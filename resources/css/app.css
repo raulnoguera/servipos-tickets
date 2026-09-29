@@ -1,9 +1,52 @@
 @import 'tailwindcss';
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
+@source '../js/**/*.jsx';
+@source '../views/**/*.blade.php';
 
+/* Colores de la página corporativa servipos2019.com */
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Urbanist', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+
+    --color-brand-50: #eef4ff;
+    --color-brand-100: #e6eeff;
+    --color-brand-200: #b3ccff;
+    --color-brand-300: #80aaff;
+    --color-brand-400: #3d7bff;
+    --color-brand-500: #0055ff;
+    --color-brand-600: #0049dc;
+    --color-brand-700: #003bb3;
+    --color-navy-900: #00194c;
+    --color-navy-800: #0a2560;
+    --color-navy-700: #324b7d;
+
+    --color-ink: #00194c;
+    --color-body: #3d4a66;
+    --color-muted: #687799;
+    --color-faint: #96a1b8;
+    --color-line: #e1e5ee;
+    --color-surface: #f8faff;
+
+    --color-ok: #219653;
+    --color-warn: #ffb930;
+    --color-danger: #ff3c3c;
+}
+
+@layer base {
+    html {
+        -webkit-tap-highlight-color: transparent;
+    }
+    body {
+        @apply bg-surface font-sans text-body antialiased;
+    }
+    h1, h2, h3 {
+        @apply font-display text-ink;
+    }
+    input, select, textarea, button {
+        font: inherit;
+    }
+}
+
+@utility tabular {
+    font-variant-numeric: tabular-nums;
 }

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -15,11 +16,16 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $this->call(AtmConditionSeeder::class);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Administrador inicial; credenciales en .env (ADMIN_EMAIL / ADMIN_PASSWORD).
+        if (env('ADMIN_EMAIL') && env('ADMIN_PASSWORD')) {
+            User::updateOrCreate(['email' => env('ADMIN_EMAIL')], [
+                'name' => env('ADMIN_NAME', 'Administrador'),
+                'password' => env('ADMIN_PASSWORD'),
+                'role' => Role::Admin,
+                'email_verified_at' => now(),
+            ]);
+        }
     }
 }

@@ -1,58 +1,104 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# ServiPos Tickets
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistema de monitoreo y gestión de tickets de soporte para cajeros automáticos (ATM) de **ServiPos 2019, C.A.**
+Alcance contratado: Opción 3 — Suite Enterprise.
 
-## About Laravel
+## Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Backend:** Laravel 13 (PHP ≥ 8.3) + MySQL/MariaDB en hosting cPanel. En desarrollo local se usa SQLite.
+- **Frontend:** React 19 + Tailwind 4 (Vite). Panel web del Call Center y vista móvil instalable para técnicos (iPhone/Android). Colores y tipografías de servipos2019.com.
+- **Excel:** PhpSpreadsheet (importación del histórico y exportación del consolidado).
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Modelo de datos
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| Tabla | Contenido |
+|---|---|
+| `banks`, `states`, `atms` | Maestros de bancos, estados/regiones y cajeros (RF-1.1, RF-1.2) |
+| `users` + `state_user` | Usuarios con rol `admin`, `operator` o `technician`, y estados que cubre cada técnico (RF-1.3) |
+| `fault_types`, `parts` | Catálogo de fallas y repuestos (RF-1.4) |
+| `atm_conditions` | "Estatus Final" del Excel (cómo queda el cajero) y el estado de ticket al que lleva |
+| `tickets` | Un ticket por falla reportada. N° correlativo `TK-AAAA-NNNNN` que vuelve a 1 cada año (RF-2.2) |
+| `visits` + `visit_parts` | Cada atención en sitio (= una fila del consolidado), con constancia, repuestos y cantidades (RF-3.x) |
+| `ticket_events` | Bitácora de cambios de estado |
 
-## Learning Laravel
+**Estados del ticket:** Abierto → Asignado → En tránsito → En sitio → Concluido / Pendiente por repuesto / Pendiente por validación (y Anulado).
+Un ticket pendiente se reabre con una nueva visita. El reloj del SLA corre desde la apertura hasta el cierre y **no se detiene** mientras espera repuesto.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Puesta en marcha (local)
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
+cp .env.example .env && php artisan key:generate   # definir ADMIN_EMAIL / ADMIN_PASSWORD
+php artisan migrate --seed
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### Importar el histórico del Excel
 
-## Contributing
+```bash
+# Primero simular: valida todo y genera el reporte de limpieza sin guardar nada
+php artisan servipos:importar-excel "ruta/al/Libro Consolidado.xlsx" --banco="Nombre del banco" --simular
+# Luego importar
+php artisan servipos:importar-excel "ruta/al/Libro Consolidado.xlsx" --banco="Nombre del banco"
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+El reporte queda en `storage/app/private/importacion/`. Los técnicos importados reciben un correo provisional
+(`nombre.apellido@tecnicos.servipos.test`) que debe actualizarse antes de darles acceso.
 
-## Code of Conduct
+### Exportar el consolidado
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+php artisan servipos:exportar-consolidado --desde=2026-08-01 --hasta=2026-08-31 [--banco="..."]
+```
 
-## Security Vulnerabilities
+Genera la pestaña "Base General" con las mismas columnas del libro actual, más la columna "N° Ticket".
+Si una visita usó varios repuestos van juntos en una celda (`PICKER x2, FEEDSHAFT x1`) y la cantidad es el total.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Interfaz
 
-## License
+```bash
+npm install
+npm run dev      # desarrollo con recarga (junto a: php artisan serve)
+npm run build    # compila a public/build
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Datos de demostración (solo ambiente de pruebas; requiere `DEMO_PASSWORD` en `.env`):
+
+```bash
+php artisan db:seed --class=DemoSeeder
+```
+
+Crea `operador@servipos.test` y `tecnico@servipos.test` y ~70 tickets de los últimos 30 días.
+
+### Publicar en Hostinger (enlace temporal)
+
+1. En tu Mac: `./deploy/empaquetar-hostinger.sh` → genera `dist/servipos-tickets-AAAAMMDD-HHMM.zip`.
+2. hPanel → **Avanzado → Configuración de PHP**: versión **8.3 o superior**.
+3. hPanel → **Bases de datos MySQL**: crear base de datos y usuario.
+4. hPanel → **Administrador de archivos** → `public_html` del dominio temporal: subir el `.zip` y extraerlo ahí (queda `public_html/.htaccess`, `public_html/app`, `public_html/public`, …).
+5. Copiar `deploy/env.hostinger.example` como `.env` y completar los valores `CAMBIAR`.
+6. Por SSH (hPanel → Avanzado → Acceso SSH), dentro de `public_html`:
+
+```bash
+php artisan key:generate --force
+php artisan migrate --seed --force
+php artisan config:cache && php artisan route:cache
+```
+
+7. Entrar con el administrador del `.env` → **Importar Excel** (simular, luego importar). Opcional: `php artisan db:seed --class=DemoSeeder --force`.
+
+Para actualizar: generar un nuevo `.zip`, extraerlo encima (sin borrar `.env` ni `storage/`), y correr `php artisan migrate --force && php artisan config:cache && php artisan route:cache`.
+
+### Pruebas
+
+```bash
+php artisan test
+```
+
+## Pendientes
+
+- [ ] **Correos de los bancos:** muestras reales para programar la lectura automática (apertura de tickets por correo).
+- [ ] **Inventario de repuestos:** definir con el cliente almacenes (central / por técnico / por región).
+- [ ] **PDF de facturación:** confirmar con el cliente el formato del reporte mensual por banco.
+- [ ] **Hosting:** confirmar acceso al cPanel y que tenga PHP ≥ 8.3 (MultiPHP Manager).
+- [ ] **Banco de los cajeros del histórico:** el Excel no lo indica.
+- [ ] Datos del maestro a completar: 107 cajeros sin modelo, 116 sin dirección, 9 sin marca, 3 con código de agencia vacío.
