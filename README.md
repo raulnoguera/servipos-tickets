@@ -75,7 +75,7 @@ Crea `operador@servipos.test` y `tecnico@servipos.test` y ~70 tickets de los úl
 2. hPanel → **Avanzado → Configuración de PHP**: versión **8.3 o superior**.
 3. hPanel → **Bases de datos MySQL**: crear base de datos y usuario.
 4. hPanel → **Administrador de archivos** → `public_html` del dominio temporal: subir el `.zip` y extraerlo ahí (queda `public_html/.htaccess`, `public_html/app`, `public_html/public`, …).
-5. Copiar `deploy/env.hostinger.example` como `.env` y completar los valores `CAMBIAR`.
+5. Copiar `deploy/env.hostinger.example` como `.env` y completar los valores `CAMBIAR`. La contraseña de MySQL se escribe con `bash deploy/configurar-bd.sh` (la pide sin mostrarla y prueba la conexión).
 6. Por SSH (hPanel → Avanzado → Acceso SSH), dentro de `public_html`:
 
 ```bash
