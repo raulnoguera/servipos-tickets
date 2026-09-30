@@ -133,17 +133,31 @@ function VisitCard({ visit, index, onPhoto }) {
                 <Info label="N° constancia">{visit.constancia_number}</Info>
                 <Info label="Falla">{visit.fault_type}</Info>
             </dl>
-            {visit.work_done && <p className="mt-3 rounded-lg bg-surface p-3 text-sm whitespace-pre-line text-body">{visit.work_done}</p>}
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-                {visit.parts.length ? (
-                    visit.parts.map((p) => (
-                        <Badge key={p.id} tone="brand"><Package className="size-3" /> {p.name} × {p.quantity}</Badge>
-                    ))
-                ) : (
-                    <span className="text-xs text-muted">Sin cambio de repuesto</span>
-                )}
+            {visit.work_done && (
+                <div className="mt-3">
+                    <p className="text-xs text-muted">Trabajo realizado</p>
+                    <p className="mt-1 rounded-lg bg-surface p-3 text-sm whitespace-pre-line text-body">{visit.work_done}</p>
+                </div>
+            )}
+            <div className="mt-3 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                    <p className="text-xs text-muted">
+                        {visit.parts.length
+                            ? `Repuestos utilizados en esta atención (${visit.parts.reduce((total, p) => total + p.quantity, 0)} ${visit.parts.reduce((total, p) => total + p.quantity, 0) === 1 ? 'unidad' : 'unidades'})`
+                            : 'Repuestos utilizados en esta atención'}
+                    </p>
+                    <div className="mt-1.5 flex flex-wrap gap-2">
+                        {visit.parts.length ? (
+                            visit.parts.map((p) => (
+                                <Badge key={p.id} tone="brand"><Package className="size-3" /> {p.name} × {p.quantity}</Badge>
+                            ))
+                        ) : (
+                            <span className="text-sm font-medium text-body">No se cambiaron repuestos</span>
+                        )}
+                    </div>
+                </div>
                 {visit.constancia_url && (
-                    <button type="button" onClick={() => onPhoto(visit.constancia_url)} className="ml-auto inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:underline">
+                    <button type="button" onClick={() => onPhoto(visit.constancia_url)} className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:underline">
                         <FileImage className="size-4" /> Ver constancia
                     </button>
                 )}
