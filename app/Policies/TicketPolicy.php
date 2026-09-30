@@ -8,10 +8,16 @@ use App\Models\User;
 
 class TicketPolicy
 {
-    /** Operadores y administradores ven todo; el técnico solo sus tickets. */
+    /**
+     * Operadores y administradores ven todo. El técnico ve los tickets que
+     * tiene asignados y los que atendió (su historial), aunque luego se
+     * hayan reasignado a otro técnico.
+     */
     public function view(User $user, Ticket $ticket): bool
     {
-        return $user->hasRole(Role::Admin, Role::Operator) || $ticket->assigned_to === $user->id;
+        return $user->hasRole(Role::Admin, Role::Operator)
+            || $ticket->assigned_to === $user->id
+            || $ticket->visits()->where('technician_id', $user->id)->exists();
     }
 
     /** Abrir, asignar y anular. */
@@ -20,9 +26,9 @@ class TicketPolicy
         return $user->hasRole(Role::Admin, Role::Operator);
     }
 
-    /** Marcar en tránsito / en sitio y registrar la atención. */
+    /** Marcar en tránsito / en sitio y registrar la atención: solo quien lo tiene asignado. */
     public function work(User $user, Ticket $ticket): bool
     {
-        return $this->view($user, $ticket);
+        return $user->hasRole(Role::Admin, Role::Operator) || $ticket->assigned_to === $user->id;
     }
 }

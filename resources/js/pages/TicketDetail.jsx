@@ -206,13 +206,15 @@ export default function TicketDetail() {
     const t = { ...data.data, status: queued.status ?? data.data.status };
     const finished = ['concluido', 'anulado'].includes(t.status);
     const closed = finished || queued.visitQueued;
-    const canWork = !closed && t.status !== 'abierto';
-    const backTo = isTechnician ? '/mis-tickets' : '/tickets';
+    // El técnico solo trabaja los tickets que tiene asignados; los de su historial son de consulta.
+    const mine = !isTechnician || t.technician?.id === user.id;
+    const canWork = !closed && t.status !== 'abierto' && mine;
+    const backTo = isTechnician ? (mine && !finished ? '/mis-tickets' : '/historial') : '/tickets';
 
     return (
         <>
             <Link to={backTo} className="mb-3 inline-flex items-center gap-1.5 text-sm font-semibold text-muted hover:text-ink">
-                <ArrowLeft className="size-4" /> {isTechnician ? 'Mis tickets' : 'Tickets'}
+                <ArrowLeft className="size-4" /> {isTechnician ? (backTo === '/historial' ? 'Mi historial' : 'Mis tickets') : 'Tickets'}
             </Link>
 
             <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -252,8 +254,12 @@ export default function TicketDetail() {
                         </Alert>
                     )}
 
+                    {isTechnician && !mine && (
+                        <Alert tone="info">Este ticket ahora está a cargo de {t.technician?.name ?? 'otro técnico'}. Puede consultarlo, pero no registrar cambios.</Alert>
+                    )}
+
                     {/* Acciones */}
-                    {!closed && (
+                    {!closed && mine && (
                         <Card className="p-4">
                             <div className="flex flex-wrap gap-2">
                                 {isTechnician && t.status === 'asignado' && (

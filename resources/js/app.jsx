@@ -13,6 +13,7 @@ const Tickets = lazy(() => import('./pages/Tickets'));
 const TicketNew = lazy(() => import('./pages/TicketNew'));
 const TicketDetail = lazy(() => import('./pages/TicketDetail'));
 const TechnicianHome = lazy(() => import('./pages/TechnicianHome'));
+const TechnicianHistory = lazy(() => import('./pages/TechnicianHistory'));
 const Atms = lazy(() => import('./pages/Atms'));
 const AtmHistory = lazy(() => import('./pages/AtmHistory'));
 const Board = lazy(() => import('./pages/Board'));
@@ -49,6 +50,7 @@ function AppRoutes() {
             <Route element={<Layout />}>
                 <Route index element={user.role === 'technician' ? <Navigate to="/mis-tickets" replace /> : <Dashboard />} />
                 <Route path="mis-tickets" element={<Guard roles={['technician']}><TechnicianHome /></Guard>} />
+                <Route path="historial" element={<Guard roles={['technician']}><TechnicianHistory /></Guard>} />
                 <Route path="tickets" element={<Guard roles={staff}><Tickets /></Guard>} />
                 <Route path="tickets/nuevo" element={<Guard roles={staff}><TicketNew /></Guard>} />
                 <Route path="tickets/:id" element={<TicketDetail />} />

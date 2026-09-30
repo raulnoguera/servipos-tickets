@@ -10,8 +10,10 @@ use App\Http\Requests\StoreTicketRequest;
 use App\Http\Resources\TicketResource;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Models\Visit;
 use App\Services\TicketService;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
@@ -29,7 +31,9 @@ class TicketController extends Controller
 
         $tickets = Ticket::query()
             ->with(['atm.state', 'bank', 'faultType', 'technician'])
-            ->when($user->role === Role::Technician, fn ($q) => $q->where('assigned_to', $user->id))
+            // Técnico: sus tickets asignados; con ?history=1, todo lo que atendió (historial).
+            ->when($user->role === Role::Technician && ! $request->boolean('history'), fn ($q) => $q->where('assigned_to', $user->id))
+            ->when($user->role === Role::Technician && $request->boolean('history'), fn ($q) => $q->forTechnician($user))
             ->when($statuses, fn ($q) => $q->whereIn('status', $statuses))
             ->when($request->query('open'), fn ($q) => $q->whereNotIn('status', [TicketStatus::Closed, TicketStatus::Cancelled]))
             ->when($request->query('bank_id'), fn ($q, $v) => $q->where('bank_id', $v))
@@ -45,6 +49,7 @@ class TicketController extends Controller
                 ->where('number', 'like', "%{$term}%")
                 ->orWhere('bank_reference', 'like', "%{$term}%")
                 ->orWhereHas('atm', fn ($a) => $a->where('atm_number', 'like', "%{$term}%")->orWhere('agency_name', 'like', "%{$term}%"))))
+            ->when($request->boolean('history'), fn ($q) => $q->orderByRaw('coalesce(closed_at, opened_at) desc'))
             ->when($request->query('sort') === 'priority', fn ($q) => $q->orderByRaw("case priority when 'critica' then 4 when 'alta' then 3 when 'media' then 2 else 1 end desc"))
             ->orderByDesc('opened_at')
             ->orderByDesc('id')
@@ -90,6 +95,27 @@ class TicketController extends Controller
         $this->tickets->transition($ticket, $to, $request->user(), $data['note'] ?? null, isset($data['at']) ? CarbonImmutable::parse($data['at']) : null);
 
         return $this->detail($ticket);
+    }
+
+    /** Resumen del técnico para su historial: este mes y total. */
+    public function technicianSummary(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $monthStart = now()->startOfMonth();
+        $visits = Visit::where('technician_id', $user->id);
+        $monthVisits = (clone $visits)->where('visit_date', '>=', $monthStart->toDateString())->with('parts')->get();
+
+        return response()->json([
+            'month' => [
+                'visits' => $monthVisits->count(),
+                'closed' => Ticket::forTechnician($user)->where('status', TicketStatus::Closed)->where('closed_at', '>=', $monthStart)->count(),
+                'parts_units' => (int) $monthVisits->flatMap->parts->sum('pivot.quantity'),
+            ],
+            'total' => [
+                'tickets' => Ticket::forTechnician($user)->count(),
+                'visits' => $visits->count(),
+            ],
+        ]);
     }
 
     /** Editar prioridad, falla, detalle o caso del banco (queda en el historial). */

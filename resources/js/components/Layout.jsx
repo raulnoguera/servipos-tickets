@@ -1,7 +1,7 @@
 import { Component, Suspense, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
-    BarChart3, Building2, ClipboardList, Columns3, FileUp, LayoutDashboard, ListChecks, LogOut, Menu, PlusCircle, Users, Wrench, X,
+    BarChart3, Building2, ClipboardList, Columns3, FileUp, History, LayoutDashboard, ListChecks, LogOut, Menu, PlusCircle, Users, Wrench, X,
 } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { initials } from '../lib/format';
@@ -16,6 +16,7 @@ const NAV = [
     { to: '/tickets', label: 'Tickets', icon: ClipboardList, roles: ['admin', 'operator'], end: true },
     { to: '/tablero', label: 'Tablero', icon: Columns3, roles: ['admin', 'operator'] },
     { to: '/mis-tickets', label: 'Mis tickets', icon: Wrench, roles: ['technician'] },
+    { to: '/historial', label: 'Mi historial', icon: History, roles: ['technician'] },
     { to: '/reportes', label: 'Reportes', icon: BarChart3, roles: ['admin', 'operator'] },
     { section: 'Maestros', roles: ['admin', 'operator'] },
     { to: '/cajeros', label: 'Cajeros', icon: Building2, roles: ['admin', 'operator'] },

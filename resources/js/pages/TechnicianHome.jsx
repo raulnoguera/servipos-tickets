@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronRight, ClipboardCheck, CloudUpload, MapPin, Navigation, PartyPopper, Truck } from 'lucide-react';
+import { ChevronRight, ClipboardCheck, CloudUpload, History, MapPin, Navigation, PartyPopper, Truck } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { changeStatus } from '../lib/actions';
@@ -103,7 +103,7 @@ export default function TechnicianHome() {
 
             {isLoading ? (
                 <LoadingBlock />
-            ) : error ? (
+            ) : error && !data ? (
                 <Alert tone="warn">{error.offline ? 'Sin señal y aún no hay tickets guardados en este teléfono. Se cargarán al volver la conexión.' : error.message}</Alert>
             ) : !tickets.length ? (
                 <Card>
@@ -125,6 +125,11 @@ export default function TechnicianHome() {
                     )}
                 </div>
             )}
+
+            <Link to="/historial" className="mt-8 flex items-center justify-between rounded-xl border border-line bg-white px-4 py-3.5 text-sm font-semibold text-ink active:bg-surface">
+                <span className="flex items-center gap-2"><History className="size-4 text-brand-500" /> Ver mi historial de atenciones</span>
+                <ChevronRight className="size-4 text-muted" />
+            </Link>
         </div>
     );
 }

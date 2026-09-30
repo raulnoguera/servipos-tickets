@@ -63,6 +63,14 @@ class Ticket extends Model
         });
     }
 
+    /** Tickets de un técnico: asignados a él o en los que registró alguna atención. */
+    public function scopeForTechnician(Builder $query, User $technician): void
+    {
+        $query->where(fn (Builder $q) => $q
+            ->where('assigned_to', $technician->id)
+            ->orWhereHas('visits', fn ($v) => $v->where('technician_id', $technician->id)));
+    }
+
     public function atm(): BelongsTo
     {
         return $this->belongsTo(Atm::class);

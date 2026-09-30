@@ -18,6 +18,7 @@ const CACHEABLE_API = [
     /^\/api\/v1\/tickets$/,
     /^\/api\/v1\/tickets\/\d+$/,
     /^\/api\/v1\/push\/config$/,
+    /^\/api\/v1\/me\/summary$/,
 ];
 
 /**

@@ -36,6 +36,7 @@ Route::prefix('v1')->group(function () {
 
         // Tickets: el técnico solo ve y trabaja los suyos (TicketPolicy).
         Route::get('tickets', [TicketController::class, 'index']);
+        Route::get('me/summary', [TicketController::class, 'technicianSummary']);
         Route::post('tickets', [TicketController::class, 'store']);
         Route::get('tickets/{ticket}', [TicketController::class, 'show']);
         Route::post('tickets/{ticket}/assign', [TicketController::class, 'assign']);
