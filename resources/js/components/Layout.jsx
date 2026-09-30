@@ -122,7 +122,7 @@ export default function Layout() {
             {/* Barra superior (teléfono / tablet) */}
             <header className="sticky top-0 z-30 flex items-center justify-between bg-navy-900 px-4 pt-[env(safe-area-inset-top)] lg:hidden">
                 <div className="flex h-14 items-center">
-                    <Logo light />
+                    <Logo light compact />
                 </div>
                 <div className="flex items-center gap-1">
                     <NotificationBell />

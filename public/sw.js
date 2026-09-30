@@ -6,8 +6,8 @@
  * - Muestra las notificaciones push y abre el ticket al tocarlas.
  * Los envíos hechos sin señal los maneja la app (bandeja en IndexedDB).
  */
-const SHELL = 'servipos-shell-v1';
-const ASSETS = 'servipos-assets-v1';
+const SHELL = 'servipos-shell-v2';
+const ASSETS = 'servipos-assets-v2';
 const API = 'servipos-api-v1';
 const KEEP = [SHELL, ASSETS, API];
 
@@ -50,7 +50,7 @@ self.addEventListener('install', (event) => {
     event.waitUntil(
         (async () => {
             const shell = await caches.open(SHELL);
-            await shell.addAll(['/', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png']).catch(() => {});
+            await shell.addAll(['/', '/manifest.webmanifest', '/icons/icon-192.png?v=2', '/icons/icon-512.png?v=2', '/brand/mark.png', '/brand/wordmark-white.png', '/brand/logo.png']).catch(() => {});
             await precacheBuild();
             await self.skipWaiting();
         })(),
@@ -121,7 +121,7 @@ self.addEventListener('fetch', (event) => {
         event.respondWith(networkFirst(request, SHELL, '/', 4000));
         return;
     }
-    if (url.pathname.startsWith('/build/') || url.pathname.startsWith('/icons/')) {
+    if (url.pathname.startsWith('/build/') || url.pathname.startsWith('/icons/') || url.pathname.startsWith('/brand/')) {
         event.respondWith(cacheFirst(request));
         return;
     }
@@ -165,8 +165,8 @@ self.addEventListener('push', (event) => {
                 renotify: Boolean(data.tag),
                 silent: false,
                 vibrate: [200, 100, 200],
-                icon: '/icons/icon-192.png',
-                badge: '/icons/icon-192.png',
+                icon: '/icons/icon-192.png?v=2',
+                badge: '/icons/icon-192.png?v=2',
                 data: { url: data.url || '/' },
             });
         })(),

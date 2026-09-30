@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ArrowRight, BarChart3, Camera, Clock3, Lock, Mail } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { Alert, Button, Field, Input } from '../components/ui';
-import { Logo, LogoMark } from '../components/Logo';
+import { Logo } from '../components/Logo';
 
 const FEATURES = [
     { icon: Clock3, title: 'Tiempos de atención medidos', text: 'Cada ticket registra su ciclo exacto, de la apertura al cierre.' },
@@ -36,7 +36,7 @@ export default function Login() {
             <section className="relative hidden overflow-hidden bg-navy-900 p-12 text-white lg:flex lg:flex-col lg:justify-between">
                 <div className="absolute -top-40 -right-40 size-[520px] rounded-full bg-brand-500/25 blur-3xl" />
                 <div className="absolute -bottom-48 -left-24 size-[420px] rounded-full bg-brand-400/15 blur-3xl" />
-                <div className="relative"><Logo light /></div>
+                <div className="relative"><Logo light large /></div>
                 <div className="relative max-w-lg">
                     <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-brand-300">Soporte técnico de cajeros automáticos</p>
                     <h1 className="font-display text-4xl leading-tight font-extrabold text-white xl:text-5xl">
@@ -61,8 +61,8 @@ export default function Login() {
 
             <section className="flex items-center justify-center px-5 py-12 sm:px-10">
                 <div className="w-full max-w-sm">
-                    <div className="mb-10 flex justify-center lg:hidden">
-                        <LogoMark className="size-14" />
+                    <div className="mb-10 flex justify-center">
+                        <Logo large />
                     </div>
                     <h2 className="text-3xl font-extrabold tracking-tight">Iniciar sesión</h2>
                     <p className="mt-2 text-sm text-muted">Ingrese con su correo corporativo.</p>

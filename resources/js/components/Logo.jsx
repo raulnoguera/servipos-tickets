@@ -1,29 +1,26 @@
-/** Marca "SP" inspirada en el logo de ServiPos 2019 (cuadros rojo, amarillo y verde). */
-export function LogoMark({ className = 'size-9' }) {
-    return (
-        <svg viewBox="0 0 48 48" className={className} aria-hidden>
-            <rect x="2" y="2" width="44" height="44" rx="11" fill="#0055ff" />
-            <text x="24" y="27" textAnchor="middle" fontFamily="Urbanist, sans-serif" fontWeight="800" fontStyle="italic" fontSize="21" fill="#fff">
-                SP
-            </text>
-            <rect x="11" y="33" width="7" height="6" rx="1.5" fill="#ff3c3c" />
-            <rect x="20.5" y="33" width="7" height="6" rx="1.5" fill="#ffb930" />
-            <rect x="30" y="33" width="7" height="6" rx="1.5" fill="#2ec46b" />
-        </svg>
-    );
+/** Símbolo "SP" del logo corporativo de ServiPos 2019 (sobre fondo claro). */
+export function LogoMark({ className = 'h-10' }) {
+    return <img src="/brand/mark.png" alt="ServiPos 2019" className={`w-auto select-none ${className}`} draggable="false" />;
 }
 
-export function Logo({ light = false }) {
+/**
+ * Logo corporativo. Sobre fondos oscuros (light) el símbolo va en una placa
+ * blanca y el nombre en blanco; sobre fondos claros se usa el logo completo.
+ */
+export function Logo({ light = false, subtitle = true, compact = false, large = false }) {
+    if (!light) {
+        return <img src="/brand/logo.png" alt="ServiPos 2019" className={`w-auto select-none ${compact ? 'h-9' : large ? 'h-20' : 'h-12'}`} draggable="false" />;
+    }
     return (
         <div className="flex items-center gap-2.5">
-            <LogoMark />
+            <span className={`grid shrink-0 place-items-center rounded-lg bg-white shadow-sm ${compact ? 'size-9' : large ? 'size-16 rounded-xl' : 'size-11'}`}>
+                <img src="/brand/mark.png" alt="" className={`w-auto select-none ${compact ? 'h-7' : large ? 'h-13' : 'h-9'}`} draggable="false" />
+            </span>
             <div className="leading-none">
-                <div className={`font-display text-lg font-extrabold tracking-tight ${light ? 'text-white' : 'text-ink'}`}>
-                    ServiPos <span className={light ? 'text-brand-300' : 'text-brand-500'}>2019</span>
-                </div>
-                <div className={`mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${light ? 'text-white/55' : 'text-muted'}`}>
-                    Monitor de tickets ATM
-                </div>
+                <img src="/brand/wordmark-white.png" alt="ServiPos 2019" className={`w-auto select-none ${compact ? 'h-7' : large ? 'h-14' : 'h-9'}`} draggable="false" />
+                {subtitle && !compact && (
+                    <div className="mt-1.5 text-[9px] font-semibold tracking-[0.16em] whitespace-nowrap text-white/55 uppercase">Monitor de tickets ATM</div>
+                )}
             </div>
         </div>
     );
