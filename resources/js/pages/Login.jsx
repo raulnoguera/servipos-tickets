@@ -40,7 +40,7 @@ export default function Login() {
                 <div className="relative max-w-lg">
                     <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-brand-300">Soporte técnico de cajeros automáticos</p>
                     <h1 className="font-display text-4xl leading-tight font-extrabold text-white xl:text-5xl">
-                        Cada falla, del correo del banco al cierre, en un solo lugar.
+                        Centro de control y monitoreo del soporte ATM en tiempo real.
                     </h1>
                     <ul className="mt-10 space-y-5">
                         {FEATURES.map((f) => (
