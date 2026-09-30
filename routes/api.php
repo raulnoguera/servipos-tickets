@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ImportController;
+use App\Http\Controllers\Api\PushSubscriptionController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\TicketController;
 use App\Http\Controllers\Api\UserController;
@@ -19,6 +20,11 @@ Route::prefix('v1')->group(function () {
         Route::post('auth/logout', [AuthController::class, 'logout']);
 
         Route::get('catalogs', [CatalogController::class, 'all']);
+
+        Route::get('push/config', [PushSubscriptionController::class, 'config']);
+        Route::post('push/subscriptions', [PushSubscriptionController::class, 'store']);
+        Route::delete('push/subscriptions', [PushSubscriptionController::class, 'destroy']);
+        Route::post('push/test', [PushSubscriptionController::class, 'test'])->middleware('throttle:5,1');
 
         // Tickets: el técnico solo ve y trabaja los suyos (TicketPolicy).
         Route::get('tickets', [TicketController::class, 'index']);

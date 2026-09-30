@@ -24,7 +24,7 @@ class StoreVisitRequest extends FormRequest
             'work_done' => ['required', 'string', 'max:5000'],
             'atm_condition_id' => ['required', 'integer', 'exists:atm_conditions,id'],
             'arrived_at' => ['nullable', 'date'],
-            'finished_at' => ['nullable', 'date', 'before_or_equal:'.now()->addMinutes(5)->toIso8601String()],
+            'finished_at' => ['nullable', 'date'],
             'parts_changed' => ['required', 'boolean'],
             // RF-3.2: si hubo cambio de repuesto, es obligatorio indicar cuál y cuántos.
             'parts' => ['exclude_unless:parts_changed,true', 'required', 'array', 'min:1'],

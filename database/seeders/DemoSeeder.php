@@ -42,6 +42,7 @@ class DemoSeeder extends Seeder
 
     public function run(TicketService $tickets): void
     {
+        $tickets->notify = false;
         $password = env('DEMO_PASSWORD') ?: throw new RuntimeException('Defina DEMO_PASSWORD en .env para crear los usuarios de demostración.');
         $this->call(AtmConditionSeeder::class);
 

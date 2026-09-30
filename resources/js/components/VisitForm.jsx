@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Camera, CheckCircle2, ImagePlus, Minus, Plus, Trash2 } from 'lucide-react';
 import { api } from '../lib/api';
+import { useAuth } from '../lib/auth';
+import { outbox } from '../lib/outbox';
 import { useCatalogs } from '../lib/queries';
 import { compressImage, formatBytes } from '../lib/compressImage';
 import { Alert, Button, Field, Input, Segmented, Select, StatusBadge, Textarea, cx, toast } from './ui';
@@ -11,6 +13,7 @@ const newUuid = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-
 /** Registro de la atención en sitio (RF-3.1 a RF-3.3). */
 export default function VisitForm({ ticket, onDone }) {
     const { data: catalogs } = useCatalogs();
+    const { user } = useAuth();
     const queryClient = useQueryClient();
     const [uuid] = useState(newUuid);
     const [form, setForm] = useState({
@@ -39,29 +42,60 @@ export default function VisitForm({ ticket, onDone }) {
         setCompressing(false);
     }
 
-    const save = useMutation({
-        mutationFn: () => {
-            const body = new FormData();
-            body.append('client_uuid', uuid);
-            Object.entries(form).forEach(([k, v]) => v !== null && v !== '' && body.append(k, k === 'parts_changed' ? (v ? '1' : '0') : v));
-            if (form.parts_changed) {
-                parts.filter((p) => p.part_id).forEach((p, i) => {
-                    body.append(`parts[${i}][part_id]`, p.part_id);
-                    body.append(`parts[${i}][quantity]`, p.quantity);
-                });
+    /** Campos del envío; finished_at es la hora real, aunque se envíe más tarde sin señal. */
+    function fields() {
+        const data = { client_uuid: uuid, finished_at: new Date().toISOString() };
+        Object.entries(form).forEach(([k, v]) => {
+            if (v !== null && v !== '') {
+                data[k] = k === 'parts_changed' ? (v ? '1' : '0') : v;
             }
+        });
+        if (form.parts_changed) {
+            parts.filter((p) => p.part_id).forEach((p, i) => {
+                data[`parts[${i}][part_id]`] = p.part_id;
+                data[`parts[${i}][quantity]`] = String(p.quantity);
+            });
+        }
+        return data;
+    }
+
+    const save = useMutation({
+        mutationFn: async () => {
+            const data = fields();
+            const body = new FormData();
+            Object.entries(data).forEach(([k, v]) => body.append(k, v));
             if (photo) {
                 body.append('photo', photo);
             }
-            return api(`tickets/${ticket.id}/visits`, { method: 'POST', body });
+            try {
+                return { queued: false, response: await api(`tickets/${ticket.id}/visits`, { method: 'POST', body, timeout: 60000 }) };
+            } catch (error) {
+                if (!error.offline) {
+                    throw error;
+                }
+                // Sin señal: se guarda en el teléfono y se envía solo al volver la conexión.
+                await outbox.add({
+                    type: 'visit',
+                    userId: user.id,
+                    ticketId: ticket.id,
+                    ticketNumber: ticket.number,
+                    payload: { fields: data, photo, photoName: photo?.name },
+                });
+                return { queued: true };
+            }
         },
         onSuccess: (r) => {
-            queryClient.setQueryData(['ticket', String(ticket.id)], r);
+            if (r.queued) {
+                toast('Sin señal: la atención quedó guardada en el teléfono y se enviará sola');
+                onDone?.(null);
+                return;
+            }
+            queryClient.setQueryData(['ticket', String(ticket.id)], r.response);
             queryClient.invalidateQueries({ queryKey: ['tickets'] });
             queryClient.invalidateQueries({ queryKey: ['my-tickets'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-            toast(`Atención registrada · ${r.data.status_label}`);
-            onDone?.(r.data);
+            toast(`Atención registrada · ${r.response.data.status_label}`);
+            onDone?.(r.response.data);
         },
     });
     const err = save.error;

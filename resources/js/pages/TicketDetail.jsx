@@ -7,6 +7,8 @@ import {
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { useCatalogs } from '../lib/queries';
+import { changeStatus } from '../lib/actions';
+import { queuedState, useOutbox } from '../lib/sync';
 import { formatDate, formatDateTime, formatDurationExact, mapsUrl } from '../lib/format';
 import {
     Alert, Badge, Button, Card, CardHeader, Elapsed, EmptyState, Field, Input, LoadingBlock, Modal, Select, StatusBadge, toast,
@@ -152,7 +154,8 @@ function VisitCard({ visit, index, onPhoto }) {
 
 export default function TicketDetail() {
     const { id } = useParams();
-    const { canManage, isTechnician } = useAuth();
+    const { user, canManage, isTechnician } = useAuth();
+    const queuedItems = useOutbox(user.id);
     const queryClient = useQueryClient();
     const [searchParams, setSearchParams] = useSearchParams();
     const [modal, setModal] = useState(searchParams.get('atender') ? 'visit' : null);
@@ -165,11 +168,15 @@ export default function TicketDetail() {
     });
 
     const move = useMutation({
-        mutationFn: (status) => api(`tickets/${id}/status`, { method: 'POST', body: { status } }),
+        mutationFn: (status) => changeStatus({ ticket: data.data, status, userId: user.id }),
         onSuccess: (r) => {
-            queryClient.setQueryData(['ticket', id], r);
+            if (r.queued) {
+                toast('Sin señal: guardado en el teléfono, se enviará al volver la conexión');
+                return;
+            }
+            queryClient.setQueryData(['ticket', id], r.data);
             queryClient.invalidateQueries({ queryKey: ['my-tickets'] });
-            toast(`Estado: ${r.data.status_label}`);
+            toast(`Estado: ${r.data.data.status_label}`);
         },
         onError: (e) => toast(e.field?.('status') || e.message, 'error'),
     });
@@ -178,11 +185,16 @@ export default function TicketDetail() {
         return <LoadingBlock />;
     }
     if (error) {
-        return <EmptyState title={error.status === 403 ? 'No tiene acceso a este ticket' : 'No se encontró el ticket'} action={<Button as={Link} to="/" variant="secondary">Volver</Button>} />;
+        const title = error.offline
+            ? 'Sin señal: este ticket no se había abierto antes en este teléfono'
+            : error.status === 403 ? 'No tiene acceso a este ticket' : 'No se encontró el ticket';
+        return <EmptyState title={title} action={<Button as={Link} to="/" variant="secondary">Volver</Button>} />;
     }
 
-    const t = data.data;
-    const closed = ['concluido', 'anulado'].includes(t.status);
+    const queued = queuedState(queuedItems, data.data.id);
+    const t = { ...data.data, status: queued.status ?? data.data.status };
+    const finished = ['concluido', 'anulado'].includes(t.status);
+    const closed = finished || queued.visitQueued;
     const canWork = !closed && t.status !== 'abierto';
     const backTo = isTechnician ? '/mis-tickets' : '/tickets';
 
@@ -205,14 +217,24 @@ export default function TicketDetail() {
                     </p>
                 </div>
                 <div className="rounded-xl border border-line bg-white px-4 py-2.5 text-right">
-                    <p className="text-xs font-semibold text-muted">{closed ? 'Tiempo total del ciclo' : 'Tiempo transcurrido'}</p>
+                    <p className="text-xs font-semibold text-muted">{finished ? 'Tiempo total del ciclo' : 'Tiempo transcurrido'}</p>
                     <p className="font-display text-2xl font-extrabold text-ink"><Elapsed ticket={t} /></p>
-                    {closed && t.duration_ms !== null && <p className="text-[11px] text-muted tabular" title="Duración exacta con milisegundos">{formatDurationExact(t.duration_ms)}</p>}
+                    {finished && t.duration_ms !== null && <p className="text-[11px] text-muted tabular" title="Duración exacta con milisegundos">{formatDurationExact(t.duration_ms)}</p>}
                 </div>
             </div>
 
             <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
                 <div className="space-y-6">
+                    {queued.count > 0 && (
+                        <Alert tone={queued.hasError ? 'danger' : 'warn'}>
+                            {queued.hasError
+                                ? 'Un envío de este ticket no se pudo registrar. Revíselo en el aviso de arriba.'
+                                : queued.visitQueued
+                                  ? 'La atención quedó guardada en el teléfono y se enviará sola al volver la señal.'
+                                  : 'Hay un cambio de estado guardado en el teléfono que se enviará al volver la señal.'}
+                        </Alert>
+                    )}
+
                     {/* Acciones */}
                     {!closed && (
                         <Card className="p-4">

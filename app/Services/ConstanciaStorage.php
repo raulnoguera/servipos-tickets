@@ -20,6 +20,8 @@ class ConstanciaStorage
 
     private const MAX_PIXELS = 24_000_000;
 
+    private const KEEP_IF_UNDER_BYTES = 600 * 1024;
+
     public function store(UploadedFile $photo, Ticket $ticket): string
     {
         $path = sprintf('constancias/%s/%s-%s.jpg', now()->format('Y/m'), $ticket->number, Str::lower(Str::random(8)));
@@ -36,6 +38,10 @@ class ConstanciaStorage
         // Una foto de 12 MP ocupa ~50 MB en memoria; más allá de 24 MP no se procesa
         // para no superar el límite del hosting compartido.
         if ($width * $height === 0 || $width * $height > self::MAX_PIXELS) {
+            return $original;
+        }
+        // Ya viene reducida desde el teléfono: se guarda tal cual para no perder calidad ni crecer.
+        if (max($width, $height) <= self::MAX_SIDE && $photo->getMimeType() === 'image/jpeg' && strlen($original) <= self::KEEP_IF_UNDER_BYTES) {
             return $original;
         }
         $image = @imagecreatefromstring($original);

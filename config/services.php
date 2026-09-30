@@ -18,6 +18,13 @@ return [
         'key' => env('POSTMARK_API_KEY'),
     ],
 
+    // Notificaciones push (Web Push / VAPID). Generar claves: php artisan servipos:claves-push
+    'webpush' => [
+        'public_key' => env('VAPID_PUBLIC_KEY'),
+        'private_key' => env('VAPID_PRIVATE_KEY'),
+        'subject' => env('VAPID_SUBJECT', 'mailto:soporte@servipos2019.com'),
+    ],
+
     'resend' => [
         'key' => env('RESEND_API_KEY'),
     ],

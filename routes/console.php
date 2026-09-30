@@ -7,6 +7,7 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
+use Minishlink\WebPush\VAPID;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -59,3 +60,24 @@ Artisan::command('servipos:exportar-consolidado
 
     return 0;
 })->purpose('Exporta las visitas al formato del consolidado Excel actual');
+
+Artisan::command('servipos:claves-push {--forzar : Reemplaza claves existentes (los dispositivos deberán activar las notificaciones de nuevo)}', function () {
+    $env = base_path('.env');
+    $content = (string) file_get_contents($env);
+    if (preg_match('/^VAPID_PUBLIC_KEY=.+$/m', $content) && ! $this->option('forzar')) {
+        $this->warn('Ya hay claves VAPID en .env. Use --forzar para reemplazarlas.');
+
+        return 0;
+    }
+
+    $keys = VAPID::createVapidKeys();
+    foreach (['VAPID_PUBLIC_KEY' => $keys['publicKey'], 'VAPID_PRIVATE_KEY' => $keys['privateKey']] as $name => $value) {
+        $content = preg_match("/^{$name}=.*$/m", $content)
+            ? preg_replace("/^{$name}=.*$/m", "{$name}={$value}", $content)
+            : rtrim($content).PHP_EOL."{$name}={$value}".PHP_EOL;
+    }
+    file_put_contents($env, $content);
+    $this->info('Claves de notificaciones push guardadas en .env. Ejecute php artisan config:cache si usa caché de configuración.');
+
+    return 0;
+})->purpose('Genera las claves VAPID para las notificaciones push y las guarda en .env');

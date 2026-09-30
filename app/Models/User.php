@@ -53,6 +53,11 @@ class User extends Authenticatable
         return $this->assignedTickets()->whereNotIn('status', [TicketStatus::Closed, TicketStatus::Cancelled]);
     }
 
+    public function pushSubscriptions(): HasMany
+    {
+        return $this->hasMany(PushSubscription::class);
+    }
+
     public function hasRole(Role ...$roles): bool
     {
         return in_array($this->role, $roles, true);

@@ -10,6 +10,7 @@ use App\Http\Resources\TicketResource;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\TicketService;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
@@ -74,11 +75,12 @@ class TicketController extends Controller
         $data = $request->validate([
             'status' => ['required', Rule::in([TicketStatus::InTransit->value, TicketStatus::OnSite->value, TicketStatus::Cancelled->value])],
             'note' => ['nullable', 'string', 'max:255', 'required_if:status,'.TicketStatus::Cancelled->value],
+            'at' => ['nullable', 'date'],
         ]);
         $to = TicketStatus::from($data['status']);
         Gate::authorize($to === TicketStatus::Cancelled ? 'manage' : 'work', $ticket);
 
-        $this->tickets->transition($ticket, $to, $request->user(), $data['note'] ?? null);
+        $this->tickets->transition($ticket, $to, $request->user(), $data['note'] ?? null, isset($data['at']) ? CarbonImmutable::parse($data['at']) : null);
 
         return $this->detail($ticket);
     }

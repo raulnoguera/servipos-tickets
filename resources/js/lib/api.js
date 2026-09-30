@@ -5,6 +5,8 @@ export class ApiError extends Error {
         super(body?.message || `Error ${status}`);
         this.status = status;
         this.errors = body?.errors || {};
+        /** Sin señal o el servidor no respondió a tiempo: el envío puede reintentarse. */
+        this.offline = status === 0;
     }
 
     /** Primer mensaje de validación de un campo. */
@@ -21,9 +23,17 @@ function xsrfToken() {
 }
 
 async function ensureCsrf() {
-    if (!csrfReady || !xsrfToken()) {
-        await fetch('/sanctum/csrf-cookie', { credentials: 'same-origin' });
-        csrfReady = true;
+    if (csrfReady && xsrfToken()) {
+        return;
+    }
+    try {
+        const response = await fetch('/sanctum/csrf-cookie', { credentials: 'same-origin' });
+        csrfReady = response.ok;
+    } catch {
+        // Sin señal: si ya hay una cookie XSRF se intenta igual; el envío fallará y quedará en la bandeja.
+        if (!xsrfToken()) {
+            throw new ApiError(0, { message: 'Sin conexión con el servidor.' });
+        }
     }
 }
 
@@ -32,7 +42,11 @@ export function setUnauthorizedHandler(handler) {
     onUnauthorized = handler;
 }
 
-export async function api(path, { method = 'GET', body, query, raw = false } = {}) {
+/**
+ * @param {object} options
+ * @param {number} [options.timeout] milisegundos antes de considerar que no hay señal
+ */
+export async function api(path, { method = 'GET', body, query, raw = false, timeout = 30000, retried = false } = {}) {
     const url = new URL(`/api/v1/${path.replace(/^\//, '')}`, window.location.origin);
     Object.entries(query || {}).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
@@ -51,17 +65,31 @@ export async function api(path, { method = 'GET', body, query, raw = false } = {
         }
     }
 
-    const response = await fetch(url, { method, headers, body: payload, credentials: 'same-origin' });
+    let response;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+    try {
+        response = await fetch(url, { method, headers, body: payload, credentials: 'same-origin', signal: controller.signal });
+    } catch {
+        throw new ApiError(0, { message: 'Sin conexión con el servidor.' });
+    } finally {
+        clearTimeout(timer);
+    }
 
     if (response.status === 419) {
+        // La sesión CSRF venció (p. ej. el teléfono estuvo horas sin señal): renovar y reintentar una vez.
         csrfReady = false;
+        if (!retried) {
+            return api(path, { method, body, query, raw, timeout, retried: true });
+        }
     }
     if (response.status === 401 && !path.startsWith('auth/login')) {
         onUnauthorized();
     }
     if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        throw new ApiError(response.status, data);
+        // El hosting responde 5xx/HTML cuando la red intermedia falla: se trata como sin señal.
+        throw new ApiError(response.status >= 502 && response.status <= 504 ? 0 : response.status, data);
     }
     if (raw) {
         return response;

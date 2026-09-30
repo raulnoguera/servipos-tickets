@@ -61,6 +61,21 @@ function AppRoutes() {
     );
 }
 
+// Guarda la app en el teléfono para abrir sin señal y recibir notificaciones.
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+    window.addEventListener('load', async () => {
+        const registration = await navigator.serviceWorker.register('/sw.js').catch(() => null);
+        // Guarda las pantallas de esta versión para usarlas sin señal.
+        (registration?.active || (await navigator.serviceWorker.ready).active)?.postMessage('precache');
+    });
+    // Al tocar una notificación con la app abierta, el service worker pide navegar al ticket.
+    navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data?.type === 'navigate') {
+            window.location.assign(event.data.url);
+        }
+    });
+}
+
 createRoot(document.getElementById('app')).render(
     <StrictMode>
         <QueryClientProvider client={queryClient}>

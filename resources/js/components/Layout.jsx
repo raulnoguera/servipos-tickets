@@ -1,4 +1,4 @@
-import { Suspense, useState } from 'react';
+import { Component, Suspense, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
     BarChart3, Building2, ClipboardList, FileUp, LayoutDashboard, ListChecks, LogOut, Menu, PlusCircle, Users, Wrench, X,
@@ -7,6 +7,7 @@ import { useAuth } from '../lib/auth';
 import { initials } from '../lib/format';
 import { LoadingBlock, cx } from './ui';
 import { Logo } from './Logo';
+import { ConnectivityBar, OutboxSync } from './Offline';
 
 const NAV = [
     { to: '/', label: 'Monitor', icon: LayoutDashboard, roles: ['admin', 'operator'], end: true },
@@ -71,6 +72,33 @@ function UserCard({ user, onLogout }) {
     );
 }
 
+/** Evita la pantalla en blanco si una pantalla no se puede cargar (p. ej. sin señal). */
+class PageErrorBoundary extends Component {
+    state = { error: null };
+
+    static getDerivedStateFromError(error) {
+        return { error };
+    }
+
+    render() {
+        if (!this.state.error) {
+            return this.props.children;
+        }
+        return (
+            <div className="mx-auto max-w-md py-16 text-center">
+                <p className="font-display text-lg font-bold text-ink">No se pudo abrir esta pantalla</p>
+                <p className="mt-2 text-sm text-muted">
+                    {navigator.onLine ? 'Ocurrió un error al cargarla.' : 'Parece que no hay señal y esta pantalla aún no estaba guardada en el teléfono.'}
+                </p>
+                <div className="mt-5 flex justify-center gap-2">
+                    <button type="button" onClick={() => window.history.back()} className="rounded-lg border border-line bg-white px-4 py-2 text-sm font-semibold text-ink">Volver</button>
+                    <button type="button" onClick={() => window.location.reload()} className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white">Reintentar</button>
+                </div>
+            </div>
+        );
+    }
+}
+
 export default function Layout() {
     const { user, logout } = useAuth();
     const [open, setOpen] = useState(false);
@@ -118,9 +146,13 @@ export default function Layout() {
             )}
 
             <main key={location.pathname} className="mx-auto w-full max-w-[1400px] px-4 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:px-6 lg:px-8 lg:py-8">
-                <Suspense fallback={<LoadingBlock />}>
-                    <Outlet />
-                </Suspense>
+                <OutboxSync />
+                <ConnectivityBar />
+                <PageErrorBoundary key={location.pathname}>
+                    <Suspense fallback={<LoadingBlock />}>
+                        <Outlet />
+                    </Suspense>
+                </PageErrorBoundary>
             </main>
         </div>
     );
