@@ -17,7 +17,7 @@ use Illuminate\Validation\ValidationException;
 /** Ciclo de vida del ticket: apertura, asignación, cambios de estado y visitas. */
 class TicketService
 {
-    /** Enviar notificación push al asignar. Se desactiva al generar datos de demostración. */
+    /** Enviar notificaciones push del ciclo. Se desactiva al generar datos de demostración o importar. */
     public bool $notify = true;
 
     public function __construct(
@@ -102,6 +102,12 @@ class TicketService
         $ticket->update(['status' => $to] + ($to === TicketStatus::Cancelled ? $this->closingTimes($ticket, $at) : []));
         $this->log($ticket, $by, $from, $to, $note, $at);
 
+        if ($this->notify) {
+            defer(fn () => $to === TicketStatus::Cancelled
+                ? $this->push->ticketCancelled($ticket->fresh(), $by, $note)
+                : $this->push->technicianMoved($ticket->fresh(), $by, $to === TicketStatus::OnSite, $at));
+        }
+
         return $ticket;
     }
 
@@ -156,6 +162,12 @@ class TicketService
             $to = $condition->resulting_ticket_status;
             $ticket->update(['status' => $to] + ($to === TicketStatus::Closed ? $this->closingTimes($ticket, $finishedAt) : []));
             $this->log($ticket, $by, $from, $to, "Atención registrada: {$condition->name}", $finishedAt);
+
+            if ($this->notify) {
+                defer(fn () => $to === TicketStatus::Closed
+                    ? $this->push->ticketClosed($ticket->fresh(), $by)
+                    : $this->push->visitPending($ticket->fresh(), $by, $condition, $finishedAt));
+            }
 
             return $visit;
         });

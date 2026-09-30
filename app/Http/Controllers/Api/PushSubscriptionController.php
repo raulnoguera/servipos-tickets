@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use App\Models\PushSubscription;
 use App\Services\PushNotifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class PushSubscriptionController extends Controller
 {
@@ -45,6 +47,17 @@ class PushSubscriptionController extends Controller
         $request->user()->pushSubscriptions()->where('endpoint', $request->input('endpoint'))->delete();
 
         return response()->json(['ok' => true]);
+    }
+
+    /** Qué avisos de tickets recibe el usuario (operadores y administradores). */
+    public function preferences(Request $request): UserResource
+    {
+        $data = $request->validate([
+            'notify_scope' => ['required', Rule::in([PushNotifier::SCOPE_ALL, PushNotifier::SCOPE_MINE, PushNotifier::SCOPE_NONE])],
+        ]);
+        $request->user()->update($data);
+
+        return new UserResource($request->user()->load('states'));
     }
 
     /** Envía una notificación de prueba a los dispositivos del usuario. */

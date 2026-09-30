@@ -22,6 +22,7 @@ class UserResource extends JsonResource
             'role_label' => $this->role->label(),
             'phone' => $this->phone,
             'active' => $this->active,
+            'notify_scope' => $this->notify_scope,
             'state_ids' => $this->whenLoaded('states', fn () => $this->states->pluck('id')),
             'states' => $this->whenLoaded('states', fn () => $this->states->pluck('name')),
             'open_tickets' => $this->whenCounted('assignedOpenTickets'),

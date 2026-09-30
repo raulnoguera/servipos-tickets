@@ -1,13 +1,14 @@
 import { Component, Suspense, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
-    BarChart3, Building2, ClipboardList, FileUp, LayoutDashboard, ListChecks, LogOut, Menu, PlusCircle, Users, Wrench, X,
+    BarChart3, Bell, Building2, ClipboardList, FileUp, LayoutDashboard, ListChecks, LogOut, Menu, PlusCircle, Users, Wrench, X,
 } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { initials } from '../lib/format';
 import { LoadingBlock, cx } from './ui';
 import { Logo } from './Logo';
 import { ConnectivityBar, OutboxSync } from './Offline';
+import NotificationSettings from './NotificationSettings';
 
 const NAV = [
     { to: '/', label: 'Monitor', icon: LayoutDashboard, roles: ['admin', 'operator'], end: true },
@@ -58,6 +59,7 @@ function NavItems({ role, onNavigate }) {
 }
 
 function UserCard({ user, onLogout }) {
+    const [settings, setSettings] = useState(false);
     return (
         <div className="m-3 flex items-center gap-3 rounded-xl bg-white/5 p-3">
             <div className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-500 text-xs font-bold text-white">{initials(user.name)}</div>
@@ -65,9 +67,13 @@ function UserCard({ user, onLogout }) {
                 <div className="truncate text-sm font-semibold text-white">{user.name}</div>
                 <div className="truncate text-xs text-white/50">{user.role_label}</div>
             </div>
-            <button type="button" onClick={onLogout} className="rounded-lg p-2 text-white/60 hover:bg-white/10 hover:text-white" title="Cerrar sesión">
+            <button type="button" onClick={() => setSettings(true)} className="rounded-lg p-2 text-white/60 hover:bg-white/10 hover:text-white" title="Notificaciones" aria-label="Notificaciones">
+                <Bell className="size-4" />
+            </button>
+            <button type="button" onClick={onLogout} className="rounded-lg p-2 text-white/60 hover:bg-white/10 hover:text-white" title="Cerrar sesión" aria-label="Cerrar sesión">
                 <LogOut className="size-4" />
             </button>
+            <NotificationSettings open={settings} onClose={() => setSettings(false)} />
         </div>
     );
 }

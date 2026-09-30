@@ -80,8 +80,14 @@ export function AuthProvider({ children }) {
         setUser(null);
     }, [queryClient, user]);
 
+    const updateUser = useCallback((next) => {
+        storedUser.set(next);
+        setUser(next);
+    }, []);
+
     const value = {
         user,
+        updateUser,
         login,
         logout,
         isAdmin: user?.role === 'admin',

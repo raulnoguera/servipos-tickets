@@ -8,6 +8,7 @@ import {
     Button, Card, CardHeader, Elapsed, EmptyState, LoadingBlock, PageHeader, Segmented, StatusBadge, Table, Td, Th, cx,
 } from '../components/ui';
 import { DailyChart, HBarChart } from '../components/Charts';
+import PushPrompt from '../components/PushPrompt';
 
 const PERIODS = [
     { value: 'day', label: 'Hoy' },
@@ -72,6 +73,8 @@ export default function Dashboard() {
                     </>
                 }
             />
+
+            <PushPrompt audience="staff" />
 
             {isLoading || !k ? (
                 <LoadingBlock />

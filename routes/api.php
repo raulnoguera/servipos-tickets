@@ -25,6 +25,7 @@ Route::prefix('v1')->group(function () {
         Route::post('push/subscriptions', [PushSubscriptionController::class, 'store']);
         Route::delete('push/subscriptions', [PushSubscriptionController::class, 'destroy']);
         Route::post('push/test', [PushSubscriptionController::class, 'test'])->middleware('throttle:5,1');
+        Route::put('me/notifications', [PushSubscriptionController::class, 'preferences']);
 
         // Tickets: el técnico solo ve y trabaja los suyos (TicketPolicy).
         Route::get('tickets', [TicketController::class, 'index']);
