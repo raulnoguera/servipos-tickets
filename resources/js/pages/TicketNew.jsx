@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, Building2, CheckCircle2, MapPin, MessageCircle, Plus, Search } from 'lucide-react';
+import { AlertTriangle, Building2, CheckCircle2, MapPin, MessageCircle, Plus } from 'lucide-react';
 import { api } from '../lib/api';
 import { useCatalogs } from '../lib/queries';
 import { mapsUrl } from '../lib/format';
-import { Alert, Button, Card, CardHeader, Field, Input, PageHeader, Select, Spinner, Textarea, toast } from '../components/ui';
+import { Alert, Button, Card, CardHeader, Field, Input, PageHeader, Select, Textarea, toast } from '../components/ui';
+import AtmSearch from '../components/AtmSearch';
 
 function AtmCard({ atm }) {
     const rows = [
@@ -46,29 +47,13 @@ function AtmCard({ atm }) {
 export default function TicketNew() {
     const { data: catalogs } = useCatalogs();
     const queryClient = useQueryClient();
-    const [number, setNumber] = useState('');
     const [atm, setAtm] = useState(null);
-    const [lookup, setLookup] = useState({ loading: false, error: null });
+    const [lookupError, setLookupError] = useState(null);
+    const [searchKey, setSearchKey] = useState(0);
     const [form, setForm] = useState({ fault_type_id: '', bank_reference: '', description: '', assigned_to: '' });
     const [created, setCreated] = useState(null);
 
     const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
-
-    async function findAtm(e) {
-        e?.preventDefault();
-        if (!number.trim()) {
-            return;
-        }
-        setLookup({ loading: true, error: null });
-        try {
-            const r = await api(`atms/lookup/${encodeURIComponent(number.trim())}`);
-            setAtm(r.data);
-            setLookup({ loading: false, error: null });
-        } catch (err) {
-            setAtm(null);
-            setLookup({ loading: false, error: err.status === 404 ? `No existe el ATM "${number.trim().toUpperCase()}" en el maestro de cajeros.` : err.message });
-        }
-    }
 
     // Técnicos que cubren el estado del cajero, primero.
     const technicians = useMemo(() => {
@@ -96,7 +81,8 @@ export default function TicketNew() {
     function reset() {
         setCreated(null);
         setAtm(null);
-        setNumber('');
+        setLookupError(null);
+        setSearchKey((k) => k + 1);
         setForm({ fault_type_id: '', bank_reference: '', description: '', assigned_to: '' });
         create.reset();
     }
@@ -133,28 +119,24 @@ export default function TicketNew() {
 
     return (
         <>
-            <PageHeader title="Nuevo ticket" subtitle="Registre la falla reportada por el banco. Escriba el N° de ATM y los datos del cajero se completan solos." />
+            <PageHeader title="Nuevo ticket" subtitle="Registre la falla reportada por el banco. Busque el cajero y sus datos se completan solos." />
 
             <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
                 <Card>
                     <CardHeader title="1. Cajero" />
                     <div className="space-y-4 p-5">
-                        <form onSubmit={findAtm} className="flex gap-2">
-                            <div className="relative flex-1">
-                                <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-faint" />
-                                <Input
-                                    value={number}
-                                    onChange={(e) => setNumber(e.target.value.toUpperCase())}
-                                    onBlur={() => number && !atm && findAtm()}
-                                    placeholder="N° de ATM, ej. A1918035"
-                                    className="h-11 pl-9 text-base font-semibold tracking-wide tabular"
-                                    autoFocus
-                                    aria-label="Número de ATM"
-                                />
-                            </div>
-                            <Button type="submit" size="lg" variant="secondary" loading={lookup.loading}>Buscar</Button>
-                        </form>
-                        {lookup.error && <Alert tone="warn">{lookup.error}</Alert>}
+                        <AtmSearch
+                            key={searchKey}
+                            onSelect={(selected) => {
+                                setAtm(selected);
+                                setLookupError(null);
+                            }}
+                            onNotFound={(message) => {
+                                setAtm(null);
+                                setLookupError(message);
+                            }}
+                        />
+                        {lookupError && <Alert tone="warn">{lookupError}</Alert>}
                         {atm && atm.open_tickets > 0 && (
                             <Alert tone="warn" className="flex items-start gap-2">
                                 <AlertTriangle className="mt-0.5 size-4 shrink-0" />
@@ -214,9 +196,9 @@ export default function TicketNew() {
                         <AtmCard atm={atm} />
                     ) : (
                         <Card className="flex flex-col items-center p-8 text-center">
-                            {lookup.loading ? <Spinner /> : <Building2 className="size-10 text-brand-200" />}
+                            <Building2 className="size-10 text-brand-200" />
                             <p className="mt-3 font-semibold text-ink">Datos del cajero</p>
-                            <p className="mt-1 text-sm text-muted">Serial, agencia, estado y modelo aparecerán aquí al ingresar el N° de ATM.</p>
+                            <p className="mt-1 text-sm text-muted">Escriba el N° de ATM o la agencia y elija de la lista, o toque “Ver cajeros” para ver todos.</p>
                         </Card>
                     )}
                 </div>
