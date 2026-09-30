@@ -78,7 +78,7 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
     });
     // Al tocar una notificación con la app abierta, el service worker pide navegar al ticket.
     navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data?.type === 'navigate') {
+        if (event.data?.type === 'navigate' && new URL(event.data.url, window.location.origin).origin === window.location.origin) {
             window.location.assign(event.data.url);
         }
         if (event.data?.type === 'push') {

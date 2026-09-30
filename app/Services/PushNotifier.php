@@ -210,6 +210,8 @@ class PushNotifier
      */
     public function deliver(Collection $users, array $message, bool $store = true): int
     {
+        // Un usuario desactivado no recibe avisos (ni en la campana ni en el teléfono).
+        $users = $users->filter(fn (User $user) => $user->active);
         if ($users->isEmpty()) {
             return 0;
         }
@@ -219,7 +221,8 @@ class PushNotifier
         if (! $this->isEnabled()) {
             return 0;
         }
-        $subscriptions = PushSubscription::whereIn('user_id', $users->pluck('id'))->get();
+        $subscriptions = PushSubscription::whereIn('user_id', $users->pluck('id'))->get()
+            ->filter(fn (PushSubscription $s) => PushSubscription::isAllowedEndpoint($s->endpoint));
         if ($subscriptions->isEmpty()) {
             return 0;
         }

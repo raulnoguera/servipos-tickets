@@ -3,6 +3,7 @@
 namespace App\Services\Reports;
 
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
@@ -82,7 +83,7 @@ class TableExporter
         $widths = array_map(fn ($label) => mb_strlen($label), array_values($columns));
         foreach ($rows as $row) {
             $values = array_map(fn ($k) => $row[$k] ?? null, $keys);
-            $sheet->fromArray($values, null, "A{$r}", true);
+            self::writeRow($sheet, $values, $r);
             foreach ($values as $i => $value) {
                 if (is_string($value)) {
                     $widths[$i] = max($widths[$i], min(60, mb_strlen($value)));
@@ -142,6 +143,26 @@ class TableExporter
     }
 
     /**
+     * Escribe una fila: los textos siempre como texto (nunca como fórmula), para
+     * evitar la inyección de fórmulas (p. ej. un "trabajo realizado" que empiece
+     * con "=HYPERLINK(...)" se ejecutaría al abrir el archivo).
+     *
+     * @param  list<mixed>  $values
+     */
+    public static function writeRow(Worksheet $sheet, array $values, int $row, int $firstColumn = 1): void
+    {
+        foreach ($values as $i => $value) {
+            if ($value === null || $value === '') {
+                continue;
+            }
+            $cell = Coordinate::stringFromColumnIndex($firstColumn + $i).$row;
+            is_string($value)
+                ? $sheet->setCellValueExplicit($cell, $value, DataType::TYPE_STRING)
+                : $sheet->setCellValue($cell, $value);
+        }
+    }
+
+    /**
      * Encabezado corporativo: logo, título, empresa, filtros y autor/fecha,
      * con una franja azul debajo. Ocupa las filas 1 a 5.
      */
@@ -155,12 +176,12 @@ class TableExporter
         // El texto empieza a la derecha del logo (columna C).
         $sheet->setCellValue('C1', self::COMPANY.' · '.self::SYSTEM);
         $sheet->getStyle('C1')->getFont()->setBold(true)->setSize(9)->getColor()->setRGB(self::BLUE);
-        $sheet->setCellValue('C2', $title);
+        $sheet->setCellValueExplicit('C2', $title, DataType::TYPE_STRING);
         $sheet->getStyle('C2')->getFont()->setBold(true)->setSize(16)->getColor()->setRGB(self::NAVY);
-        $sheet->setCellValue('C3', $filtersText);
+        $sheet->setCellValueExplicit('C3', $filtersText, DataType::TYPE_STRING);
         $sheet->getStyle('C3')->getFont()->setSize(10)->getColor()->setRGB('3D4A66');
         $user = auth()->user()?->name;
-        $sheet->setCellValue('C4', 'Generado el '.now()->format('d/m/Y \a \l\a\s h:i a').($user ? " por {$user}" : ''));
+        $sheet->setCellValueExplicit('C4', 'Generado el '.now()->format('d/m/Y \a \l\a\s h:i a').($user ? " por {$user}" : ''), DataType::TYPE_STRING);
         $sheet->getStyle('C4')->getFont()->setItalic(true)->setSize(9)->getColor()->setRGB(self::MUTED);
 
         $sheet->getStyle("A5:{$lastCol}5")->applyFromArray([

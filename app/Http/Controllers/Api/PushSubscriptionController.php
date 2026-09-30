@@ -25,12 +25,22 @@ class PushSubscriptionController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'endpoint' => ['required', 'url', 'max:500'],
+            'endpoint' => ['required', 'string', 'max:500', function (string $attribute, mixed $value, \Closure $fail) {
+                if (! PushSubscription::isAllowedEndpoint($value)) {
+                    $fail('El servicio de notificaciones del dispositivo no es válido.');
+                }
+            }],
             'keys.p256dh' => ['required', 'string', 'max:255'],
             'keys.auth' => ['required', 'string', 'max:255'],
         ]);
 
-        // Si el dispositivo ya estaba registrado a nombre de otro usuario, pasa al actual.
+        // Si el dispositivo ya estaba registrado a nombre de otro usuario (otra sesión en
+        // el mismo teléfono), pasa al actual solo si presenta las mismas claves del navegador:
+        // conocer el endpoint no basta para quitarle los avisos a otra persona.
+        $existing = PushSubscription::firstWhere('endpoint', $data['endpoint']);
+        if ($existing && $existing->user_id !== $request->user()->id && ! hash_equals($existing->auth_token, $data['keys']['auth'])) {
+            abort(409, 'Este dispositivo ya está registrado.');
+        }
         PushSubscription::updateOrCreate(['endpoint' => $data['endpoint']], [
             'user_id' => $request->user()->id,
             'public_key' => $data['keys']['p256dh'],

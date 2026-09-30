@@ -22,7 +22,8 @@ class AccessControlTest extends TestCase
     {
         $user = User::factory()->create(['active' => false]);
 
-        $this->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'password'])
+        $this->withHeader('Referer', config('app.url'))
+            ->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'password'])
             ->assertJsonValidationErrors('email');
     }
 

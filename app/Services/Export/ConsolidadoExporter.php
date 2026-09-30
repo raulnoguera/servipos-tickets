@@ -84,7 +84,7 @@ class ConsolidadoExporter
             $parts = $visit->parts;
             $constancia = $visit->constancia_number;
 
-            $sheet->fromArray([
+            TableExporter::writeRow($sheet, [
                 $i + 1,
                 ExcelDate::PHPToExcel($visit->visit_date),
                 $atm->atm_number,
@@ -106,7 +106,7 @@ class ConsolidadoExporter
                 $visit->technician?->name,
                 ExcelDate::PHPToExcel($visit->visit_date),
                 $visit->ticket->number,
-            ], null, "B{$row}", true);
+            ], $row, firstColumn: 2);
             $row++;
         }
 

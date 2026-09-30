@@ -13,6 +13,7 @@ use App\Models\TicketComment;
 use App\Models\User;
 use App\Models\Visit;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -22,6 +23,9 @@ class TicketService
 {
     /** Enviar notificaciones push del ciclo. Se desactiva al generar datos de demostración o importar. */
     public bool $notify = true;
+
+    /** Máximo que se acepta retrodatar un evento enviado por el teléfono (p. ej. hecho sin señal). */
+    private const MAX_BACKDATE_HOURS = 24;
 
     public function __construct(
         private TicketNumberGenerator $numbers,
@@ -102,7 +106,7 @@ class TicketService
         }
 
         $from = $ticket->status;
-        $at = $this->clampToCycle($ticket, $at);
+        $at = $this->clampToCycle($ticket, $at, $this->lastEventAt($ticket));
         $ticket->update(['status' => $to]
             + ($to === TicketStatus::Cancelled ? $this->closingTimes($ticket, $at) : [])
             + ($to === TicketStatus::OnSite && ! $ticket->responded_at ? ['responded_at' => $at] : []));
@@ -126,7 +130,7 @@ class TicketService
     public function registerVisit(Ticket $ticket, array $data, User $by, ?UploadedFile $photo = null): Visit
     {
         // Reintento de una sincronización offline: devolver la visita ya creada.
-        if (! empty($data['client_uuid']) && $existing = Visit::firstWhere('client_uuid', $data['client_uuid'])) {
+        if (! empty($data['client_uuid']) && $existing = $ticket->visits()->firstWhere('client_uuid', $data['client_uuid'])) {
             return $existing;
         }
         if ($ticket->status->isFinal() || $ticket->status === TicketStatus::Open) {
@@ -139,12 +143,15 @@ class TicketService
 
         return DB::transaction(function () use ($ticket, $data, $by, $photo) {
             $condition = AtmCondition::findOrFail($data['atm_condition_id']);
-            $finishedAt = $this->clampToCycle($ticket, isset($data['finished_at']) ? CarbonImmutable::parse($data['finished_at']) : null);
+            $finishedAt = $this->clampToCycle($ticket, isset($data['finished_at']) ? CarbonImmutable::parse($data['finished_at']) : null, $this->lastEventAt($ticket));
             // Si no se indica la llegada, se toma la hora en que marcó "Llegué al sitio".
-            $arrivedAt = $data['arrived_at'] ?? $ticket->events()
-                ->where('to_status', TicketStatus::OnSite->value)
-                ->where('created_at', '<=', $finishedAt)
-                ->reorder()->latest('created_at')->value('created_at');
+            // Si se indica, no puede ser antes de la asignación ni después del cierre (protege el SLA).
+            $arrivedAt = isset($data['arrived_at'])
+                ? $this->clampToCycle($ticket, CarbonImmutable::parse($data['arrived_at']), $ticket->assigned_at)->min($finishedAt)
+                : $ticket->events()
+                    ->where('to_status', TicketStatus::OnSite->value)
+                    ->where('created_at', '<=', $finishedAt)
+                    ->reorder()->latest('created_at')->value('created_at');
             $parts = collect($data['parts'] ?? [])->filter(fn ($p) => ($p['quantity'] ?? 0) > 0);
 
             $visit = $ticket->visits()->create([
@@ -236,15 +243,30 @@ class TicketService
      * Hora informada por el teléfono (suele venir en UTC), llevada a la zona
      * horaria de la app y acotada entre la apertura del ticket y ahora.
      */
-    private function clampToCycle(Ticket $ticket, ?CarbonImmutable $at): CarbonImmutable
+    private function clampToCycle(Ticket $ticket, ?CarbonImmutable $at, ?CarbonInterface $notBefore = null): CarbonImmutable
     {
         $now = CarbonImmutable::now();
         if ($at === null || $at->greaterThan($now)) {
             return $now;
         }
         $at = $at->setTimezone(config('app.timezone'));
+        // Nunca antes de la apertura, del evento anterior ni de MAX_BACKDATE_HOURS atrás:
+        // así nadie puede retrodatar para aparentar que cumplió el SLA.
+        $floor = CarbonImmutable::instance($ticket->opened_at)->max($now->subHours(self::MAX_BACKDATE_HOURS));
+        if ($notBefore) {
+            $floor = $floor->max(CarbonImmutable::instance($notBefore));
+        }
+        $floor = $floor->min($now);
 
-        return $at->lessThan($ticket->opened_at) ? CarbonImmutable::instance($ticket->opened_at) : $at;
+        return $at->lessThan($floor) ? $floor : $at;
+    }
+
+    /** Hora del último cambio de estado del ticket (asignación, en tránsito, en sitio…). */
+    private function lastEventAt(Ticket $ticket): ?CarbonImmutable
+    {
+        $at = $ticket->events()->whereNotNull('to_status')->reorder()->latest('created_at')->value('created_at');
+
+        return $at ? CarbonImmutable::parse($at) : null;
     }
 
     private function log(Ticket $ticket, User $by, ?TicketStatus $from, ?TicketStatus $to, ?string $note, ?CarbonImmutable $at = null): void

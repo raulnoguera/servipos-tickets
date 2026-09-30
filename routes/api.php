@@ -15,9 +15,9 @@ use App\Http\Controllers\Api\VisitController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
-    Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
+    Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
 
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::get('auth/me', [AuthController::class, 'me']);
         Route::post('auth/logout', [AuthController::class, 'logout']);
 
@@ -53,14 +53,14 @@ Route::prefix('v1')->group(function () {
             Route::get('dashboard', DashboardController::class);
             Route::get('atms', [AtmController::class, 'index']);
             Route::get('atms/lookup/{number}', [AtmController::class, 'lookup']);
-            Route::get('reports/summary', [ReportController::class, 'summary']);
-            Route::get('reports/atms', [ReportController::class, 'atms']);
-            Route::get('reports/atms/{atm}', [ReportController::class, 'atm']);
-            Route::get('reports/technicians', [ReportController::class, 'technicians']);
-            Route::get('reports/faults', [ReportController::class, 'faults']);
-            Route::get('reports/detail', [ReportController::class, 'detail']);
-            Route::get('reports/parts', [ReportController::class, 'parts']);
-            Route::get('reports/consolidado', [ReportController::class, 'consolidado']);
+            Route::get('reports/summary', [ReportController::class, 'summary'])->middleware('throttle:heavy');
+            Route::get('reports/atms', [ReportController::class, 'atms'])->middleware('throttle:heavy');
+            Route::get('reports/atms/{atm}', [ReportController::class, 'atm'])->middleware('throttle:heavy');
+            Route::get('reports/technicians', [ReportController::class, 'technicians'])->middleware('throttle:heavy');
+            Route::get('reports/faults', [ReportController::class, 'faults'])->middleware('throttle:heavy');
+            Route::get('reports/detail', [ReportController::class, 'detail'])->middleware('throttle:heavy');
+            Route::get('reports/parts', [ReportController::class, 'parts'])->middleware('throttle:heavy');
+            Route::get('reports/consolidado', [ReportController::class, 'consolidado'])->middleware('throttle:heavy');
             Route::get('users', [UserController::class, 'index']);
         });
 
@@ -71,7 +71,7 @@ Route::prefix('v1')->group(function () {
             Route::put('catalogs/{type}/{id}', [CatalogController::class, 'update']);
             Route::post('users', [UserController::class, 'store']);
             Route::put('users/{user}', [UserController::class, 'update']);
-            Route::post('import/excel', ImportController::class);
+            Route::post('import/excel', ImportController::class)->middleware('throttle:heavy');
             Route::put('sla-policies', [SlaPolicyController::class, 'update']);
         });
     });

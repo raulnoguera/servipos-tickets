@@ -8,6 +8,7 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /** Usuarios y maestro de técnicos (RF-1.3). */
@@ -45,6 +46,15 @@ class UserController extends Controller
         }
         $user->update($data);
         $user->states()->sync($data['state_ids'] ?? []);
+
+        // Al desactivar o cambiar la contraseña: se invalida "recordarme" en todos sus
+        // equipos y, si se desactivó, deja de recibir notificaciones en sus teléfonos.
+        if ($user->wasChanged(['active', 'password'])) {
+            $user->forceFill(['remember_token' => Str::random(60)])->saveQuietly();
+        }
+        if (! $user->active) {
+            $user->pushSubscriptions()->delete();
+        }
 
         return new UserResource($user->load('states'));
     }

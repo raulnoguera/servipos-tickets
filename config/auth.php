@@ -41,6 +41,8 @@ return [
         'web' => [
             'driver' => 'session',
             'provider' => 'users',
+            // "Mantener la sesión iniciada" dura 30 días (por defecto serían años).
+            'remember' => 60 * 24 * 30,
         ],
     ],
 

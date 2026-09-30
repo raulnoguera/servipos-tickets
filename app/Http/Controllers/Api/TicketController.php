@@ -53,7 +53,7 @@ class TicketController extends Controller
             ->when($request->query('sort') === 'priority', fn ($q) => $q->orderByRaw("case priority when 'critica' then 4 when 'alta' then 3 when 'media' then 2 else 1 end desc"))
             ->orderByDesc('opened_at')
             ->orderByDesc('id')
-            ->paginate(min(200, (int) $request->query('per_page', 25)));
+            ->paginate(max(1, min(200, (int) $request->query('per_page', 25))));
 
         return TicketResource::collection($tickets);
     }
@@ -148,7 +148,8 @@ class TicketController extends Controller
 
     public function watch(Request $request, Ticket $ticket): TicketResource
     {
-        Gate::authorize('view', $ticket);
+        // Dejar de seguir siempre se puede; seguir, solo si aún le corresponde el ticket.
+        Gate::authorize($request->isMethod('delete') ? 'view' : 'work', $ticket);
         $request->isMethod('delete')
             ? $ticket->watchers()->detach($request->user()->id)
             : $ticket->watchers()->syncWithoutDetaching([$request->user()->id]);

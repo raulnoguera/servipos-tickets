@@ -30,3 +30,9 @@
         Header set Cache-Control "no-cache, no-store, must-revalidate"
     </FilesMatch>
 </IfModule>
+
+# Seguridad para archivos estáticos (las respuestas de PHP ya traen sus cabeceras).
+<IfModule mod_headers.c>
+    Header always unset X-Powered-By
+    Header always set X-Content-Type-Options "nosniff"
+</IfModule>

@@ -16,6 +16,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -25,6 +26,8 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
  */
 class ReportController extends Controller
 {
+    private const MAX_RANGE_DAYS = 731;
+
     private const HOURS = '[h]:mm';
 
     private const PERCENT = '0.0" %"';
@@ -182,6 +185,7 @@ class ReportController extends Controller
         ]);
         $from = CarbonImmutable::parse($data['from']);
         $to = CarbonImmutable::parse($data['to']);
+        $this->ensureRange($from, $to);
 
         $path = tempnam(sys_get_temp_dir(), 'consolidado');
         $exporter->save($exporter->build($from, $to, $data['bank_id'] ?? null), $path);
@@ -201,7 +205,18 @@ class ReportController extends Controller
             'technician_id' => ['nullable', 'integer'],
         ]);
 
-        return $this->reports->filters($request->only(['from', 'to', 'bank_id', 'state_id', 'technician_id']));
+        $filters = $this->reports->filters($request->only(['from', 'to', 'bank_id', 'state_id', 'technician_id']));
+        $this->ensureRange($filters['from'], $filters['to']);
+
+        return $filters;
+    }
+
+    /** Un rango enorme cargaría miles de registros en memoria en el hosting compartido. */
+    private function ensureRange(CarbonImmutable $from, CarbonImmutable $to): void
+    {
+        if ($from->diffInDays($to, absolute: true) > self::MAX_RANGE_DAYS) {
+            throw ValidationException::withMessages(['from' => 'El período no puede ser mayor a 2 años. Acorte el rango de fechas.']);
+        }
     }
 
     private function describe(array $f): string

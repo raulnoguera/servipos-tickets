@@ -12,7 +12,7 @@ class NotificationController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $items = $request->user()->inbox()->limit(min(100, (int) $request->query('limit', 40)))->get();
+        $items = $request->user()->inbox()->limit(max(1, min(100, (int) $request->query('limit', 40))))->get();
 
         return response()->json([
             'unread' => $request->user()->inbox()->whereNull('read_at')->count(),

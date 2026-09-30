@@ -28,7 +28,7 @@ class SaveUserRequest extends FormRequest
             'role' => ['required', Rule::enum(Role::class)],
             'phone' => ['nullable', 'string', 'max:30'],
             'active' => ['boolean'],
-            'password' => [$creating ? 'required' : 'nullable', Password::min(8)],
+            'password' => [$creating ? 'required' : 'nullable', Password::min(10)->letters()->numbers()],
             'state_ids' => ['array'],
             'state_ids.*' => ['integer', 'exists:states,id'],
         ];

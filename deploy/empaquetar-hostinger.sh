@@ -15,6 +15,8 @@ echo "→ Copiando archivos…"
 rsync -a \
     --exclude '.git' --exclude 'node_modules' --exclude 'vendor' --exclude 'tests' --exclude 'dist' \
     --exclude '.env' --exclude '.env.backup' --exclude '.claude' --exclude 'public/hot' \
+    --exclude 'deploy/hostinger.conf' --exclude 'deploy/brand/logo-original.png' \
+    --exclude 'CLAUDE.md' --exclude 'AGENTS.md' --exclude 'boost.json' --exclude '.phpunit.result.cache' \
     --exclude 'database/*.sqlite*' --exclude 'storage/logs/*.log' \
     --exclude 'storage/app/private/*' --exclude 'storage/framework/sessions/*' \
     --exclude 'storage/framework/views/*' --exclude 'storage/framework/cache/data/*' \

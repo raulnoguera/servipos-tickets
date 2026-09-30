@@ -3,6 +3,10 @@
 namespace App\Providers;
 
 use App\Services\SlaService;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -20,6 +24,18 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Inicio de sesión: además del bloqueo por correo (AuthController), máximo 20 intentos por minuto por IP.
+        RateLimiter::for('login', fn (Request $request) => Limit::perMinute(20)->by($request->ip()));
+
+        // API en general: 240 solicitudes por minuto por usuario (o por IP si no hay sesión).
+        RateLimiter::for('api', fn (Request $request) => Limit::perMinute(240)->by($request->user()?->id ?: $request->ip()));
+
+        // Operaciones pesadas (reportes, exportaciones, importación).
+        RateLimiter::for('heavy', fn (Request $request) => Limit::perMinute(60)->by($request->user()?->id ?: $request->ip()));
+
+        // En producción, los enlaces generados siempre usan HTTPS.
+        if ($this->app->isProduction()) {
+            URL::forceScheme('https');
+        }
     }
 }

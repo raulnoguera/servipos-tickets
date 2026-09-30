@@ -125,6 +125,7 @@ class PushAndOfflineSyncTest extends TestCase
 
         $events = $ticket->events()->get()->keyBy('to_status');
         $this->assertTrue($events['en_transito']->created_at->lessThanOrEqualTo(now()), 'no en el futuro');
-        $this->assertTrue($events['en_sitio']->created_at->equalTo($ticket->refresh()->opened_at), 'no antes de la apertura');
+        $this->assertTrue($events['en_sitio']->created_at->greaterThanOrEqualTo($ticket->refresh()->opened_at), 'no antes de la apertura');
+        $this->assertTrue($events['en_sitio']->created_at->greaterThanOrEqualTo($events['en_transito']->created_at), 'no antes del evento anterior');
     }
 }
