@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import { useQueryClient } from '@tanstack/react-query';
 import { api, setUnauthorizedHandler } from './api';
 import { outbox } from './outbox';
-import { disablePush } from './push';
+import { disablePush, ensurePush } from './push';
 
 /** Borra del teléfono las respuestas guardadas de otro usuario. */
 function clearOfflineCache() {
@@ -40,6 +40,7 @@ export function AuthProvider({ children }) {
             .then((r) => {
                 storedUser.set(r.data);
                 setUser(r.data);
+                ensurePush();
             })
             .catch((error) => {
                 // Sin señal: se sigue con el último usuario conocido. Con 401 la sesión terminó.
@@ -61,6 +62,7 @@ export function AuthProvider({ children }) {
         queryClient.clear();
         storedUser.set(r.data);
         setUser(r.data);
+        ensurePush(); // mismo equipo con permiso ya otorgado: avisos activos sin volver a tocar "Activar"
         return r.data;
     }, [queryClient]);
 

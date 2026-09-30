@@ -65,7 +65,7 @@ export default function NotificationSettings({ open, onClose }) {
                             })}>
                                 Enviar prueba
                             </Button>
-                            <Button size="sm" variant="ghost" icon={BellOff} loading={busy === 'off'} onClick={() => run('off', disablePush)}>Desactivar aquí</Button>
+                            <Button size="sm" variant="ghost" icon={BellOff} loading={busy === 'off'} onClick={() => run('off', () => disablePush({ byUser: true }))}>Desactivar aquí</Button>
                         </div>
                     </div>
                 ) : state === 'available' ? (
