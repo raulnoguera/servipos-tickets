@@ -27,3 +27,4 @@ Homestead.yaml
 Thumbs.db
 /dist
 /.claude
+/deploy/hostinger.conf
