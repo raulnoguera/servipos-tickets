@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\Priority;
 use App\Enums\Role;
 use App\Enums\TicketStatus;
 use App\Http\Controllers\Controller;
@@ -45,6 +46,7 @@ class CatalogController extends Controller
             'technicians' => User::technicians()->where('active', true)->with('states:id')->orderBy('name')->get()
                 ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->name, 'phone' => $u->phone, 'state_ids' => $u->states->pluck('id')]),
             'statuses' => collect(TicketStatus::cases())->map(fn ($s) => ['value' => $s->value, 'label' => $s->label()]),
+            'priorities' => collect(Priority::cases())->sortByDesc(fn (Priority $p) => $p->weight())->map(fn ($p) => ['value' => $p->value, 'label' => $p->label()])->values(),
             'roles' => collect(Role::cases())->map(fn ($r) => ['value' => $r->value, 'label' => $r->label()]),
         ]);
     }

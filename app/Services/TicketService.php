@@ -2,11 +2,14 @@
 
 namespace App\Services;
 
+use App\Enums\Priority;
 use App\Enums\Role;
 use App\Enums\TicketStatus;
 use App\Models\Atm;
 use App\Models\AtmCondition;
+use App\Models\FaultType;
 use App\Models\Ticket;
+use App\Models\TicketComment;
 use App\Models\User;
 use App\Models\Visit;
 use Carbon\CarbonImmutable;
@@ -29,7 +32,7 @@ class TicketService
     /**
      * Abre un ticket (RF-2.1/2.2) y, si se indica, lo asigna al técnico.
      *
-     * @param  array{atm_id: int, fault_type_id?: int|null, description?: string|null, bank_reference?: string|null, assigned_to?: int|null}  $data
+     * @param  array{atm_id: int, fault_type_id?: int|null, priority?: string|null, description?: string|null, bank_reference?: string|null, assigned_to?: int|null}  $data
      */
     public function open(array $data, User $operator): Ticket
     {
@@ -45,6 +48,7 @@ class TicketService
                 'description' => $data['description'] ?? null,
                 'bank_reference' => $data['bank_reference'] ?? null,
                 'status' => TicketStatus::Open,
+                'priority' => $data['priority'] ?? Priority::Medium->value,
                 'source' => 'manual',
                 'opened_by' => $operator->id,
                 'opened_at' => $now,
@@ -99,7 +103,9 @@ class TicketService
 
         $from = $ticket->status;
         $at = $this->clampToCycle($ticket, $at);
-        $ticket->update(['status' => $to] + ($to === TicketStatus::Cancelled ? $this->closingTimes($ticket, $at) : []));
+        $ticket->update(['status' => $to]
+            + ($to === TicketStatus::Cancelled ? $this->closingTimes($ticket, $at) : [])
+            + ($to === TicketStatus::OnSite && ! $ticket->responded_at ? ['responded_at' => $at] : []));
         $this->log($ticket, $by, $from, $to, $note, $at);
 
         if ($this->notify) {
@@ -160,7 +166,9 @@ class TicketService
 
             $from = $ticket->status;
             $to = $condition->resulting_ticket_status;
-            $ticket->update(['status' => $to] + ($to === TicketStatus::Closed ? $this->closingTimes($ticket, $finishedAt) : []));
+            $ticket->update(['status' => $to]
+                + ($to === TicketStatus::Closed ? $this->closingTimes($ticket, $finishedAt) : [])
+                + (! $ticket->responded_at ? ['responded_at' => $arrivedAt ? CarbonImmutable::parse($arrivedAt) : $finishedAt] : []));
             $this->log($ticket, $by, $from, $to, "Atención registrada: {$condition->name}", $finishedAt);
 
             if ($this->notify) {
@@ -171,6 +179,46 @@ class TicketService
 
             return $visit;
         });
+    }
+
+    /**
+     * Edita datos del ticket y deja constancia de cada cambio en el historial.
+     *
+     * @param  array{priority?: string, fault_type_id?: int|null, description?: string|null, bank_reference?: string|null}  $data
+     */
+    public function edit(Ticket $ticket, array $data, User $by): Ticket
+    {
+        $labels = ['priority' => 'Prioridad', 'fault_type_id' => 'Falla', 'description' => 'Detalle', 'bank_reference' => 'Caso del banco'];
+        $ticket->fill($data);
+        $changes = [];
+        foreach (array_keys($ticket->getDirty()) as $field) {
+            $changes[] = match ($field) {
+                'priority' => 'Prioridad: '.($ticket->getOriginal('priority') ?? Priority::Medium)->label().' → '.$ticket->priority->label(),
+                'fault_type_id' => 'Falla: '.(FaultType::find($ticket->getOriginal('fault_type_id'))?->name ?? '—').' → '.(FaultType::find($ticket->fault_type_id)?->name ?? '—'),
+                default => ($labels[$field] ?? $field).' actualizado',
+            };
+        }
+        if ($changes) {
+            $ticket->save();
+            $this->log($ticket, $by, null, null, 'Editado: '.implode(' · ', $changes));
+        }
+
+        return $ticket;
+    }
+
+    /** Comentario de seguimiento; avisa al técnico, a quien lo abrió y a los seguidores. */
+    public function comment(Ticket $ticket, string $body, User $by): TicketComment
+    {
+        $comment = $ticket->comments()->create([
+            'user_id' => $by->id,
+            'body' => $body,
+            'created_at' => CarbonImmutable::now(),
+        ]);
+        if ($this->notify) {
+            defer(fn () => $this->push->commented($ticket->fresh(), $comment->fresh('user')));
+        }
+
+        return $comment;
     }
 
     /** @return array{closed_at: CarbonImmutable, duration_ms: int} */
@@ -199,12 +247,12 @@ class TicketService
         return $at->lessThan($ticket->opened_at) ? CarbonImmutable::instance($ticket->opened_at) : $at;
     }
 
-    private function log(Ticket $ticket, User $by, ?TicketStatus $from, TicketStatus $to, ?string $note, ?CarbonImmutable $at = null): void
+    private function log(Ticket $ticket, User $by, ?TicketStatus $from, ?TicketStatus $to, ?string $note, ?CarbonImmutable $at = null): void
     {
         $ticket->events()->create([
             'user_id' => $by->id,
             'from_status' => $from?->value,
-            'to_status' => $to->value,
+            'to_status' => $to?->value,
             'note' => $note,
             'created_at' => $at ?? CarbonImmutable::now(),
         ]);

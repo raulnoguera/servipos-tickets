@@ -6,6 +6,7 @@ use App\Enums\Role;
 use App\Models\AtmCondition;
 use App\Models\PushSubscription;
 use App\Models\Ticket;
+use App\Models\TicketComment;
 use App\Models\User;
 use App\Models\UserNotification;
 use Carbon\CarbonInterface;
@@ -149,7 +150,7 @@ class PushNotifier
      */
     public function staffFor(Ticket $ticket, ?User $except = null): Collection
     {
-        return User::query()
+        $staff = User::query()
             ->whereIn('role', [Role::Admin, Role::Operator])
             ->where('active', true)
             ->when($except, fn ($q) => $q->whereKeyNot($except->id))
@@ -157,6 +158,37 @@ class PushNotifier
                 ->where('notify_scope', self::SCOPE_ALL)
                 ->orWhere(fn ($mine) => $mine->where('notify_scope', self::SCOPE_MINE)->where('id', $ticket->opened_by)))
             ->get();
+
+        // Quien sigue el ticket recibe sus avisos aunque su preferencia general sea otra.
+        return $staff->merge($this->watchersOf($ticket, $except))->unique('id')->values();
+    }
+
+    /** @return Collection<int, User> */
+    private function watchersOf(Ticket $ticket, ?User $except): Collection
+    {
+        return $ticket->watchers()->where('active', true)->when($except, fn ($q) => $q->whereKeyNot($except->id))->get();
+    }
+
+    /** Comentario nuevo: al técnico, a quien abrió el ticket y a los seguidores. */
+    public function commented(Ticket $ticket, TicketComment $comment): int
+    {
+        $author = $comment->user;
+        $users = User::query()->where('active', true)
+            ->whereIn('id', array_filter([$ticket->assigned_to, $ticket->opened_by]))
+            ->get()
+            ->merge($this->watchersOf($ticket, null))
+            ->unique('id')
+            ->reject(fn (User $u) => $author && $u->is($author))
+            ->values();
+
+        return $this->deliver($users, [
+            'kind' => 'comment',
+            'ticket_id' => $ticket->id,
+            'title' => "{$ticket->number} · Comentario de ".($author?->name ?? 'un usuario'),
+            'body' => mb_strimwidth($comment->body, 0, 180, '…'),
+            'url' => "/tickets/{$ticket->id}#actividad",
+            'tag' => $ticket->number.'-comentario',
+        ]);
     }
 
     /**

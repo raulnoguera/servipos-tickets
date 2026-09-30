@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\ImportController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PushSubscriptionController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\SlaPolicyController;
 use App\Http\Controllers\Api\TicketController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VisitController;
@@ -40,12 +41,22 @@ Route::prefix('v1')->group(function () {
         Route::post('tickets/{ticket}/assign', [TicketController::class, 'assign']);
         Route::post('tickets/{ticket}/status', [TicketController::class, 'status']);
         Route::post('tickets/{ticket}/visits', [VisitController::class, 'store']);
+        Route::patch('tickets/{ticket}', [TicketController::class, 'update']);
+        Route::post('tickets/{ticket}/comments', [TicketController::class, 'comment']);
+        Route::post('tickets/{ticket}/watch', [TicketController::class, 'watch']);
+        Route::delete('tickets/{ticket}/watch', [TicketController::class, 'watch']);
+        Route::get('sla-policies', [SlaPolicyController::class, 'index']);
         Route::get('visits/{visit}/constancia', [VisitController::class, 'constancia'])->name('visits.constancia');
 
         Route::middleware('role:admin,operator')->group(function () {
             Route::get('dashboard', DashboardController::class);
             Route::get('atms', [AtmController::class, 'index']);
             Route::get('atms/lookup/{number}', [AtmController::class, 'lookup']);
+            Route::get('reports/summary', [ReportController::class, 'summary']);
+            Route::get('reports/atms', [ReportController::class, 'atms']);
+            Route::get('reports/atms/{atm}', [ReportController::class, 'atm']);
+            Route::get('reports/technicians', [ReportController::class, 'technicians']);
+            Route::get('reports/faults', [ReportController::class, 'faults']);
             Route::get('reports/parts', [ReportController::class, 'parts']);
             Route::get('reports/consolidado', [ReportController::class, 'consolidado']);
             Route::get('users', [UserController::class, 'index']);
@@ -59,6 +70,7 @@ Route::prefix('v1')->group(function () {
             Route::post('users', [UserController::class, 'store']);
             Route::put('users/{user}', [UserController::class, 'update']);
             Route::post('import/excel', ImportController::class);
+            Route::put('sla-policies', [SlaPolicyController::class, 'update']);
         });
     });
 });

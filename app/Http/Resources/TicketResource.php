@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Ticket;
+use App\Services\SlaService;
 use App\Services\WhatsAppLink;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -22,6 +23,10 @@ class TicketResource extends JsonResource
             'number' => $this->number,
             'status' => $this->status->value,
             'status_label' => $this->status->label(),
+            'priority' => $this->priority?->value ?? 'media',
+            'priority_label' => $this->priority?->label() ?? 'Media',
+            'sla' => app(SlaService::class)->evaluate($this->resource),
+            'responded_at' => $this->responded_at?->toIso8601String(),
             'source' => $this->source,
             'description' => $this->description,
             'bank_reference' => $this->bank_reference,
@@ -45,6 +50,15 @@ class TicketResource extends JsonResource
                 'to' => $e->to_status,
                 'note' => $e->note,
             ])),
+            'comments' => $this->whenLoaded('comments', fn () => $this->comments->map(fn ($c) => [
+                'id' => $c->id,
+                'at' => $c->created_at->toIso8601String(),
+                'user' => $c->user?->name,
+                'user_id' => $c->user_id,
+                'body' => $c->body,
+            ])),
+            'watchers' => $this->whenLoaded('watchers', fn () => $this->watchers->map(fn ($u) => ['id' => $u->id, 'name' => $u->name])),
+            'watching' => $this->whenLoaded('watchers', fn () => $this->watchers->contains('id', $request->user()?->id)),
             'whatsapp_url' => $this->when(
                 $request->user()?->role->value !== 'technician' && $this->technician?->phone,
                 fn () => WhatsAppLink::forTicket($this->resource),

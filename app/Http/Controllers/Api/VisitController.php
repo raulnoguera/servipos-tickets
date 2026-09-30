@@ -22,7 +22,7 @@ class VisitController extends Controller
 
         return new TicketResource($ticket->refresh()->load([
             'atm.state', 'bank', 'faultType', 'technician', 'opener',
-            'visits.parts', 'visits.technician', 'visits.faultType', 'visits.atmCondition', 'events.user',
+            'visits.parts', 'visits.technician', 'visits.faultType', 'visits.atmCondition', 'events.user', 'comments.user', 'watchers',
         ]));
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\Priority;
 use App\Enums\Role;
 use App\Enums\TicketStatus;
 use App\Http\Controllers\Controller;
@@ -33,15 +34,20 @@ class TicketController extends Controller
             ->when($request->query('open'), fn ($q) => $q->whereNotIn('status', [TicketStatus::Closed, TicketStatus::Cancelled]))
             ->when($request->query('bank_id'), fn ($q, $v) => $q->where('bank_id', $v))
             ->when($request->query('technician_id'), fn ($q, $v) => $q->where('assigned_to', $v))
+            ->when($request->query('priority'), fn ($q, $v) => $q->whereIn('priority', explode(',', $v)))
+            ->when($request->query('atm_id'), fn ($q, $v) => $q->where('atm_id', $v))
+            ->when($request->query('sla') === 'breached', fn ($q) => $q->sla('breached'))
+            ->when($request->query('sla') === 'at_risk', fn ($q) => $q->sla('at_risk')->whereNot(fn ($n) => $n->sla('breached')))
             ->when($request->query('from'), fn ($q, $v) => $q->whereDate('opened_at', '>=', $v))
             ->when($request->query('to'), fn ($q, $v) => $q->whereDate('opened_at', '<=', $v))
             ->when($term !== '', fn ($q) => $q->where(fn ($w) => $w
                 ->where('number', 'like', "%{$term}%")
                 ->orWhere('bank_reference', 'like', "%{$term}%")
                 ->orWhereHas('atm', fn ($a) => $a->where('atm_number', 'like', "%{$term}%")->orWhere('agency_name', 'like', "%{$term}%"))))
+            ->when($request->query('sort') === 'priority', fn ($q) => $q->orderByRaw("case priority when 'critica' then 4 when 'alta' then 3 when 'media' then 2 else 1 end desc"))
             ->orderByDesc('opened_at')
             ->orderByDesc('id')
-            ->paginate(min(100, (int) $request->query('per_page', 25)));
+            ->paginate(min(200, (int) $request->query('per_page', 25)));
 
         return TicketResource::collection($tickets);
     }
@@ -85,12 +91,50 @@ class TicketController extends Controller
         return $this->detail($ticket);
     }
 
+    /** Editar prioridad, falla, detalle o caso del banco (queda en el historial). */
+    public function update(Request $request, Ticket $ticket): TicketResource
+    {
+        Gate::authorize('manage', $ticket);
+        $data = $request->validate([
+            'priority' => ['sometimes', Rule::enum(Priority::class)],
+            'fault_type_id' => ['sometimes', 'nullable', 'integer', 'exists:fault_types,id'],
+            'description' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'bank_reference' => ['sometimes', 'nullable', 'string', 'max:60'],
+        ]);
+
+        $this->tickets->edit($ticket, $data, $request->user());
+
+        return $this->detail($ticket);
+    }
+
+    public function comment(Request $request, Ticket $ticket): TicketResource
+    {
+        Gate::authorize('view', $ticket);
+        $data = $request->validate(['body' => ['required', 'string', 'max:2000']]);
+
+        $this->tickets->comment($ticket, trim($data['body']), $request->user());
+        // Quien comenta queda siguiendo el ticket, como en JIRA.
+        $ticket->watchers()->syncWithoutDetaching([$request->user()->id]);
+
+        return $this->detail($ticket);
+    }
+
+    public function watch(Request $request, Ticket $ticket): TicketResource
+    {
+        Gate::authorize('view', $ticket);
+        $request->isMethod('delete')
+            ? $ticket->watchers()->detach($request->user()->id)
+            : $ticket->watchers()->syncWithoutDetaching([$request->user()->id]);
+
+        return $this->detail($ticket);
+    }
+
     private function detail(Ticket $ticket): TicketResource
     {
         return new TicketResource($ticket->load([
             'atm.state', 'atm.bank', 'bank', 'faultType', 'technician', 'opener',
             'visits.parts', 'visits.technician', 'visits.faultType', 'visits.atmCondition',
-            'events.user',
+            'events.user', 'comments.user', 'watchers',
         ]));
     }
 }
