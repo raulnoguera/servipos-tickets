@@ -86,7 +86,20 @@ php artisan config:cache && php artisan route:cache
 
 7. Entrar con el administrador del `.env` → **Importar Excel** (simular, luego importar). Opcional: `php artisan db:seed --class=DemoSeeder --force`.
 
-Para actualizar: generar un nuevo `.zip`, extraerlo encima (sin borrar `.env` ni `storage/`), y correr `php artisan migrate --force && php artisan config:cache && php artisan route:cache`.
+8. Notificaciones push: `php artisan servipos:claves-push && php artisan config:cache`.
+
+**Actualizaciones:** con `deploy/hostinger.conf` configurado (ver `hostinger.conf.example`) y la llave SSH autorizada en hPanel:
+
+```bash
+./deploy/actualizar-hostinger.sh
+```
+
+Empaqueta, sube, pone el sitio en mantenimiento unos segundos, extrae sin tocar `.env` ni `storage/`, migra y verifica.
+
+## App del técnico: sin señal y notificaciones
+
+- **Sin señal:** la app queda guardada en el teléfono (`public/sw.js`). Los tickets asignados, su detalle y los catálogos se leen de lo último descargado. Los cambios de estado y las atenciones (con foto) se guardan en una bandeja del teléfono (IndexedDB) y se envían solos al volver la conexión, con la hora real en que se hicieron.
+- **Notificaciones push:** al asignar un ticket se avisa al técnico en su teléfono. En Android funciona desde Chrome; en iPhone (iOS 16.4+) hay que **agregar la app a la pantalla de inicio** y activar los avisos desde ahí.
 
 ### Pruebas
 
