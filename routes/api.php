@@ -58,6 +58,7 @@ Route::prefix('v1')->group(function () {
             Route::get('reports/atms/{atm}', [ReportController::class, 'atm']);
             Route::get('reports/technicians', [ReportController::class, 'technicians']);
             Route::get('reports/faults', [ReportController::class, 'faults']);
+            Route::get('reports/detail', [ReportController::class, 'detail']);
             Route::get('reports/parts', [ReportController::class, 'parts']);
             Route::get('reports/consolidado', [ReportController::class, 'consolidado']);
             Route::get('users', [UserController::class, 'index']);

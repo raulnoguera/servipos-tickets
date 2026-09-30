@@ -20,6 +20,7 @@ const Board = lazy(() => import('./pages/Board'));
 const Catalogs = lazy(() => import('./pages/Catalogs'));
 const Users = lazy(() => import('./pages/Users'));
 const Reports = lazy(() => import('./pages/Reports'));
+const ReportDetail = lazy(() => import('./pages/ReportDetail'));
 const Import = lazy(() => import('./pages/Import'));
 
 const queryClient = new QueryClient({
@@ -58,6 +59,7 @@ function AppRoutes() {
                 <Route path="cajeros/:id" element={<Guard roles={staff}><AtmHistory /></Guard>} />
                 <Route path="tablero" element={<Guard roles={staff}><Board /></Guard>} />
                 <Route path="reportes" element={<Guard roles={staff}><Reports /></Guard>} />
+                <Route path="reportes/detalle" element={<Guard roles={staff}><ReportDetail /></Guard>} />
                 <Route path="catalogos" element={<Guard roles={['admin']}><Catalogs /></Guard>} />
                 <Route path="usuarios" element={<Guard roles={['admin']}><Users /></Guard>} />
                 <Route path="importar" element={<Guard roles={['admin']}><Import /></Guard>} />

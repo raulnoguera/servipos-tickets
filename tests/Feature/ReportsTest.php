@@ -72,6 +72,44 @@ class ReportsTest extends TestCase
         $this->actingAs($this->technician)->getJson('/api/v1/reports/summary')->assertForbidden();
     }
 
+    public function test_summary_cards_open_a_detail_that_matches_their_numbers(): void
+    {
+        $this->actingAs($this->admin);
+        $query = 'from=2026-09-01&to=2026-09-30';
+        $kpis = $this->getJson("/api/v1/reports/summary?{$query}")->json('kpis');
+
+        $this->getJson("/api/v1/reports/detail?type=tickets&metric=opened&{$query}")->assertJsonCount($kpis['opened'], 'data');
+        $this->getJson("/api/v1/reports/detail?type=tickets&metric=closed&{$query}")->assertJsonCount($kpis['closed'], 'data');
+        $this->getJson("/api/v1/reports/detail?type=tickets&metric=backlog&{$query}")->assertJsonCount($kpis['backlog'], 'data');
+        $this->getJson("/api/v1/reports/detail?type=tickets&metric=reincidence&{$query}")->assertJsonCount(1, 'data');
+        $this->getJson("/api/v1/reports/detail?type=tickets&metric=mttr&{$query}")
+            ->assertJsonPath('title', 'Tiempo de resolución por ticket')
+            ->assertJsonPath('data.0.duration_ms', 2 * 3600 * 1000);
+    }
+
+    public function test_technician_fault_and_part_rows_open_their_detail(): void
+    {
+        $this->actingAs($this->admin);
+        $query = 'from=2026-09-01&to=2026-09-30';
+        $fault = FaultType::firstWhere('name', 'Falla de Dispensación');
+        $picker = Part::firstWhere('name', 'PICKER');
+
+        $this->getJson("/api/v1/reports/detail?type=visits&technician_id={$this->technician->id}&{$query}")
+            ->assertJsonPath('title', 'Atenciones de Jesus Ramos')
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('data.0.parts', 'PICKER x1, FEEDSHAFT x1');
+        $this->getJson("/api/v1/reports/detail?type=tickets&fault_type_id={$fault->id}&{$query}")
+            ->assertJsonPath('title', 'Tickets por tipo de falla: Falla de Dispensación')
+            ->assertJsonCount(2, 'data');
+        $rows = $this->getJson("/api/v1/reports/detail?type=visits&part_id={$picker->id}&{$query}")
+            ->assertJsonPath('title', 'Atenciones con PICKER')->json('data');
+        $this->assertSame(3, collect($rows)->sum('parts_units'), 'unidades de PICKER, igual que el reporte de repuestos');
+
+        $this->get("/api/v1/reports/detail?type=visits&part_id={$picker->id}&{$query}&format=xlsx")
+            ->assertOk()->assertHeader('content-disposition', 'attachment; filename="Reporte atenciones 01-09-2026 al 30-09-2026.xlsx"');
+        $this->get("/api/v1/reports/detail?type=tickets&metric=sla&{$query}&format=xlsx")->assertOk();
+    }
+
     /** @param list<array{0: string, 1: int}> $parts */
     private function cycle(int $hours, array $parts, string $condition = 'Operativo'): void
     {

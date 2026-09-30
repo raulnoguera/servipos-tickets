@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import {
-    AlertTriangle, BarChart3, Building2, CheckCircle2, Clock3, Download, FileSpreadsheet, Gauge, Package, Repeat2, Timer, Wrench,
+    AlertTriangle, BarChart3, Building2, CheckCircle2, ChevronRight, Clock3, Download, FileSpreadsheet, Gauge, Package, Repeat2, Timer, Wrench,
 } from 'lucide-react';
 import { api, download } from '../lib/api';
 import { useCatalogs } from '../lib/queries';
@@ -11,6 +11,7 @@ import {
     Alert, Button, Card, CardHeader, EmptyState, Field, Input, LoadingBlock, PageHeader, Select, Table, Td, Th, cx, toast,
 } from '../components/ui';
 import { CATEGORICAL, ColumnChart, HBarChart, TrendChart, WeeklyChart } from '../components/Charts';
+import { detailUrl } from './ReportDetail';
 
 const TABS = [
     { key: 'resumen', label: 'Resumen', icon: Gauge },
@@ -144,17 +145,28 @@ function ExportButton({ path, filters }) {
     );
 }
 
-function Kpi({ icon: Icon, label, value, detail, tone = 'brand' }) {
+function Kpi({ icon: Icon, label, value, detail, tone = 'brand', to }) {
     const tones = { brand: 'bg-brand-50 text-brand-600', ok: 'bg-emerald-50 text-emerald-700', warn: 'bg-amber-50 text-amber-700', danger: 'bg-red-50 text-red-600', navy: 'bg-navy-900 text-white' };
-    return (
-        <Card className="p-4">
+    const body = (
+        <Card className={cx('group h-full p-4 transition', to && 'hover:border-brand-300 hover:shadow-md')}>
             <div className="flex items-start justify-between gap-2">
                 <p className="text-xs font-semibold text-muted">{label}</p>
                 <span className={cx('grid size-8 place-items-center rounded-lg', tones[tone])}><Icon className="size-4" /></span>
             </div>
             <p className="mt-2 font-display text-2xl font-extrabold text-ink tabular">{value}</p>
             {detail && <p className="mt-1 text-xs text-muted">{detail}</p>}
+            {to && <p className="mt-2 flex items-center text-xs font-semibold text-brand-600 opacity-70 group-hover:opacity-100">Ver detalle <ChevronRight className="size-3.5" /></p>}
         </Card>
+    );
+    return to ? <Link to={to} className="block h-full">{body}</Link> : body;
+}
+
+/** Barra horizontal dentro de una fila de tabla (valor relativo al máximo). */
+function InlineBar({ value, max }) {
+    return (
+        <div className="h-2 w-full min-w-[80px] overflow-hidden rounded-full bg-surface ring-1 ring-line ring-inset">
+            <div className="h-full rounded-full bg-brand-500" style={{ width: `${max ? Math.max(3, (value / max) * 100) : 0}%` }} />
+        </div>
     );
 }
 
@@ -162,6 +174,7 @@ function Kpi({ icon: Icon, label, value, detail, tone = 'brand' }) {
 
 function SummaryTab({ filters }) {
     const { data, isLoading } = useReport('summary', filters);
+    const link = (params) => detailUrl(filters, { tipo: 'tickets', ...params }, 'resumen');
     if (isLoading || !data) {
         return <LoadingBlock />;
     }
@@ -169,14 +182,14 @@ function SummaryTab({ filters }) {
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                <Kpi icon={BarChart3} label="Tickets abiertos en el período" value={formatNumber(k.opened)} detail={`${formatNumber(k.closed)} concluidos · ${formatNumber(k.backlog)} pendientes hoy`} />
-                <Kpi icon={Timer} tone="navy" label="Tiempo promedio de resolución" value={k.mttr_ms ? formatDuration(k.mttr_ms) : '—'} detail="De la apertura al cierre" />
-                <Kpi icon={Clock3} label="Tiempo promedio de llegada" value={k.mtta_ms ? formatDuration(k.mtta_ms) : '—'} detail="De la apertura a la llegada al sitio" />
-                <Kpi icon={CheckCircle2} tone="ok" label="Resueltos en la 1.ª visita" value={formatPct(k.first_visit_rate)} detail="Sobre los concluidos del período" />
-                <Kpi icon={Gauge} tone={k.sla_resolution_rate !== null && k.sla_resolution_rate < 80 ? 'warn' : 'ok'} label="SLA de resolución cumplido" value={formatPct(k.sla_resolution_rate)} detail={`Llegada: ${formatPct(k.sla_response_rate)}`} />
-                <Kpi icon={AlertTriangle} tone="danger" label="Tickets con SLA vencido" value={formatNumber(k.sla_breached)} detail={<Link to="/tickets?filtro=todos&sla=breached" className="font-semibold text-brand-600 hover:underline">Ver tickets vencidos</Link>} />
-                <Kpi icon={Repeat2} tone="warn" label="Reincidencia" value={formatPct(k.reincidence_rate)} detail="Cajero con otra falla en los 30 días previos" />
-                <Kpi icon={Wrench} label="Pendientes hoy" value={formatNumber(k.backlog)} detail="Sin cerrar, según antigüedad abajo" />
+                <Kpi icon={BarChart3} label="Tickets abiertos en el período" value={formatNumber(k.opened)} detail={`${formatNumber(k.closed)} concluidos · ${formatNumber(k.backlog)} pendientes hoy`} to={link({ metrica: 'opened' })} />
+                <Kpi icon={Timer} tone="navy" label="Tiempo promedio de resolución" value={k.mttr_ms ? formatDuration(k.mttr_ms) : '—'} detail="De la apertura al cierre" to={link({ metrica: 'mttr' })} />
+                <Kpi icon={Clock3} label="Tiempo promedio de llegada" value={k.mtta_ms ? formatDuration(k.mtta_ms) : '—'} detail="De la apertura a la llegada al sitio" to={link({ metrica: 'mtta' })} />
+                <Kpi icon={CheckCircle2} tone="ok" label="Resueltos en la 1.ª visita" value={formatPct(k.first_visit_rate)} detail="Sobre los concluidos del período" to={link({ metrica: 'first_visit' })} />
+                <Kpi icon={Gauge} tone={k.sla_resolution_rate !== null && k.sla_resolution_rate < 80 ? 'warn' : 'ok'} label="SLA de resolución cumplido" value={formatPct(k.sla_resolution_rate)} detail={`Llegada: ${formatPct(k.sla_response_rate)}`} to={link({ metrica: 'sla' })} />
+                <Kpi icon={AlertTriangle} tone="danger" label="Tickets con SLA vencido" value={formatNumber(k.sla_breached)} detail="Llegada o resolución fuera de meta" to={link({ metrica: 'sla_breached' })} />
+                <Kpi icon={Repeat2} tone="warn" label="Reincidencia" value={formatPct(k.reincidence_rate)} detail="Cajero con otra falla en los 30 días previos" to={link({ metrica: 'reincidence' })} />
+                <Kpi icon={Wrench} label="Pendientes hoy" value={formatNumber(k.backlog)} detail="Sin cerrar, según antigüedad abajo" to={link({ metrica: 'backlog' })} />
             </div>
             <div className="grid gap-6 xl:grid-cols-3">
                 <Card className="xl:col-span-2">
@@ -250,13 +263,15 @@ function AtmsTab({ filters }) {
 
 function TechniciansTab({ filters }) {
     const { data, isLoading } = useReport('technicians', filters);
+    const navigate = useNavigate();
+    const visitsOf = (id) => detailUrl({ ...filters, technician_id: id }, { tipo: 'visits' }, 'tecnicos');
     if (isLoading || !data) {
         return <LoadingBlock />;
     }
     return (
         <div className="space-y-6">
             <Card>
-                <CardHeader title="Desempeño por técnico" subtitle="Tickets del período; pendientes a hoy" actions={<ExportButton path="technicians" filters={filters} />} />
+                <CardHeader title="Desempeño por técnico" subtitle="Toque un técnico para ver el detalle de sus atenciones" actions={<ExportButton path="technicians" filters={filters} />} />
                 {!data.data.length ? (
                     <EmptyState icon={Wrench} title="Sin actividad de técnicos en este período" />
                 ) : (
@@ -266,10 +281,10 @@ function TechniciansTab({ filters }) {
                         </thead>
                         <tbody>
                             {data.data.map((r) => (
-                                <tr key={r.technician_id} className="hover:bg-brand-50/40">
-                                    <Td className="font-semibold whitespace-nowrap text-ink">{r.name}</Td>
+                                <tr key={r.technician_id} onClick={() => navigate(visitsOf(r.technician_id))} className="cursor-pointer hover:bg-brand-50/40" title="Ver sus atenciones">
+                                    <Td className="font-semibold whitespace-nowrap"><Link to={visitsOf(r.technician_id)} onClick={(e) => e.stopPropagation()} className="text-brand-600 hover:underline">{r.name}</Link></Td>
                                     <Td className="text-right tabular">{r.assigned}</Td>
-                                    <Td className="text-right font-bold text-ink tabular">{r.closed}</Td>
+                                    <Td className="text-right font-bold tabular"><Link to={detailUrl({ ...filters, technician_id: r.technician_id }, { tipo: 'tickets', metrica: 'closed' }, 'tecnicos')} onClick={(e) => e.stopPropagation()} className="text-ink hover:text-brand-600 hover:underline">{r.closed}</Link></Td>
                                     <Td className={cx('text-right tabular', r.pending_now > 0 && 'font-semibold text-amber-700')}>{r.pending_now}</Td>
                                     <Td className="text-right tabular">{r.visits}</Td>
                                     <Td className="text-right tabular">{r.parts_units}</Td>
@@ -297,6 +312,8 @@ function TechniciansTab({ filters }) {
 
 function PartsTab({ filters }) {
     const { data, isLoading } = useReport('parts', filters);
+    const navigate = useNavigate();
+    const visitsWith = (id) => detailUrl(filters, { tipo: 'visits', repuesto: id }, 'repuestos');
     if (isLoading || !data) {
         return <LoadingBlock />;
     }
@@ -306,15 +323,30 @@ function PartsTab({ filters }) {
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                <Kpi icon={Package} label="Unidades utilizadas" value={formatNumber(data.total)} />
+                <Kpi icon={Package} label="Unidades utilizadas" value={formatNumber(data.total)} to={detailUrl(filters, { tipo: 'visits', with_parts: 1 }, 'repuestos')} />
                 <Kpi icon={BarChart3} label="Tipos de repuesto" value={data.by_part.length} />
-                <Kpi icon={Wrench} label="Visitas con cambio" value={formatNumber(data.visits_with_parts)} />
+                <Kpi icon={Wrench} label="Visitas con cambio" value={formatNumber(data.visits_with_parts)} to={detailUrl(filters, { tipo: 'visits', with_parts: 1 }, 'repuestos')} />
                 <Kpi icon={Building2} label="Cajeros atendidos" value={data.top_atms.length >= 10 ? '10+' : data.top_atms.length} detail="Con repuestos en el período" />
             </div>
             <div className="grid gap-6 xl:grid-cols-2">
                 <Card>
-                    <CardHeader title="Consumo por repuesto" subtitle="Unidades en el período" actions={<ExportButton path="parts" filters={filters} />} />
-                    <div className="px-4 py-3"><HBarChart data={data.by_part.slice(0, 12)} labelKey="name" valueKey="quantity" unit="Unidades" /></div>
+                    <CardHeader title="Consumo por repuesto" subtitle="Toque un repuesto para ver en qué atenciones se usó" actions={<ExportButton path="parts" filters={filters} />} />
+                    <div className="max-h-[520px] overflow-y-auto">
+                        <Table compact>
+                            <thead><tr><Th>Repuesto</Th><Th className="w-[28%]">Consumo</Th><Th className="text-right">Unid.</Th><Th className="text-right">Visitas</Th><Th className="text-right">Cajeros</Th></tr></thead>
+                            <tbody>
+                                {data.by_part.map((p) => (
+                                    <tr key={p.name} onClick={() => navigate(visitsWith(p.part_id))} className="cursor-pointer hover:bg-brand-50/40" title="Ver atenciones">
+                                        <Td className="font-semibold whitespace-nowrap"><Link to={visitsWith(p.part_id)} onClick={(e) => e.stopPropagation()} className="text-brand-600 hover:underline">{p.name}</Link></Td>
+                                        <Td><InlineBar value={p.quantity} max={data.by_part[0].quantity} /></Td>
+                                        <Td className="text-right font-bold text-ink tabular">{p.quantity}</Td>
+                                        <Td className="text-right tabular">{p.visits}</Td>
+                                        <Td className="text-right tabular">{p.atms}</Td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </Table>
+                    </div>
                 </Card>
                 <Card>
                     <CardHeader title="Tendencia de los 5 más usados" subtitle="Unidades por mes, últimos 6 meses" />
@@ -375,13 +407,15 @@ function PartsTab({ filters }) {
 
 function FaultsTab({ filters }) {
     const { data, isLoading } = useReport('faults', filters);
+    const navigate = useNavigate();
+    const ticketsOf = (id) => detailUrl(filters, { tipo: 'tickets', metrica: 'fault', falla: id }, 'fallas');
     if (isLoading || !data) {
         return <LoadingBlock />;
     }
     return (
         <div className="grid gap-6 xl:grid-cols-5">
             <Card className="xl:col-span-3">
-                <CardHeader title="Tickets por tipo de falla" actions={<ExportButton path="faults" filters={filters} />} />
+                <CardHeader title="Tickets por tipo de falla" subtitle="Toque una falla para ver sus tickets" actions={<ExportButton path="faults" filters={filters} />} />
                 {!data.data.length ? (
                     <EmptyState title="Sin tickets en este período" />
                 ) : (
@@ -389,8 +423,8 @@ function FaultsTab({ filters }) {
                         <thead><tr><Th>Tipo de falla</Th><Th className="text-right">Tickets</Th><Th className="text-right">Concluidos</Th><Th className="text-right">Pendientes</Th><Th className="text-right">Cajeros</Th><Th className="text-right">Tiempo prom.</Th></tr></thead>
                         <tbody>
                             {data.data.map((r) => (
-                                <tr key={r.name}>
-                                    <Td className="font-semibold text-ink">{r.name}</Td>
+                                <tr key={r.name} onClick={() => r.fault_type_id && navigate(ticketsOf(r.fault_type_id))} className={cx(r.fault_type_id && 'cursor-pointer hover:bg-brand-50/40')} title="Ver sus tickets">
+                                    <Td className="font-semibold">{r.fault_type_id ? <Link to={ticketsOf(r.fault_type_id)} onClick={(e) => e.stopPropagation()} className="text-brand-600 hover:underline">{r.name}</Link> : r.name}</Td>
                                     <Td className="text-right font-bold text-ink tabular">{r.tickets}</Td>
                                     <Td className="text-right tabular">{r.closed} <span className="text-xs text-muted">({formatPct(r.close_rate)})</span></Td>
                                     <Td className={cx('text-right tabular', r.pending > 0 && 'font-semibold text-amber-700')}>{r.pending}</Td>

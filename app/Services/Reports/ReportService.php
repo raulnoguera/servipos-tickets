@@ -203,7 +203,9 @@ class ReportService
             'total' => (int) $rows->sum('quantity'),
             'visits_with_parts' => $rows->pluck('visit_id')->unique()->count(),
             'by_part' => $this->groupSum($rows, 'part')->map(fn ($r) => $r + [
+                'part_id' => $rows->firstWhere('part', $r['name'])['part_id'],
                 'atms' => $rows->where('part', $r['name'])->pluck('atm_id')->unique()->count(),
+                'visits' => $rows->where('part', $r['name'])->pluck('visit_id')->unique()->count(),
             ])->values(),
             'by_model' => $rows->groupBy('model')->map(fn ($g, $model) => [
                 'name' => $model,
@@ -239,6 +241,7 @@ class ReportService
                 $closed = $g->where('status', TicketStatus::Closed);
 
                 return [
+                    'fault_type_id' => $g->first()->fault_type_id,
                     'name' => $name,
                     'tickets' => $g->count(),
                     'closed' => $closed->count(),
@@ -248,6 +251,148 @@ class ReportService
                     'atms' => $g->pluck('atm_id')->unique()->count(),
                 ];
             })->sortByDesc('tickets')->values();
+    }
+
+    /* ---------------------------------------------------------------- Detalle (drill-down) */
+
+    /** Títulos de cada métrica del detalle de tickets. */
+    public const TICKET_METRICS = [
+        'opened' => 'Tickets abiertos en el período',
+        'closed' => 'Tickets concluidos en el período',
+        'backlog' => 'Tickets pendientes hoy',
+        'mttr' => 'Tiempo de resolución por ticket',
+        'mtta' => 'Tiempo de llegada al sitio por ticket',
+        'first_visit' => 'Concluidos: visitas por ticket',
+        'sla' => 'Cumplimiento de SLA por ticket',
+        'sla_breached' => 'Tickets con SLA vencido',
+        'reincidence' => 'Tickets de cajeros reincidentes',
+        'fault' => 'Tickets por tipo de falla',
+    ];
+
+    /**
+     * Tickets que componen una métrica del reporte.
+     *
+     * @param  array{fault_type_id?: int|null, atm_id?: int|null}  $extra
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function ticketDetail(array $f, string $metric, array $extra = []): Collection
+    {
+        $relations = ['atm.state', 'faultType', 'technician', 'visits.parts'];
+        $query = match ($metric) {
+            'closed', 'mttr', 'first_visit' => $this->scoped($f)->where('status', TicketStatus::Closed)->whereBetween('closed_at', [$f['from'], $f['to']]),
+            'backlog' => $this->scoped($f, withDates: false)->whereNotIn('status', [TicketStatus::Closed, TicketStatus::Cancelled]),
+            default => $this->ticketsOpened($f),
+        };
+        $tickets = $query
+            ->when($extra['fault_type_id'] ?? null, fn ($q, $id) => $q->where('fault_type_id', $id))
+            ->when($extra['atm_id'] ?? null, fn ($q, $id) => $q->where('atm_id', $id))
+            ->with($relations)->orderByDesc('opened_at')->limit(2000)->get();
+
+        $tickets = match ($metric) {
+            'mttr' => $tickets->where('source', '!=', 'import')->sortByDesc('duration_ms'),
+            'mtta' => $tickets->where('source', '!=', 'import')->filter(fn (Ticket $t) => $t->responded_at)
+                ->sortByDesc(fn (Ticket $t) => $t->opened_at->diffInSeconds($t->responded_at)),
+            'first_visit' => $tickets->sortBy(fn (Ticket $t) => $t->visits->count()),
+            'sla' => $tickets->where('source', '!=', 'import'),
+            'sla_breached' => $tickets->where('source', '!=', 'import')->filter(function (Ticket $t) {
+                $sla = $this->sla->evaluate($t);
+
+                return $sla['response']['status'] === 'breached' || $sla['resolution']['status'] === 'breached';
+            }),
+            'reincidence' => $this->reincidents($tickets),
+            default => $tickets,
+        };
+
+        return $tickets->values()->map(function (Ticket $t) {
+            $sla = $t->source === 'import' ? null : $this->sla->evaluate($t);
+            $parts = $t->visits->flatMap->parts;
+
+            return [
+                'id' => $t->id,
+                'number' => $t->number,
+                'status' => $t->status->value,
+                'status_label' => $t->status->label(),
+                'priority' => $t->priority?->value,
+                'priority_label' => $t->priority?->label(),
+                'opened_at' => $t->opened_at->toIso8601String(),
+                'closed_at' => $t->closed_at?->toIso8601String(),
+                'atm_id' => $t->atm_id,
+                'atm_number' => $t->atm->atm_number,
+                'agency_name' => $t->atm->agency_name,
+                'state' => $t->atm->state?->name,
+                'fault_type' => $t->faultType?->name,
+                'technician' => $t->technician?->name,
+                'visits' => $t->visits->count(),
+                'arrival_ms' => $t->source !== 'import' && $t->responded_at ? (int) $t->opened_at->diffInMilliseconds($t->responded_at) : null,
+                'duration_ms' => $t->duration_ms,
+                'sla_response' => $sla['response']['status'] ?? 'none',
+                'sla_resolution' => $sla['resolution']['status'] ?? 'none',
+                'parts' => $parts->map(fn ($p) => "{$p->name} x{$p->pivot->quantity}")->implode(', '),
+                'parts_units' => (int) $parts->sum('pivot.quantity'),
+            ];
+        });
+    }
+
+    /**
+     * Atenciones (visitas) del período, p. ej. de un técnico o donde se usó un repuesto.
+     *
+     * @param  array{part_id?: int|null, fault_type_id?: int|null, with_parts?: bool}  $extra
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function visitDetail(array $f, array $extra = []): Collection
+    {
+        $partId = $extra['part_id'] ?? null;
+
+        return Visit::query()
+            ->with(['ticket.atm.state', 'technician', 'faultType', 'atmCondition', 'parts'])
+            ->whereDate('visit_date', '>=', $f['from']->toDateString())
+            ->whereDate('visit_date', '<=', $f['to']->toDateString())
+            ->when($f['technician_id'], fn ($q, $id) => $q->where('technician_id', $id))
+            ->when($partId, fn ($q, $id) => $q->whereHas('parts', fn ($p) => $p->whereKey($id)))
+            ->when($extra['with_parts'] ?? false, fn ($q) => $q->whereHas('parts'))
+            ->when($extra['fault_type_id'] ?? null, fn ($q, $id) => $q->where('fault_type_id', $id))
+            ->whereHas('ticket', fn ($t) => $t
+                ->when($f['bank_id'], fn ($q, $id) => $q->where('bank_id', $id))
+                ->when($f['state_id'], fn ($q, $id) => $q->whereHas('atm', fn ($a) => $a->where('state_id', $id))))
+            ->orderByDesc('visit_date')->orderByDesc('id')
+            ->limit(2000)->get()
+            ->map(fn (Visit $v) => [
+                'id' => $v->id,
+                'ticket_id' => $v->ticket_id,
+                'number' => $v->ticket->number,
+                'visit_date' => $v->visit_date->toDateString(),
+                'finished_at' => $v->finished_at?->toIso8601String(),
+                'atm_id' => $v->ticket->atm_id,
+                'atm_number' => $v->ticket->atm->atm_number,
+                'agency_name' => $v->ticket->atm->agency_name,
+                'state' => $v->ticket->atm->state?->name,
+                'technician' => $v->technician?->name,
+                'fault_type' => $v->faultType?->name,
+                'condition' => $v->atmCondition?->name,
+                'constancia_number' => $v->constancia_number,
+                'has_photo' => (bool) $v->constancia_path,
+                'parts' => $v->parts->map(fn ($p) => "{$p->name} x{$p->pivot->quantity}")->implode(', '),
+                'parts_units' => $partId
+                    ? (int) $v->parts->firstWhere('id', $partId)?->pivot->quantity
+                    : (int) $v->parts->sum('pivot.quantity'),
+                'work_done' => $v->work_done,
+            ]);
+    }
+
+    /** @return Collection<int, Ticket> */
+    private function reincidents(Collection $tickets): Collection
+    {
+        if ($tickets->isEmpty()) {
+            return $tickets;
+        }
+        $history = Ticket::whereIn('atm_id', $tickets->pluck('atm_id')->unique())
+            ->where('opened_at', '>=', $tickets->min('opened_at')->subDays(self::REINCIDENCE_DAYS))
+            ->get(['id', 'atm_id', 'opened_at'])->groupBy('atm_id');
+
+        return $tickets->filter(fn (Ticket $t) => $history->get($t->atm_id, collect())->contains(fn ($o) => $o->id !== $t->id
+            && $o->opened_at->lessThan($t->opened_at)
+            && $o->opened_at->greaterThanOrEqualTo($t->opened_at->subDays(self::REINCIDENCE_DAYS))))
+            ->sortBy('atm_id');
     }
 
     /* ---------------------------------------------------------------- Ayudantes */
@@ -281,6 +426,7 @@ class ReportService
             ->get()
             ->flatMap(fn (Visit $v) => $v->parts->map(fn ($p) => [
                 'visit_id' => $v->id,
+                'part_id' => $p->id,
                 'part' => $p->name,
                 'quantity' => (int) $p->pivot->quantity,
                 'atm_id' => $v->ticket->atm_id,
@@ -300,16 +446,7 @@ class ReportService
 
     private function reincidentCount(Collection $tickets): int
     {
-        if ($tickets->isEmpty()) {
-            return 0;
-        }
-        $history = Ticket::whereIn('atm_id', $tickets->pluck('atm_id')->unique())
-            ->where('opened_at', '>=', $tickets->min('opened_at')->subDays(self::REINCIDENCE_DAYS))
-            ->get(['id', 'atm_id', 'opened_at'])->groupBy('atm_id');
-
-        return $tickets->filter(fn (Ticket $t) => $history->get($t->atm_id, collect())->contains(fn ($o) => $o->id !== $t->id
-            && $o->opened_at->lessThan($t->opened_at)
-            && $o->opened_at->greaterThanOrEqualTo($t->opened_at->subDays(self::REINCIDENCE_DAYS))))->count();
+        return $this->reincidents($tickets)->count();
     }
 
     /** @return list<array{bucket: string, total: int}> */

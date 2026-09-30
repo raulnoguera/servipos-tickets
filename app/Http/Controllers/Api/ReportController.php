@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Atm;
 use App\Models\Bank;
+use App\Models\FaultType;
+use App\Models\Part;
 use App\Models\State;
 use App\Models\User;
 use App\Services\Export\ConsolidadoExporter;
@@ -13,6 +15,8 @@ use App\Services\Reports\TableExporter;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
@@ -99,6 +103,70 @@ class ReportController extends Controller
         return response()->json(['data' => $rows, 'filters' => $this->describe($f)]);
     }
 
+    /**
+     * Detalle de una cifra del reporte: tickets (por métrica o tipo de falla)
+     * o atenciones (de un técnico o con un repuesto). ?format=xlsx descarga.
+     */
+    public function detail(Request $request): JsonResponse|BinaryFileResponse
+    {
+        $data = $request->validate([
+            'type' => ['required', Rule::in(['tickets', 'visits'])],
+            'metric' => ['nullable', Rule::in(array_keys(ReportService::TICKET_METRICS))],
+            'fault_type_id' => ['nullable', 'integer', 'exists:fault_types,id'],
+            'part_id' => ['nullable', 'integer', 'exists:parts,id'],
+            'atm_id' => ['nullable', 'integer', 'exists:atms,id'],
+            'with_parts' => ['nullable', 'boolean'],
+        ]);
+        $f = $this->filters($request);
+        $extra = array_intersect_key($data, array_flip(['fault_type_id', 'part_id', 'atm_id', 'with_parts']));
+        $fault = isset($data['fault_type_id']) ? FaultType::find($data['fault_type_id'])?->name : null;
+        $part = isset($data['part_id']) ? Part::find($data['part_id'])?->name : null;
+
+        if ($data['type'] === 'visits') {
+            $rows = $this->reports->visitDetail($f, $extra);
+            $title = match (true) {
+                (bool) $part => "Atenciones con {$part}",
+                (bool) $f['technician_id'] => 'Atenciones de '.User::find($f['technician_id'])?->name,
+                (bool) ($extra['with_parts'] ?? false) => 'Atenciones con cambio de repuesto',
+                default => 'Atenciones del período',
+            };
+            if ($request->query('format') === 'xlsx') {
+                return $this->excel->download($title, $this->describe($f), [
+                    'visit_date' => 'Fecha', 'number' => 'N° Ticket', 'atm_number' => 'N° ATM', 'agency_name' => 'Agencia', 'state' => 'Estado',
+                    'technician' => 'Técnico', 'fault_type' => 'Falla', 'condition' => 'Estatus final', 'constancia_number' => 'N° Constancia',
+                    'parts' => 'Repuestos', 'parts_units' => $part ? "Unid. de {$part}" : 'Repuestos (unid.)', 'work_done' => 'Trabajo realizado',
+                ], $rows, $this->fileName('atenciones', $f));
+            }
+
+            return response()->json(['title' => $title, 'type' => 'visits', 'data' => $rows, 'filters' => $this->describe($f)]);
+        }
+
+        $metric = $data['metric'] ?? ($fault ? 'fault' : 'opened');
+        $rows = $this->reports->ticketDetail($f, $metric, $extra);
+        $title = ReportService::TICKET_METRICS[$metric].($fault ? ": {$fault}" : '');
+        if ($request->query('format') === 'xlsx') {
+            $sla = ['met' => 'Cumplido', 'breached' => 'Vencido', 'at_risk' => 'Por vencer', 'on_track' => 'En tiempo', 'none' => '—'];
+
+            return $this->excel->download($title, $this->describe($f), [
+                'number' => 'N° Ticket', 'opened' => 'Apertura', 'closed' => 'Cierre', 'status_label' => 'Estado', 'priority_label' => 'Prioridad',
+                'atm_number' => 'N° ATM', 'agency_name' => 'Agencia', 'state' => 'Estado (región)', 'fault_type' => 'Falla', 'technician' => 'Técnico',
+                'visits' => 'Visitas', 'arrival' => 'Llegada', 'duration' => 'Resolución', 'sla_response_label' => 'SLA llegada',
+                'sla_resolution_label' => 'SLA resolución', 'parts' => 'Repuestos',
+            ], $rows->map(fn ($r) => $r + [
+                'opened' => $this->excelDate($r['opened_at']),
+                'closed' => $this->excelDate($r['closed_at']),
+                'arrival' => $this->excelDuration($r['arrival_ms']),
+                'duration' => $this->excelDuration($r['duration_ms']),
+                'sla_response_label' => $sla[$r['sla_response']],
+                'sla_resolution_label' => $sla[$r['sla_resolution']],
+            ]), $this->fileName('detalle', $f), [
+                'opened' => 'dd/mm/yyyy hh:mm', 'closed' => 'dd/mm/yyyy hh:mm', 'arrival' => self::HOURS, 'duration' => self::HOURS,
+            ]);
+        }
+
+        return response()->json(['title' => $title, 'type' => 'tickets', 'metric' => $metric, 'data' => $rows, 'filters' => $this->describe($f)]);
+    }
+
     /** Descarga del consolidado .xlsx (RF-4.3). */
     public function consolidado(Request $request, ConsolidadoExporter $exporter): BinaryFileResponse
     {
@@ -144,6 +212,12 @@ class ReportController extends Controller
     private function fileName(string $kind, array $f): string
     {
         return sprintf('Reporte %s %s al %s.xlsx', $kind, $f['from']->format('d-m-Y'), $f['to']->format('d-m-Y'));
+    }
+
+    /** Fecha ISO → número de fecha de Excel (hora local de la app). */
+    private function excelDate(?string $iso): ?float
+    {
+        return $iso ? Date::PHPToExcel(CarbonImmutable::parse($iso)->setTimezone(config('app.timezone'))->toDateTime()) : null;
     }
 
     /** Milisegundos → fracción de día (formato de hora de Excel). */

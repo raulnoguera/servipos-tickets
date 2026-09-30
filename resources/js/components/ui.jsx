@@ -315,10 +315,10 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
 
 /* ---------- Tabla ---------- */
 
-export function Table({ children, className }) {
+export function Table({ children, className, compact = false }) {
     return (
         <div className={cx('overflow-x-auto', className)}>
-            <table className="w-full min-w-[640px] text-left text-sm">{children}</table>
+            <table className={cx('w-full text-left text-sm', !compact && 'min-w-[640px]')}>{children}</table>
         </div>
     );
 }
