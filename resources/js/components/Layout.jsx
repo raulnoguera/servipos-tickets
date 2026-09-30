@@ -109,9 +109,12 @@ export default function Layout() {
         <div className="min-h-dvh lg:pl-64">
             {/* Barra lateral (escritorio) */}
             <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-navy-900 lg:flex">
-                <div className="flex items-center justify-between py-6 pr-4 pl-6">
-                    <Logo light />
-                    <NotificationBell />
+                <div className="px-5 pt-6 pb-5">
+                    <div className="flex items-center justify-between gap-2">
+                        <Logo light subtitle={false} />
+                        <NotificationBell />
+                    </div>
+                    <p className="mt-2.5 text-[10px] font-semibold tracking-[0.16em] text-white/50 uppercase">Monitor de tickets ATM</p>
                 </div>
                 <div className="flex-1 overflow-y-auto pb-4">
                     <NavItems role={user.role} />
