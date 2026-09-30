@@ -27,6 +27,10 @@ class ReportController extends Controller
 {
     private const HOURS = '[h]:mm';
 
+    private const PERCENT = '0.0" %"';
+
+    private const DATETIME = 'dd/mm/yyyy hh:mm';
+
     public function __construct(private ReportService $reports, private TableExporter $excel) {}
 
     public function summary(Request $request): JsonResponse
@@ -68,7 +72,7 @@ class ReportController extends Controller
                 'visits' => 'Visitas', 'parts_units' => 'Repuestos (unid.)', 'mtta' => 'Tiempo prom. llegada', 'mttr' => 'Tiempo prom. resolución',
                 'first_visit_rate' => '% resuelto 1.ª visita', 'sla_resolution_rate' => '% SLA resolución',
             ], $rows->map(fn ($r) => $r + ['mtta' => $this->excelDuration($r['mtta_ms']), 'mttr' => $this->excelDuration($r['mttr_ms'])]),
-                $this->fileName('tecnicos', $f), ['mtta' => self::HOURS, 'mttr' => self::HOURS]);
+                $this->fileName('tecnicos', $f), ['mtta' => self::HOURS, 'mttr' => self::HOURS, 'first_visit_rate' => self::PERCENT, 'sla_resolution_rate' => self::PERCENT]);
         }
 
         return response()->json(['data' => $rows, 'filters' => $this->describe($f)]);
@@ -97,7 +101,7 @@ class ReportController extends Controller
             return $this->excel->download('Reporte por tipo de falla', $this->describe($f), [
                 'name' => 'Tipo de falla', 'tickets' => 'Tickets', 'closed' => 'Concluidos', 'pending' => 'Pendientes',
                 'close_rate' => '% concluidos', 'atms' => 'Cajeros afectados', 'mttr' => 'Tiempo prom. resolución',
-            ], $rows->map(fn ($r) => $r + ['mttr' => $this->excelDuration($r['mttr_ms'])]), $this->fileName('fallas', $f), ['mttr' => self::HOURS]);
+            ], $rows->map(fn ($r) => $r + ['mttr' => $this->excelDuration($r['mttr_ms'])]), $this->fileName('fallas', $f), ['mttr' => self::HOURS, 'close_rate' => self::PERCENT]);
         }
 
         return response()->json(['data' => $rows, 'filters' => $this->describe($f)]);
@@ -132,10 +136,11 @@ class ReportController extends Controller
             };
             if ($request->query('format') === 'xlsx') {
                 return $this->excel->download($title, $this->describe($f), [
-                    'visit_date' => 'Fecha', 'number' => 'N° Ticket', 'atm_number' => 'N° ATM', 'agency_name' => 'Agencia', 'state' => 'Estado',
+                    'date' => 'Fecha', 'number' => 'N° Ticket', 'atm_number' => 'N° ATM', 'agency_name' => 'Agencia', 'state' => 'Estado',
                     'technician' => 'Técnico', 'fault_type' => 'Falla', 'condition' => 'Estatus final', 'constancia_number' => 'N° Constancia',
                     'parts' => 'Repuestos', 'parts_units' => $part ? "Unid. de {$part}" : 'Repuestos (unid.)', 'work_done' => 'Trabajo realizado',
-                ], $rows, $this->fileName('atenciones', $f));
+                ], $rows->map(fn ($r) => $r + ['date' => $this->excelDate($r['finished_at'] ?? $r['visit_date'])]),
+                    $this->fileName('atenciones', $f), ['date' => self::DATETIME]);
             }
 
             return response()->json(['title' => $title, 'type' => 'visits', 'data' => $rows, 'filters' => $this->describe($f)]);
@@ -160,7 +165,7 @@ class ReportController extends Controller
                 'sla_response_label' => $sla[$r['sla_response']],
                 'sla_resolution_label' => $sla[$r['sla_resolution']],
             ]), $this->fileName('detalle', $f), [
-                'opened' => 'dd/mm/yyyy hh:mm', 'closed' => 'dd/mm/yyyy hh:mm', 'arrival' => self::HOURS, 'duration' => self::HOURS,
+                'opened' => self::DATETIME, 'closed' => self::DATETIME, 'arrival' => self::HOURS, 'duration' => self::HOURS,
             ]);
         }
 

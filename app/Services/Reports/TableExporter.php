@@ -4,15 +4,43 @@ namespace App\Services\Reports;
 
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
+use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use PhpOffice\PhpSpreadsheet\Worksheet\Table;
 use PhpOffice\PhpSpreadsheet\Worksheet\Table\TableStyle;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
-/** Exporta un reporte tabular a .xlsx con título, filtros y tabla con formato. */
+/**
+ * Exporta un reporte tabular a .xlsx con la imagen corporativa: logo,
+ * título, filtros, autor y fecha; tabla con formato; pie con el total y
+ * configuración de impresión (horizontal, ajustado al ancho, encabezados
+ * repetidos y número de página).
+ */
 class TableExporter
 {
+    public const COMPANY = 'ServiPos 2019, C.A.';
+
+    public const SYSTEM = 'Sistema de Monitoreo de Tickets ATM';
+
+    private const NAVY = '00194C';
+
+    private const BLUE = '0055FF';
+
+    private const MUTED = '687799';
+
+    private const LINE = 'E1E5EE';
+
+    /** Fila donde empieza la tabla (encabezados de columna). */
+    private const HEADER_ROW = 7;
+
+    /** Columnas de texto largo: se muestran en varias líneas. */
+    private const LONG_TEXT = ['work_done', 'parts', 'description', 'top_fault', 'agency_name'];
+
     /**
      * @param  array<string, string>  $columns  clave => encabezado
      * @param  iterable<array<string, mixed>>  $rows
@@ -21,42 +49,154 @@ class TableExporter
     public function download(string $title, string $filtersText, array $columns, iterable $rows, string $fileName, array $formats = []): BinaryFileResponse
     {
         $book = new Spreadsheet;
-        $sheet = $book->getActiveSheet()->setTitle(mb_substr(preg_replace('/[\\\\\/?*\[\]:]/', '', $title), 0, 31));
+        $book->getProperties()
+            ->setCreator(self::COMPANY)
+            ->setCompany(self::COMPANY)
+            ->setTitle($title)
+            ->setSubject(self::SYSTEM)
+            ->setDescription($filtersText);
+        $book->getDefaultStyle()->getFont()->setName('Calibri')->setSize(10);
 
-        $sheet->setCellValue('A1', $title);
-        $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14)->getColor()->setRGB('00194C');
-        $sheet->setCellValue('A2', $filtersText);
-        $sheet->getStyle('A2')->getFont()->setItalic(true)->getColor()->setRGB('687799');
+        $sheet = $book->getActiveSheet()->setTitle(mb_substr(preg_replace('/[\\\\\/?*\[\]:]/', '', $title), 0, 31));
+        $sheet->setShowGridlines(false);
 
         $keys = array_keys($columns);
-        $sheet->fromArray(array_values($columns), null, 'A4');
-        $r = 5;
+        $lastCol = Coordinate::stringFromColumnIndex(max(count($keys), 6));
+        $tableLastCol = Coordinate::stringFromColumnIndex(count($keys));
+
+        $this->header($sheet, $title, $filtersText, $lastCol);
+
+        // Encabezados de columna
+        $h = self::HEADER_ROW;
+        $sheet->fromArray(array_values($columns), null, "A{$h}");
+        $sheet->getRowDimension($h)->setRowHeight(30);
+        $sheet->getStyle("A{$h}:{$tableLastCol}{$h}")->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => self::NAVY]],
+            'alignment' => ['vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => self::NAVY]]],
+        ]);
+
+        // Datos
+        $r = $h + 1;
+        $widths = array_map(fn ($label) => mb_strlen($label), array_values($columns));
         foreach ($rows as $row) {
-            $sheet->fromArray(array_map(fn ($k) => $row[$k] ?? null, $keys), null, "A{$r}", true);
+            $values = array_map(fn ($k) => $row[$k] ?? null, $keys);
+            $sheet->fromArray($values, null, "A{$r}", true);
+            foreach ($values as $i => $value) {
+                if (is_string($value)) {
+                    $widths[$i] = max($widths[$i], min(60, mb_strlen($value)));
+                }
+            }
             $r++;
         }
-        $lastCol = $sheet->getHighestColumn(4);
-        $lastRow = max(5, $r - 1);
+        $lastRow = max($h + 1, $r - 1);
+        $count = $r - $h - 1;
 
-        foreach ($formats as $key => $format) {
-            $col = Coordinate::stringFromColumnIndex(array_search($key, $keys, true) + 1);
-            $sheet->getStyle("{$col}5:{$col}{$lastRow}")->getNumberFormat()->setFormatCode($format);
+        foreach ($keys as $i => $key) {
+            $col = Coordinate::stringFromColumnIndex($i + 1);
+            $long = in_array($key, self::LONG_TEXT, true);
+            // Las fechas y tiempos no son texto: se reserva su ancho según el formato.
+            $formatWidth = match (true) {
+                ! isset($formats[$key]) => 0,
+                str_contains($formats[$key], 'yyyy') => 17,
+                default => 12,
+            };
+            $sheet->getColumnDimension($col)->setWidth($long ? min(55, max(18, $widths[$i] * 0.95)) : min(34, max(10, $widths[$i] + 3, $formatWidth)));
+            if (isset($formats[$key])) {
+                $sheet->getStyle("{$col}".($h + 1).":{$col}{$lastRow}")->getNumberFormat()->setFormatCode($formats[$key]);
+                $sheet->getStyle("{$col}".($h + 1).":{$col}{$lastRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            }
+            if ($long) {
+                $sheet->getStyle("{$col}".($h + 1).":{$col}{$lastRow}")->getAlignment()->setWrapText(true);
+            }
         }
-        foreach (range(1, count($keys)) as $i) {
-            $sheet->getColumnDimensionByColumn($i)->setAutoSize(true);
-        }
-        $sheet->getStyle("A4:{$lastCol}4")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('00194C');
-        $sheet->getStyle("A4:{$lastCol}4")->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
-        if ($r > 5) {
-            $table = new Table("A4:{$lastCol}{$lastRow}", 'reporte');
-            $table->setStyle((new TableStyle)->setTheme(TableStyle::TABLE_STYLE_MEDIUM2)->setShowRowStripes(true));
+
+        if ($count > 0) {
+            $sheet->getStyle('A'.($h + 1).":{$tableLastCol}{$lastRow}")->applyFromArray([
+                'alignment' => ['vertical' => Alignment::VERTICAL_TOP],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => self::LINE]]],
+            ]);
+            $table = new Table("A{$h}:{$tableLastCol}{$lastRow}", 'reporte');
+            $table->setStyle((new TableStyle)->setTheme(TableStyle::TABLE_STYLE_LIGHT9)->setShowRowStripes(true));
             $sheet->addTable($table);
+        } else {
+            $sheet->setCellValue('A'.($h + 1), 'Sin registros para los filtros seleccionados.');
+            $sheet->getStyle('A'.($h + 1))->getFont()->setItalic(true)->getColor()->setRGB(self::MUTED);
         }
-        $sheet->freezePane('A5');
+
+        // Pie
+        $foot = $lastRow + 2;
+        $sheet->setCellValue("A{$foot}", 'Total de registros: '.number_format($count, 0, ',', '.'));
+        $sheet->getStyle("A{$foot}")->getFont()->setBold(true)->getColor()->setRGB(self::NAVY);
+        $sheet->setCellValue('A'.($foot + 1), self::COMPANY.' · '.self::SYSTEM.' · Documento generado automáticamente.');
+        $sheet->getStyle('A'.($foot + 1))->getFont()->setSize(8)->getColor()->setRGB(self::MUTED);
+
+        $sheet->freezePane('A'.($h + 1));
+        $this->printSetup($sheet, $title, $h);
 
         $path = tempnam(sys_get_temp_dir(), 'reporte');
         (new Xlsx($book))->save($path);
 
         return response()->download($path, $fileName)->deleteFileAfterSend();
+    }
+
+    /**
+     * Encabezado corporativo: logo, título, empresa, filtros y autor/fecha,
+     * con una franja azul debajo. Ocupa las filas 1 a 5.
+     */
+    public function header(Worksheet $sheet, string $title, string $filtersText, string $lastCol): void
+    {
+        foreach ([1 => 22, 2 => 24, 3 => 16, 4 => 16, 5 => 6] as $row => $height) {
+            $sheet->getRowDimension($row)->setRowHeight($height);
+        }
+        $this->logo($sheet, 'A1', 70);
+
+        // El texto empieza a la derecha del logo (columna C).
+        $sheet->setCellValue('C1', self::COMPANY.' · '.self::SYSTEM);
+        $sheet->getStyle('C1')->getFont()->setBold(true)->setSize(9)->getColor()->setRGB(self::BLUE);
+        $sheet->setCellValue('C2', $title);
+        $sheet->getStyle('C2')->getFont()->setBold(true)->setSize(16)->getColor()->setRGB(self::NAVY);
+        $sheet->setCellValue('C3', $filtersText);
+        $sheet->getStyle('C3')->getFont()->setSize(10)->getColor()->setRGB('3D4A66');
+        $user = auth()->user()?->name;
+        $sheet->setCellValue('C4', 'Generado el '.now()->format('d/m/Y \a \l\a\s h:i a').($user ? " por {$user}" : ''));
+        $sheet->getStyle('C4')->getFont()->setItalic(true)->setSize(9)->getColor()->setRGB(self::MUTED);
+
+        $sheet->getStyle("A5:{$lastCol}5")->applyFromArray([
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => self::BLUE]],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => self::BLUE]]],
+        ]);
+    }
+
+    /** Logo corporativo anclado en una celda, con la altura indicada en píxeles. */
+    public function logo(Worksheet $sheet, string $cell, int $height): void
+    {
+        $file = public_path('brand/logo.png');
+        if (! is_file($file)) {
+            return;
+        }
+        $logo = new Drawing;
+        $logo->setName('ServiPos 2019');
+        $logo->setDescription('Logo ServiPos 2019');
+        $logo->setPath($file);
+        $logo->setHeight($height);
+        $logo->setCoordinates($cell);
+        $logo->setOffsetX(4);
+        $logo->setOffsetY(4);
+        $logo->setWorksheet($sheet);
+    }
+
+    private function printSetup(Worksheet $sheet, string $title, int $headerRow): void
+    {
+        $sheet->getPageSetup()
+            ->setOrientation(PageSetup::ORIENTATION_LANDSCAPE)
+            ->setPaperSize(PageSetup::PAPERSIZE_LETTER)
+            ->setFitToWidth(1)
+            ->setFitToHeight(0)
+            ->setRowsToRepeatAtTopByStartAndEnd($headerRow, $headerRow);
+        $sheet->getPageMargins()->setTop(0.5)->setBottom(0.6)->setLeft(0.4)->setRight(0.4);
+        $sheet->getHeaderFooter()
+            ->setOddFooter('&L&8'.self::COMPANY.' — '.$title.'&R&8Página &P de &N');
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Services\Export;
 
 use App\Models\Visit;
+use App\Services\Reports\TableExporter;
 use Carbon\CarbonInterface;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -52,8 +53,19 @@ class ConsolidadoExporter
             ->get();
 
         $book = new Spreadsheet;
+        $book->getProperties()->setCreator(TableExporter::COMPANY)->setCompany(TableExporter::COMPANY)
+            ->setTitle('Libro Consolidado Relación de Atenciones');
         $sheet = $book->getActiveSheet()->setTitle('Base General');
         $sheet->getColumnDimension('A')->setWidth(1.6);
+
+        // Fila 1 (vacía en el libro original): logo y título. La tabla sigue en B2, igual que antes.
+        $sheet->getRowDimension(1)->setRowHeight(46);
+        app(TableExporter::class)->logo($sheet, 'B1', 52);
+        $sheet->setCellValue('E1', 'Libro Consolidado Relación de Atenciones');
+        $sheet->getStyle('E1')->getFont()->setBold(true)->setSize(14)->getColor()->setRGB('00194C');
+        $sheet->setCellValue('I1', sprintf('%s · Del %s al %s · Generado el %s', TableExporter::COMPANY, $from->format('d/m/Y'), $to->format('d/m/Y'), now()->format('d/m/Y h:i a')));
+        $sheet->getStyle('I1')->getFont()->setSize(9)->getColor()->setRGB('687799');
+        $sheet->getStyle('B1:R1')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
 
         $col = 'B';
         foreach (self::COLUMNS as $header => $width) {
