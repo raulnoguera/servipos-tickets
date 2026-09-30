@@ -9,7 +9,7 @@ import { outbox } from './outbox';
 export async function changeStatus({ ticket, status, userId }) {
     const payload = { status, at: new Date().toISOString() };
     try {
-        return { queued: false, data: await api(`tickets/${ticket.id}/status`, { method: 'POST', body: payload, timeout: 15000 }) };
+        return { queued: false, data: await api(`tickets/${ticket.id}/status`, { method: 'POST', body: payload, timeout: 8000 }) };
     } catch (error) {
         if (!error.offline) {
             throw error;

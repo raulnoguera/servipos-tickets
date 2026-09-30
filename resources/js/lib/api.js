@@ -26,14 +26,18 @@ async function ensureCsrf() {
     if (csrfReady && xsrfToken()) {
         return;
     }
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 6000);
     try {
-        const response = await fetch('/sanctum/csrf-cookie', { credentials: 'same-origin' });
+        const response = await fetch('/sanctum/csrf-cookie', { credentials: 'same-origin', signal: controller.signal });
         csrfReady = response.ok;
     } catch {
         // Sin señal: si ya hay una cookie XSRF se intenta igual; el envío fallará y quedará en la bandeja.
         if (!xsrfToken()) {
             throw new ApiError(0, { message: 'Sin conexión con el servidor.' });
         }
+    } finally {
+        clearTimeout(timer);
     }
 }
 
@@ -56,6 +60,11 @@ export async function api(path, { method = 'GET', body, query, raw = false, time
 
     const headers = { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' };
     let payload = body;
+    // El teléfono ya sabe que no hay conexión: no esperar, el envío va a la bandeja.
+    // (Las consultas GET sí siguen, porque el service worker responde con lo guardado.)
+    if (method !== 'GET' && navigator.onLine === false) {
+        throw new ApiError(0, { message: 'Sin conexión con el servidor.' });
+    }
     if (method !== 'GET') {
         await ensureCsrf();
         headers['X-XSRF-TOKEN'] = xsrfToken();
