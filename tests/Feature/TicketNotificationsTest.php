@@ -67,7 +67,7 @@ class TicketNotificationsTest extends TestCase
         $this->actingAs($this->technician)->postJson("/api/v1/tickets/{$this->ticket->id}/status", ['status' => 'en_sitio'])->assertOk();
 
         $this->assertCount(2, $this->sent);
-        $this->assertSame(['abre@x.test', 'admin@x.test'], $this->sent[0]['to'], '"mine" no abrió el ticket; "none" y sin dispositivo no reciben');
+        $this->assertSame(['abre@x.test', 'admin@x.test', 'sin-dispositivo@x.test'], $this->sent[0]['to'], '"mine" no abrió el ticket y "none" no quiere avisos; sin dispositivo lo ve en la campana');
         $this->assertSame('TK-2026-00007 · En camino', $this->sent[0]['title']);
         $this->assertStringStartsWith('Jesus Ramos va hacia TOCUYITO', $this->sent[0]['body']);
         $this->assertSame('TK-2026-00007 · En sitio', $this->sent[1]['title']);
@@ -79,7 +79,7 @@ class TicketNotificationsTest extends TestCase
 
         $this->actingAs($this->technician)->postJson("/api/v1/tickets/{$this->ticket->id}/status", ['status' => 'en_transito']);
 
-        $this->assertSame(['abre@x.test', 'admin@x.test', 'mios@x.test'], $this->sent[0]['to']);
+        $this->assertSame(['abre@x.test', 'admin@x.test', 'mios@x.test', 'sin-dispositivo@x.test'], $this->sent[0]['to']);
     }
 
     public function test_pending_visit_notifies_staff_with_the_final_status(): void
@@ -96,7 +96,7 @@ class TicketNotificationsTest extends TestCase
         $this->visit($this->technician, 'Operativo');
 
         $this->assertCount(2, $this->sent);
-        $this->assertSame(['abre@x.test', 'admin@x.test'], $this->sent[0]['to']);
+        $this->assertSame(['abre@x.test', 'admin@x.test', 'sin-dispositivo@x.test'], $this->sent[0]['to']);
         $this->assertSame('✅ TK-2026-00007 concluido', $this->sent[0]['title']);
         $this->assertStringContainsString('tiempo total 2 h', $this->sent[0]['body']);
         $this->assertSame(['tecnico@x.test'], $this->sent[1]['to']);
@@ -107,7 +107,7 @@ class TicketNotificationsTest extends TestCase
     {
         $this->visit($this->opener, 'Operativo');
 
-        $this->assertSame(['admin@x.test'], $this->sent[0]['to'], 'el operador que registró el cierre no se avisa a sí mismo');
+        $this->assertSame(['admin@x.test', 'sin-dispositivo@x.test'], $this->sent[0]['to'], 'el operador que registró el cierre no se avisa a sí mismo');
         $this->assertSame(['tecnico@x.test'], $this->sent[1]['to']);
     }
 

@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ImportController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PushSubscriptionController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\TicketController;
@@ -26,6 +27,11 @@ Route::prefix('v1')->group(function () {
         Route::delete('push/subscriptions', [PushSubscriptionController::class, 'destroy']);
         Route::post('push/test', [PushSubscriptionController::class, 'test'])->middleware('throttle:5,1');
         Route::put('me/notifications', [PushSubscriptionController::class, 'preferences']);
+
+        Route::get('notifications', [NotificationController::class, 'index']);
+        Route::get('notifications/unread', [NotificationController::class, 'unread']);
+        Route::post('notifications/read-all', [NotificationController::class, 'readAll']);
+        Route::post('notifications/{id}/read', [NotificationController::class, 'read'])->whereNumber('id');
 
         // Tickets: el técnico solo ve y trabaja los suyos (TicketPolicy).
         Route::get('tickets', [TicketController::class, 'index']);

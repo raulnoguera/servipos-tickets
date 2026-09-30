@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { BellOff, BellRing, CheckCircle2, Send } from 'lucide-react';
+import { BellOff, BellRing, CheckCircle2, Send, Volume2 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { disablePush, enablePush, isIOS, pushState, sendTestPush } from '../lib/push';
-import { Alert, Button, Modal, cx, toast } from './ui';
+import { playChime, setSoundEnabled, soundEnabled } from '../lib/sound';
+import { Alert, Button, Modal, Toggle, cx, toast } from './ui';
 
 const SCOPES = [
     { value: 'all', label: 'Todos los tickets', hint: 'Avances y cierres de cualquier ticket.' },
@@ -23,6 +24,7 @@ export default function NotificationSettings({ open, onClose }) {
     const { user, updateUser, isTechnician } = useAuth();
     const [state, setState] = useState(null);
     const [busy, setBusy] = useState(null);
+    const [sound, setSound] = useState(soundEnabled);
 
     useEffect(() => {
         if (open) {
@@ -87,6 +89,25 @@ export default function NotificationSettings({ open, onClose }) {
                 {!isIOS() && state !== 'unsupported' && (
                     <p className="mt-3 text-xs text-muted">Actívelo en cada computadora o teléfono donde quiera recibir avisos.</p>
                 )}
+            </section>
+
+            <section className="mt-6 border-t border-line pt-5">
+                <div className="flex items-center justify-between gap-3">
+                    <div>
+                        <h3 className="flex items-center gap-1.5 text-sm font-bold text-ink"><Volume2 className="size-4" /> Sonido con la app abierta</h3>
+                        <p className="text-xs text-muted">Con la app cerrada se usa el sonido de notificaciones del dispositivo.</p>
+                    </div>
+                    <Toggle
+                        checked={sound}
+                        onChange={(on) => {
+                            setSoundEnabled(on);
+                            setSound(on);
+                            if (on) {
+                                playChime();
+                            }
+                        }}
+                    />
+                </div>
             </section>
 
             {!isTechnician && (

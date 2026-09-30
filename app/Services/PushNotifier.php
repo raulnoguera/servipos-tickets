@@ -7,6 +7,7 @@ use App\Models\AtmCondition;
 use App\Models\PushSubscription;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Models\UserNotification;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -18,7 +19,8 @@ use Throwable;
  * Notificaciones push del ciclo del ticket (RF-2.3 y seguimiento):
  * - al técnico: asignación, anulación y confirmación de cierre;
  * - a operadores y administradores: avances del técnico y cierre.
- * Si no hay claves VAPID configuradas, no hace nada.
+ * Todo aviso se guarda en la campana del usuario; el push se envía solo si hay
+ * claves VAPID y el usuario activó algún dispositivo.
  */
 class PushNotifier
 {
@@ -41,6 +43,8 @@ class PushNotifier
         }
 
         return $this->send($ticket->technician, [
+            'kind' => 'assigned',
+            'ticket_id' => $ticket->id,
             'title' => "Nuevo ticket {$ticket->number}",
             'body' => implode(' · ', array_filter([
                 "ATM {$ticket->atm->atm_number}",
@@ -58,6 +62,8 @@ class PushNotifier
         $ticket->loadMissing('atm');
 
         return $this->deliver($this->staffFor($ticket, $actor), [
+            'kind' => 'moved',
+            'ticket_id' => $ticket->id,
             'title' => "{$ticket->number} · ".($arrived ? 'En sitio' : 'En camino'),
             'body' => sprintf(
                 '%s %s %s (ATM %s) · %s',
@@ -78,6 +84,8 @@ class PushNotifier
         $ticket->loadMissing('atm');
 
         return $this->deliver($this->staffFor($ticket, $actor), [
+            'kind' => 'pending',
+            'ticket_id' => $ticket->id,
             'title' => "{$ticket->number} · {$ticket->status->label()}",
             'body' => "{$actor->name} registró la atención en {$ticket->atm->agency_name}: {$condition->name} · {$this->time($at)}",
             'url' => "/tickets/{$ticket->id}",
@@ -92,6 +100,8 @@ class PushNotifier
         $duration = $ticket->duration_ms !== null ? ' · tiempo total '.$this->duration($ticket->duration_ms) : '';
 
         $sent = $this->deliver($this->staffFor($ticket, $actor), [
+            'kind' => 'closed',
+            'ticket_id' => $ticket->id,
             'title' => "✅ {$ticket->number} concluido",
             'body' => "{$actor->name} cerró la atención en {$ticket->atm->agency_name} (ATM {$ticket->atm->atm_number}){$duration}",
             'url' => "/tickets/{$ticket->id}",
@@ -100,6 +110,8 @@ class PushNotifier
 
         if ($ticket->technician) {
             $sent += $this->send($ticket->technician, [
+                'kind' => 'closed',
+                'ticket_id' => $ticket->id,
                 'title' => "Cierre informado · {$ticket->number}",
                 'body' => "El ticket quedó concluido y el Call Center fue notificado{$duration}.",
                 'url' => "/tickets/{$ticket->id}",
@@ -119,6 +131,8 @@ class PushNotifier
         }
 
         return $this->send($ticket->technician, [
+            'kind' => 'cancelled',
+            'ticket_id' => $ticket->id,
             'title' => "Ticket anulado · {$ticket->number}",
             'body' => "Ya no es necesario atender el ATM {$ticket->atm->atm_number}.".($reason ? " Motivo: {$reason}" : ''),
             'url' => "/tickets/{$ticket->id}",
@@ -129,6 +143,7 @@ class PushNotifier
     /**
      * Operadores y administradores activos que quieren avisos de este ticket
      * (todos o solo los que abrieron), sin incluir a quien hizo la acción.
+     * Todos lo ven en la campana; el push llega solo a quien activó un dispositivo.
      *
      * @return Collection<int, User>
      */
@@ -141,28 +156,35 @@ class PushNotifier
             ->where(fn ($q) => $q
                 ->where('notify_scope', self::SCOPE_ALL)
                 ->orWhere(fn ($mine) => $mine->where('notify_scope', self::SCOPE_MINE)->where('id', $ticket->opened_by)))
-            ->whereHas('pushSubscriptions')
             ->get();
     }
 
     /**
-     * @param  array{title: string, body: string, url?: string, tag?: string}  $message
+     * @param  array{kind?: string, ticket_id?: int, title: string, body: string, url?: string, tag?: string}  $message
+     * @param  bool  $store  guardar en la campana (false para la notificación de prueba)
      */
-    public function send(User $user, array $message): int
+    public function send(User $user, array $message, bool $store = true): int
     {
-        return $this->deliver(collect([$user]), $message);
+        return $this->deliver(collect([$user]), $message, $store);
     }
 
     /**
-     * Envía el mensaje a todos los dispositivos de los usuarios indicados.
+     * Guarda el aviso en la campana de cada usuario y lo envía como push a
+     * todos sus dispositivos registrados.
      *
      * @param  Collection<int, User>  $users
-     * @param  array{title: string, body: string, url?: string, tag?: string}  $message
-     * @return int notificaciones entregadas
+     * @param  array{kind?: string, ticket_id?: int, title: string, body: string, url?: string, tag?: string}  $message
+     * @return int notificaciones push entregadas
      */
-    public function deliver(Collection $users, array $message): int
+    public function deliver(Collection $users, array $message, bool $store = true): int
     {
-        if (! $this->isEnabled() || $users->isEmpty()) {
+        if ($users->isEmpty()) {
+            return 0;
+        }
+        if ($store) {
+            $this->storeInInbox($users, $message);
+        }
+        if (! $this->isEnabled()) {
             return 0;
         }
         $subscriptions = PushSubscription::whereIn('user_id', $users->pluck('id'))->get();
@@ -177,7 +199,7 @@ class PushNotifier
                 'privateKey' => config('services.webpush.private_key'),
             ]], ['TTL' => 3600 * 12, 'urgency' => 'high']);
 
-            $payload = json_encode($message, JSON_UNESCAPED_UNICODE);
+            $payload = json_encode(array_intersect_key($message, array_flip(['kind', 'title', 'body', 'url', 'tag'])), JSON_UNESCAPED_UNICODE);
             foreach ($subscriptions as $subscription) {
                 $webPush->queueNotification(Subscription::create([
                     'endpoint' => $subscription->endpoint,
@@ -207,6 +229,29 @@ class PushNotifier
 
             return 0;
         }
+    }
+
+    /**
+     * @param  Collection<int, User>  $users
+     * @param  array<string, mixed>  $message
+     */
+    private function storeInInbox(Collection $users, array $message): void
+    {
+        $now = now();
+        UserNotification::insert($users->map(fn (User $user) => [
+            'user_id' => $user->id,
+            'ticket_id' => $message['ticket_id'] ?? null,
+            'kind' => $message['kind'] ?? 'info',
+            'title' => $message['title'],
+            'body' => mb_substr($message['body'], 0, 500),
+            'url' => $message['url'] ?? null,
+            'created_at' => $now,
+        ])->all());
+
+        // Limpieza del historial antiguo de estos usuarios.
+        UserNotification::whereIn('user_id', $users->pluck('id'))
+            ->where('created_at', '<', $now->copy()->subDays(UserNotification::KEEP_DAYS))
+            ->delete();
     }
 
     private function time(CarbonInterface $at): string

@@ -1,14 +1,14 @@
 import { Component, Suspense, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
-    BarChart3, Bell, Building2, ClipboardList, FileUp, LayoutDashboard, ListChecks, LogOut, Menu, PlusCircle, Users, Wrench, X,
+    BarChart3, Building2, ClipboardList, FileUp, LayoutDashboard, ListChecks, LogOut, Menu, PlusCircle, Users, Wrench, X,
 } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { initials } from '../lib/format';
 import { LoadingBlock, cx } from './ui';
 import { Logo } from './Logo';
 import { ConnectivityBar, OutboxSync } from './Offline';
-import NotificationSettings from './NotificationSettings';
+import NotificationBell, { PushListener } from './NotificationBell';
 
 const NAV = [
     { to: '/', label: 'Monitor', icon: LayoutDashboard, roles: ['admin', 'operator'], end: true },
@@ -59,7 +59,6 @@ function NavItems({ role, onNavigate }) {
 }
 
 function UserCard({ user, onLogout }) {
-    const [settings, setSettings] = useState(false);
     return (
         <div className="m-3 flex items-center gap-3 rounded-xl bg-white/5 p-3">
             <div className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-500 text-xs font-bold text-white">{initials(user.name)}</div>
@@ -67,13 +66,9 @@ function UserCard({ user, onLogout }) {
                 <div className="truncate text-sm font-semibold text-white">{user.name}</div>
                 <div className="truncate text-xs text-white/50">{user.role_label}</div>
             </div>
-            <button type="button" onClick={() => setSettings(true)} className="rounded-lg p-2 text-white/60 hover:bg-white/10 hover:text-white" title="Notificaciones" aria-label="Notificaciones">
-                <Bell className="size-4" />
-            </button>
             <button type="button" onClick={onLogout} className="rounded-lg p-2 text-white/60 hover:bg-white/10 hover:text-white" title="Cerrar sesión" aria-label="Cerrar sesión">
                 <LogOut className="size-4" />
             </button>
-            <NotificationSettings open={settings} onClose={() => setSettings(false)} />
         </div>
     );
 }
@@ -114,8 +109,9 @@ export default function Layout() {
         <div className="min-h-dvh lg:pl-64">
             {/* Barra lateral (escritorio) */}
             <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-navy-900 lg:flex">
-                <div className="px-6 py-6">
+                <div className="flex items-center justify-between py-6 pr-4 pl-6">
                     <Logo light />
+                    <NotificationBell />
                 </div>
                 <div className="flex-1 overflow-y-auto pb-4">
                     <NavItems role={user.role} />
@@ -128,9 +124,12 @@ export default function Layout() {
                 <div className="flex h-14 items-center">
                     <Logo light />
                 </div>
-                <button type="button" onClick={() => setOpen(true)} className="rounded-lg p-2 text-white/80 hover:bg-white/10" aria-label="Abrir menú">
-                    <Menu className="size-6" />
-                </button>
+                <div className="flex items-center gap-1">
+                    <NotificationBell />
+                    <button type="button" onClick={() => setOpen(true)} className="rounded-lg p-2 text-white/80 hover:bg-white/10" aria-label="Abrir menú">
+                        <Menu className="size-6" />
+                    </button>
+                </div>
             </header>
 
             {open && (
@@ -153,6 +152,7 @@ export default function Layout() {
 
             <main key={location.pathname} className="mx-auto w-full max-w-[1400px] px-4 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:px-6 lg:px-8 lg:py-8">
                 <OutboxSync />
+                <PushListener />
                 <ConnectivityBar />
                 <PageErrorBoundary key={location.pathname}>
                     <Suspense fallback={<LoadingBlock />}>

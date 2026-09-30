@@ -149,14 +149,27 @@ self.addEventListener('push', (event) => {
         data = { title: 'ServiPos', body: event.data?.text() };
     }
     event.waitUntil(
-        self.registration.showNotification(data.title || 'ServiPos Tickets', {
-            body: data.body || '',
-            tag: data.tag,
-            renotify: Boolean(data.tag),
-            icon: '/icons/icon-192.png',
-            badge: '/icons/icon-192.png',
-            data: { url: data.url || '/' },
-        }),
+        (async () => {
+            const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+            // Toda ventana abierta actualiza la campana.
+            windows.forEach((client) => client.postMessage({ type: 'push', data }));
+
+            // Con la app en primer plano el aviso se muestra dentro de ella (con su sonido);
+            // si no, notificación del sistema con sonido y vibración del dispositivo.
+            if (windows.some((client) => client.focused && client.visibilityState === 'visible')) {
+                return;
+            }
+            await self.registration.showNotification(data.title || 'ServiPos Tickets', {
+                body: data.body || '',
+                tag: data.tag,
+                renotify: Boolean(data.tag),
+                silent: false,
+                vibrate: [200, 100, 200],
+                icon: '/icons/icon-192.png',
+                badge: '/icons/icon-192.png',
+                data: { url: data.url || '/' },
+            });
+        })(),
     );
 });
 

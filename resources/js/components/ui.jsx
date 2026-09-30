@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from 'react';
 import {
-    AlertTriangle, CheckCircle2, CircleDot, Clock3, Inbox, Loader2, MapPin, PackageX, UserCheck, X, XCircle, Truck,
+    AlertTriangle, Bell, CheckCircle2, CircleDot, Clock3, Inbox, Loader2, MapPin, PackageX, UserCheck, X, XCircle, Truck,
 } from 'lucide-react';
 import { formatDuration } from '../lib/format';
 
@@ -355,31 +355,45 @@ export function Pagination({ meta, onPage }) {
 /* ---------- Avisos flotantes ---------- */
 
 let pushToast = () => {};
-export const toast = (message, tone = 'ok') => pushToast({ message, tone, id: Math.random() });
+/**
+ * @param {string} message
+ * @param {'ok'|'error'|'info'} tone
+ * @param {{title?: string, onClick?: () => void, duration?: number}} options
+ */
+export const toast = (message, tone = 'ok', options = {}) => pushToast({ message, tone, id: Math.random(), ...options });
 
 export function Toaster() {
     const [items, setItems] = useState([]);
     useEffect(() => {
         pushToast = (t) => {
-            setItems((list) => [...list, t]);
-            setTimeout(() => setItems((list) => list.filter((i) => i.id !== t.id)), 4000);
+            setItems((list) => [...list.slice(-2), t]);
+            setTimeout(() => setItems((list) => list.filter((i) => i.id !== t.id)), t.duration ?? 4000);
         };
     }, []);
     return (
         <div className="pointer-events-none fixed inset-x-0 bottom-4 z-[60] flex flex-col items-center gap-2 px-4 sm:bottom-6 sm:right-6 sm:left-auto sm:items-end">
-            {items.map((t) => (
-                <div
-                    key={t.id}
-                    role="status"
-                    className={cx(
-                        'pointer-events-auto flex max-w-sm items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-white shadow-lg',
-                        t.tone === 'ok' ? 'bg-navy-900' : 'bg-red-600',
-                    )}
-                >
-                    {t.tone === 'ok' ? <CheckCircle2 className="size-4 text-emerald-300" /> : <AlertTriangle className="size-4" />}
-                    {t.message}
-                </div>
-            ))}
+            {items.map((t) => {
+                const Tag = t.onClick ? 'button' : 'div';
+                return (
+                    <Tag
+                        key={t.id}
+                        type={t.onClick ? 'button' : undefined}
+                        role="status"
+                        onClick={t.onClick ? () => { t.onClick(); setItems((list) => list.filter((i) => i.id !== t.id)); } : undefined}
+                        className={cx(
+                            'pointer-events-auto flex max-w-sm items-start gap-2.5 rounded-xl px-4 py-3 text-left text-sm font-medium text-white shadow-lg',
+                            t.tone === 'error' ? 'bg-red-600' : 'bg-navy-900',
+                            t.onClick && 'cursor-pointer hover:bg-navy-800',
+                        )}
+                    >
+                        {t.tone === 'error' ? <AlertTriangle className="mt-0.5 size-4 shrink-0" /> : t.tone === 'info' ? <Bell className="mt-0.5 size-4 shrink-0 text-brand-300" /> : <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-300" />}
+                        <span>
+                            {t.title && <span className="block font-semibold">{t.title}</span>}
+                            <span className={t.title ? 'text-white/75' : undefined}>{t.message}</span>
+                        </span>
+                    </Tag>
+                );
+            })}
         </div>
     );
 }

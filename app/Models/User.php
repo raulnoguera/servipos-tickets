@@ -58,6 +58,11 @@ class User extends Authenticatable
         return $this->hasMany(PushSubscription::class);
     }
 
+    public function inbox(): HasMany
+    {
+        return $this->hasMany(UserNotification::class)->latest('created_at')->latest('id');
+    }
+
     public function hasRole(Role ...$roles): bool
     {
         return in_array($this->role, $roles, true);

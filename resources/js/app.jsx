@@ -73,6 +73,10 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
         if (event.data?.type === 'navigate') {
             window.location.assign(event.data.url);
         }
+        if (event.data?.type === 'push') {
+            // Llegó un aviso: la campana se actualiza y, si la app está a la vista, suena y se muestra.
+            window.dispatchEvent(new CustomEvent('servipos:push', { detail: event.data.data }));
+        }
     });
 }
 

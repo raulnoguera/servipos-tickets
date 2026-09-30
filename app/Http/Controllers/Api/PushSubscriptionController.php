@@ -68,7 +68,7 @@ class PushSubscriptionController extends Controller
             'body' => 'Así le avisaremos cuando le asignen un ticket.',
             'url' => '/',
             'tag' => 'prueba',
-        ]);
+        ], store: false);
 
         return response()->json(['delivered' => $delivered]);
     }
