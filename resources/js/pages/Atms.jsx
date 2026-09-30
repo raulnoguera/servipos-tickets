@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Building2, Pencil, Plus, Search } from 'lucide-react';
 import { api } from '../lib/api';
@@ -135,8 +136,8 @@ export default function Atms() {
                             <tbody>
                                 {data.data.map((a) => (
                                     <tr key={a.id} className="hover:bg-brand-50/40">
-                                        <Td className="font-semibold text-ink tabular">
-                                            {a.atm_number} {!a.active && <Badge className="ml-1">Inactivo</Badge>}
+                                        <Td className="font-semibold tabular">
+                                            <Link to={`/cajeros/${a.id}`} className="text-brand-600 hover:underline" title="Ver hoja de vida">{a.atm_number}</Link> {!a.active && <Badge className="ml-1">Inactivo</Badge>}
                                         </Td>
                                         <Td className="text-muted tabular">{a.serial ?? '—'}</Td>
                                         <Td className="max-w-[260px]">

@@ -104,12 +104,14 @@ export default function Users() {
             )}
             <Card>
                 <div className="border-b border-line p-4">
-                    <Select value={role} onChange={(e) => setRole(e.target.value)} className="sm:w-60" aria-label="Rol">
-                        <option value="">Todos los roles</option>
-                        <option value="admin">Administradores</option>
-                        <option value="operator">Operadores Call Center</option>
-                        <option value="technician">Técnicos de campo</option>
-                    </Select>
+                    <div className="sm:w-60">
+                        <Select value={role} onChange={(e) => setRole(e.target.value)} aria-label="Rol">
+                            <option value="">Todos los roles</option>
+                            <option value="admin">Administradores</option>
+                            <option value="operator">Operadores Call Center</option>
+                            <option value="technician">Técnicos de campo</option>
+                        </Select>
+                    </div>
                 </div>
                 {isLoading ? (
                     <LoadingBlock />

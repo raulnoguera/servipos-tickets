@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-    ArrowLeft, Ban, Building2, ClipboardCheck, FileImage, History, MapPin, MessageCircle, Navigation, Package, Truck, UserPlus,
+    ArrowLeft, Ban, Building2, ClipboardCheck, FileImage, MapPin, MessageCircle, Navigation, Package, Truck, UserPlus,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
@@ -14,11 +14,8 @@ import {
     Alert, Badge, Button, Card, CardHeader, Elapsed, EmptyState, Field, Input, LoadingBlock, Modal, Select, StatusBadge, toast,
 } from '../components/ui';
 import VisitForm from '../components/VisitForm';
-
-const STATUS_LABEL = {
-    abierto: 'Abierto', asignado: 'Asignado', en_transito: 'En tránsito', en_sitio: 'En sitio', concluido: 'Concluido',
-    pendiente_repuesto: 'Pend. repuesto', pendiente_validacion: 'Pend. validación', anulado: 'Anulado',
-};
+import { PriorityBadge, SlaBadge } from '../components/Sla';
+import { ActivityCard, EditButton, EditTicketModal, SlaCard, WatchButton } from '../components/TicketTracking';
 
 function Info({ label, children }) {
     return (
@@ -223,12 +220,18 @@ export default function TicketDetail() {
                     <div className="flex flex-wrap items-center gap-3">
                         <h1 className="font-display text-3xl font-extrabold tracking-tight tabular">{t.number}</h1>
                         <StatusBadge status={t.status} />
+                        <PriorityBadge priority={t.priority} />
+                        {!finished && <SlaBadge sla={t.sla} />}
                     </div>
                     <p className="mt-1 text-sm text-muted">
                         Abierto {formatDateTime(t.opened_at)}{t.opened_by && ` por ${t.opened_by}`}
                         {t.bank_reference && <> · Caso banco <b className="text-ink">{t.bank_reference}</b></>}
                         {t.source === 'import' && <> · <Badge>Histórico Excel</Badge></>}
                     </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                    <WatchButton ticket={t} />
+                    {canManage && <EditButton onClick={() => setModal('edit')} />}
                 </div>
                 <div className="rounded-xl border border-line bg-white px-4 py-2.5 text-right">
                     <p className="text-xs font-semibold text-muted">{finished ? 'Tiempo total del ciclo' : 'Tiempo transcurrido'}</p>
@@ -298,11 +301,18 @@ export default function TicketDetail() {
                             )}
                         </div>
                     </Card>
+
+                    <ActivityCard ticket={t} />
                 </div>
 
                 <div className="space-y-6">
+                    <SlaCard ticket={t} />
+
                     <Card>
-                        <CardHeader title="Cajero" actions={<Building2 className="size-5 text-brand-500" />} />
+                        <CardHeader
+                            title="Cajero"
+                            actions={canManage ? <Link to={`/cajeros/${t.atm.id}`} className="text-sm font-semibold text-brand-600 hover:underline">Hoja de vida</Link> : <Building2 className="size-5 text-brand-500" />}
+                        />
                         <div className="p-5">
                             <p className="text-xs font-semibold tracking-wide text-brand-600 uppercase">ATM {t.atm.atm_number}</p>
                             <p className="font-display text-lg font-bold text-ink">{t.atm.agency_name}</p>
@@ -333,21 +343,6 @@ export default function TicketDetail() {
                         </div>
                     </Card>
 
-                    <Card>
-                        <CardHeader title="Historial" actions={<History className="size-5 text-muted" />} />
-                        <ol className="relative space-y-4 p-5 before:absolute before:top-6 before:bottom-6 before:left-[27px] before:w-px before:bg-line">
-                            {t.events.map((e, i) => (
-                                <li key={i} className="relative flex gap-3 pl-0">
-                                    <span className="relative z-10 mt-1 size-3 shrink-0 rounded-full border-2 border-white bg-brand-500 ring-1 ring-brand-200" />
-                                    <div className="min-w-0 text-sm">
-                                        <p className="font-semibold text-ink">{e.to ? STATUS_LABEL[e.to] ?? e.to : 'Cambio'}</p>
-                                        {e.note && <p className="text-body">{e.note}</p>}
-                                        <p className="text-xs text-muted">{formatDateTime(e.at)}{e.user && ` · ${e.user}`}</p>
-                                    </div>
-                                </li>
-                            ))}
-                        </ol>
-                    </Card>
                 </div>
             </div>
 
@@ -356,6 +351,7 @@ export default function TicketDetail() {
             </Modal>
             {modal === 'assign' && <AssignModal ticket={t} open onClose={() => setModal(null)} />}
             {modal === 'cancel' && <CancelModal ticket={t} open onClose={() => setModal(null)} />}
+            {modal === 'edit' && <EditTicketModal ticket={t} open onClose={() => setModal(null)} />}
             <Modal open={!!photo} onClose={() => setPhoto(null)} title="Constancia de servicio" size="lg">
                 {photo && <img src={photo} alt="Constancia de servicio" className="mx-auto max-h-[75dvh] rounded-lg" />}
             </Modal>

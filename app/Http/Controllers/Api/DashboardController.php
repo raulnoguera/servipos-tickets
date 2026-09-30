@@ -44,6 +44,8 @@ class DashboardController extends Controller
                 'opened' => Ticket::where('opened_at', '>=', $from)->count(),
                 'closed' => (clone $closedInPeriod)->count(),
                 'avg_duration_ms' => (int) round((float) (clone $closedInPeriod)->whereNotNull('duration_ms')->avg('duration_ms')),
+                'sla_breached' => Ticket::whereNotIn('status', [TicketStatus::Closed, TicketStatus::Cancelled])->sla('breached')->count(),
+                'sla_at_risk' => Ticket::whereNotIn('status', [TicketStatus::Closed, TicketStatus::Cancelled])->sla('at_risk')->whereNot(fn ($q) => $q->sla('breached'))->count(),
             ],
             'daily' => $this->daily($now),
             'by_fault' => $this->byFault($from),

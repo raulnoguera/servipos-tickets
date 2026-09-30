@@ -44,3 +44,13 @@ export function mapsUrl(atm) {
     const query = [atm?.address, atm?.agency_name, atm?.state, 'Venezuela'].filter(Boolean).join(', ');
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
+
+export const formatPct = (value) => (value === null || value === undefined ? '—' : `${String(value).replace('.', ',')} %`);
+
+/** Primer día del mes y hoy, en formato AAAA-MM-DD (hora local). */
+export function monthToDate() {
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    return [`${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`, today];
+}

@@ -61,3 +61,62 @@ export function HBarChart({ data, labelKey, valueKey, unit = '', color = SERIES.
         </ResponsiveContainer>
     );
 }
+
+/* Paleta categórica validada (orden fijo) para series múltiples, p. ej. tendencia de repuestos. */
+export const CATEGORICAL = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4'];
+
+const monthLabel = (ym) => new Date(`${ym}-01T00:00:00`).toLocaleDateString('es-VE', { month: 'short', year: '2-digit' });
+const weekLabel = (iso) => `Sem. ${new Date(`${iso}T00:00:00`).toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}`;
+
+/** Abiertos vs. concluidos por semana (dos series, columnas agrupadas). */
+export function WeeklyChart({ data }) {
+    return (
+        <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: -18 }} barGap={2} barCategoryGap="28%">
+                <CartesianGrid stroke={GRID} vertical={false} />
+                <XAxis dataKey="week" tickFormatter={weekLabel} tick={{ fill: AXIS, fontSize: 11 }} tickLine={false} axisLine={{ stroke: GRID }} />
+                <YAxis allowDecimals={false} tick={{ fill: AXIS, fontSize: 11 }} tickLine={false} axisLine={false} />
+                <Tooltip content={<TooltipBox labelFormatter={weekLabel} />} cursor={{ fill: '#f1f5ff' }} />
+                <Legend verticalAlign="top" align="right" height={28} iconType="square" iconSize={10} wrapperStyle={{ fontSize: 12, color: AXIS }} />
+                <Bar dataKey="opened" name="Abiertos" fill={SERIES.opened} maxBarSize={22} radius={[4, 4, 0, 0]} />
+                <Bar dataKey="closed" name="Concluidos" fill={SERIES.closed} maxBarSize={22} radius={[4, 4, 0, 0]} />
+            </BarChart>
+        </ResponsiveContainer>
+    );
+}
+
+/** Columnas de una sola serie con el valor encima (p. ej. antigüedad de pendientes). */
+export function ColumnChart({ data, labelKey, valueKey, name = 'Total', color = SERIES.single, height = 220 }) {
+    return (
+        <ResponsiveContainer width="100%" height={height}>
+            <BarChart data={data} margin={{ top: 22, right: 8, bottom: 0, left: -18 }} barCategoryGap="30%">
+                <CartesianGrid stroke={GRID} vertical={false} />
+                <XAxis dataKey={labelKey} tick={{ fill: AXIS, fontSize: 11 }} tickLine={false} axisLine={{ stroke: GRID }} interval={0} />
+                <YAxis allowDecimals={false} tick={{ fill: AXIS, fontSize: 11 }} tickLine={false} axisLine={false} />
+                <Tooltip content={<TooltipBox />} cursor={{ fill: '#f1f5ff' }} />
+                <Bar dataKey={valueKey} name={name} fill={color} maxBarSize={48} radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey={valueKey} position="top" style={{ fill: '#00194c', fontSize: 12, fontWeight: 600 }} />
+                </Bar>
+            </BarChart>
+        </ResponsiveContainer>
+    );
+}
+
+/** Tendencia mensual de hasta 5 repuestos (líneas con leyenda; la tabla acompaña los valores). */
+export function TrendChart({ months, series }) {
+    const data = months.map((m, i) => Object.fromEntries([['month', m], ...series.map((s) => [s.name, s.values[i]])]));
+    return (
+        <ResponsiveContainer width="100%" height={260}>
+            <LineChart data={data} margin={{ top: 8, right: 16, bottom: 0, left: -18 }}>
+                <CartesianGrid stroke={GRID} vertical={false} />
+                <XAxis dataKey="month" tickFormatter={monthLabel} tick={{ fill: AXIS, fontSize: 11 }} tickLine={false} axisLine={{ stroke: GRID }} />
+                <YAxis allowDecimals={false} tick={{ fill: AXIS, fontSize: 11 }} tickLine={false} axisLine={false} />
+                <Tooltip content={<TooltipBox labelFormatter={monthLabel} />} cursor={{ stroke: '#b6c1db', strokeWidth: 1 }} />
+                <Legend verticalAlign="top" align="right" height={36} iconType="plainline" iconSize={14} wrapperStyle={{ fontSize: 12, color: AXIS }} />
+                {series.map((s, i) => (
+                    <Line key={s.name} type="linear" dataKey={s.name} stroke={CATEGORICAL[i]} strokeWidth={2} dot={{ r: 3, strokeWidth: 0, fill: CATEGORICAL[i] }} activeDot={{ r: 5, stroke: '#fff', strokeWidth: 2 }} />
+                ))}
+            </LineChart>
+        </ResponsiveContainer>
+    );
+}

@@ -14,6 +14,8 @@ const TicketNew = lazy(() => import('./pages/TicketNew'));
 const TicketDetail = lazy(() => import('./pages/TicketDetail'));
 const TechnicianHome = lazy(() => import('./pages/TechnicianHome'));
 const Atms = lazy(() => import('./pages/Atms'));
+const AtmHistory = lazy(() => import('./pages/AtmHistory'));
+const Board = lazy(() => import('./pages/Board'));
 const Catalogs = lazy(() => import('./pages/Catalogs'));
 const Users = lazy(() => import('./pages/Users'));
 const Reports = lazy(() => import('./pages/Reports'));
@@ -51,6 +53,8 @@ function AppRoutes() {
                 <Route path="tickets/nuevo" element={<Guard roles={staff}><TicketNew /></Guard>} />
                 <Route path="tickets/:id" element={<TicketDetail />} />
                 <Route path="cajeros" element={<Guard roles={staff}><Atms /></Guard>} />
+                <Route path="cajeros/:id" element={<Guard roles={staff}><AtmHistory /></Guard>} />
+                <Route path="tablero" element={<Guard roles={staff}><Board /></Guard>} />
                 <Route path="reportes" element={<Guard roles={staff}><Reports /></Guard>} />
                 <Route path="catalogos" element={<Guard roles={['admin']}><Catalogs /></Guard>} />
                 <Route path="usuarios" element={<Guard roles={['admin']}><Users /></Guard>} />

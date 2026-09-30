@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, CheckCircle2, Clock3, PackageX, Plus, RefreshCw, Siren, Wrench } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock3, PackageX, Plus, RefreshCw, Siren, TimerOff, Wrench } from 'lucide-react';
 import { api } from '../lib/api';
 import { formatDuration, formatNumber, initials } from '../lib/format';
 import {
@@ -87,6 +87,19 @@ export default function Dashboard() {
                         <Kpi icon={CheckCircle2} tone="ok" label="Concluidos" value={k.closed} detail={`${k.opened} abiertos ${PERIOD_TEXT[period]}`} to="/tickets?filtro=concluido" />
                         <Kpi icon={Clock3} tone="navy" label="Tiempo promedio" value={k.avg_duration_ms ? formatDuration(k.avg_duration_ms) : '—'} detail={`De apertura a cierre, ${PERIOD_TEXT[period]}`} />
                     </div>
+
+                    {(k.sla_breached > 0 || k.sla_at_risk > 0) && (
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <Link to="/tickets?filtro=vencidos" className="flex items-center gap-4 rounded-xl border border-red-200 bg-red-50 p-4 transition hover:shadow-md">
+                                <span className="grid size-10 place-items-center rounded-lg bg-red-600 text-white"><TimerOff className="size-5" /></span>
+                                <span><span className="block font-display text-2xl font-extrabold text-red-700 tabular">{k.sla_breached}</span><span className="text-sm font-semibold text-red-800">tickets en curso con SLA vencido</span></span>
+                            </Link>
+                            <Link to="/tickets?filtro=por_vencer" className="flex items-center gap-4 rounded-xl border border-amber-200 bg-amber-50 p-4 transition hover:shadow-md">
+                                <span className="grid size-10 place-items-center rounded-lg bg-amber-500 text-white"><Clock3 className="size-5" /></span>
+                                <span><span className="block font-display text-2xl font-extrabold text-amber-800 tabular">{k.sla_at_risk}</span><span className="text-sm font-semibold text-amber-900">tickets por vencer (más del 80 % del tiempo)</span></span>
+                            </Link>
+                        </div>
+                    )}
 
                     <div className="grid gap-6 xl:grid-cols-3">
                         <Card className="xl:col-span-2">

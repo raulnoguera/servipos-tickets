@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, Pencil, Plus, X } from 'lucide-react';
 import { api } from '../lib/api';
 import { useCatalogs } from '../lib/queries';
 import { Badge, Button, Card, Input, LoadingBlock, PageHeader, Select, StatusBadge, Toggle, cx, toast } from '../components/ui';
+import { PriorityBadge } from '../components/Sla';
 
 const TABS = [
     { type: 'fault-types', key: 'fault_types', label: 'Tipos de falla', hint: 'Motivos de visita (Dispensación, Impresora, Comunicación…)' },
@@ -11,7 +12,69 @@ const TABS = [
     { type: 'atm-conditions', key: 'atm_conditions', label: 'Estatus final', hint: 'Cómo queda el cajero y a qué estado lleva el ticket' },
     { type: 'banks', key: 'banks', label: 'Bancos', hint: 'Clientes bancarios' },
     { type: 'states', key: 'states', label: 'Estados', hint: 'Estados y regiones de cobertura' },
+    { type: 'sla', key: 'sla', label: 'SLA', hint: 'Metas de tiempo por prioridad' },
 ];
+
+const toHours = (minutes) => (minutes ? String(Math.round((minutes / 60) * 100) / 100).replace('.', ',') : '');
+const toMinutes = (hours) => {
+    const n = parseFloat(String(hours).replace(',', '.'));
+    return Number.isFinite(n) && n > 0 ? Math.round(n * 60) : null;
+};
+
+/** Metas de SLA por prioridad (en horas en pantalla; minutos en el servidor). */
+function SlaSettings() {
+    const queryClient = useQueryClient();
+    const { data, isLoading } = useQuery({ queryKey: ['sla-policies'], queryFn: () => api('sla-policies') });
+    const [rows, setRows] = useState(null);
+    const current = rows ?? data?.data.map((p) => ({ ...p, response: toHours(p.response_minutes), resolution: toHours(p.resolution_minutes) }));
+    const save = useMutation({
+        mutationFn: () => api('sla-policies', {
+            method: 'PUT',
+            body: { policies: current.map((p) => ({ priority: p.priority, response_minutes: toMinutes(p.response), resolution_minutes: toMinutes(p.resolution) })) },
+        }),
+        onSuccess: (r) => {
+            queryClient.setQueryData(['sla-policies'], r);
+            queryClient.invalidateQueries({ queryKey: ['tickets'] });
+            setRows(null);
+            toast('Metas de SLA guardadas');
+        },
+        onError: (e) => toast(e.message, 'error'),
+    });
+    if (isLoading || !current) {
+        return <LoadingBlock />;
+    }
+    const setField = (i, key) => (e) => setRows(current.map((r, j) => (j === i ? { ...r, [key]: e.target.value } : r)));
+
+    return (
+        <div className="p-5">
+            <div className="overflow-x-auto">
+                <table className="w-full min-w-[480px] text-sm">
+                    <thead>
+                        <tr className="text-left text-xs font-bold tracking-wide text-muted uppercase">
+                            <th className="pb-2">Prioridad</th><th className="pb-2">Llegada al sitio (horas)</th><th className="pb-2">Resolución (horas)</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-line">
+                        {current.map((p, i) => (
+                            <tr key={p.priority}>
+                                <td className="py-2.5 pr-3"><PriorityBadge priority={p.priority} /></td>
+                                <td className="py-2.5 pr-3"><Input value={p.response} onChange={setField(i, 'response')} inputMode="decimal" placeholder="Sin meta" className="w-36 tabular" aria-label={`Llegada ${p.label}`} /></td>
+                                <td className="py-2.5"><Input value={p.resolution} onChange={setField(i, 'resolution')} inputMode="decimal" placeholder="Sin meta" className="w-36 tabular" aria-label={`Resolución ${p.label}`} /></td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+            <p className="mt-3 text-xs text-muted">
+                Ejemplo: 1,5 = 1 hora 30 minutos. Deje vacío para no medir esa meta. El reloj corre desde la apertura del ticket y no se detiene mientras espera repuesto.
+                Los valores iniciales son de ejemplo: ajústelos a lo acordado con cada banco.
+            </p>
+            <div className="mt-4 flex justify-end">
+                <Button loading={save.isPending} disabled={!rows} onClick={() => save.mutate()}>Guardar metas</Button>
+            </div>
+        </div>
+    );
+}
 
 const RESULT_STATUSES = ['concluido', 'pendiente_repuesto', 'pendiente_validacion'];
 
@@ -89,7 +152,7 @@ export default function Catalogs() {
                             )}
                         >
                             {t.label}
-                            {data && <Badge className={tab.type === t.type ? 'bg-white/15 text-white ring-white/20' : ''}>{data[t.key]?.length}</Badge>}
+                            {data && data[t.key] && <Badge className={tab.type === t.type ? 'bg-white/15 text-white ring-white/20' : ''}>{data[t.key].length}</Badge>}
                         </button>
                     ))}
                 </nav>
@@ -98,11 +161,13 @@ export default function Catalogs() {
                         <h2 className="text-base font-bold">{tab.label}</h2>
                         <p className="text-sm text-muted">{tab.hint}</p>
                     </div>
+                    {tab.type === 'sla' ? <SlaSettings /> : (<>
                     <form className="flex gap-2 border-b border-line bg-surface/60 px-5 py-3" onSubmit={(e) => { e.preventDefault(); add.mutate(); }}>
                         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={`Agregar a ${tab.label.toLowerCase()}…`} required />
                         <Button type="submit" icon={Plus} loading={add.isPending}>Agregar</Button>
                     </form>
                     {isLoading ? <LoadingBlock /> : <ul className="divide-y divide-line">{items.map((i) => <Row key={`${tab.type}-${i.id}`} tab={tab} item={i} />)}</ul>}
+                    </>)}
                 </Card>
             </div>
         </>

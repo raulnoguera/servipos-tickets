@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Download, Plus, Search } from 'lucide-react';
 import { api } from '../lib/api';
+import { PriorityBadge, SlaBadge } from '../components/Sla';
 import { useCatalogs } from '../lib/queries';
 import { formatDateTime } from '../lib/format';
 import {
@@ -15,6 +16,8 @@ const TABS = [
     { value: 'pendiente_repuesto', label: 'Pend. repuesto', query: { status: 'pendiente_repuesto' } },
     { value: 'pendiente_validacion', label: 'Pend. validación', query: { status: 'pendiente_validacion' } },
     { value: 'concluido', label: 'Concluidos', query: { status: 'concluido' } },
+    { value: 'vencidos', label: 'SLA vencido', query: { sla: 'breached', open: 1 } },
+    { value: 'por_vencer', label: 'Por vencer', query: { sla: 'at_risk', open: 1 } },
     { value: 'anulado', label: 'Anulados', query: { status: 'anulado' } },
     { value: 'todos', label: 'Todos', query: {} },
 ];
@@ -28,6 +31,8 @@ export default function Tickets() {
     const [debounced, setDebounced] = useState(q);
     const technician = params.get('tecnico') || '';
     const bank = params.get('banco') || '';
+    const priority = params.get('prioridad') || '';
+    const slaParam = params.get('sla') || '';
     const page = Number(params.get('pagina') || 1);
 
     useEffect(() => {
@@ -45,8 +50,8 @@ export default function Tickets() {
     };
 
     const { data, isLoading } = useQuery({
-        queryKey: ['tickets', tab.value, debounced, technician, bank, page],
-        queryFn: () => api('tickets', { query: { ...tab.query, q: debounced, technician_id: technician, bank_id: bank, page } }),
+        queryKey: ['tickets', tab.value, debounced, technician, bank, priority, slaParam, page],
+        queryFn: () => api('tickets', { query: { ...tab.query, ...(slaParam ? { sla: slaParam } : {}), q: debounced, technician_id: technician, bank_id: bank, priority, sort: priority ? undefined : 'priority', page } }),
         placeholderData: keepPreviousData,
         refetchInterval: 30000,
     });
@@ -83,7 +88,7 @@ export default function Tickets() {
             </div>
 
             <Card>
-                <div className="grid gap-3 border-b border-line p-4 sm:grid-cols-[1fr_220px_220px]">
+                <div className="grid gap-3 border-b border-line p-4 sm:grid-cols-2 lg:grid-cols-[1fr_200px_200px_170px]">
                     <div className="relative">
                         <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-faint" />
                         <Input value={q} onChange={(e) => { setQ(e.target.value); set('q', e.target.value); }} placeholder="Buscar por N° de ticket, ATM, agencia o caso del banco" className="pl-9" />
@@ -95,6 +100,10 @@ export default function Tickets() {
                     <Select value={bank} onChange={(e) => set('banco', e.target.value)} aria-label="Banco">
                         <option value="">Todos los bancos</option>
                         {catalogs?.banks.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    </Select>
+                    <Select value={priority} onChange={(e) => set('prioridad', e.target.value)} aria-label="Prioridad">
+                        <option value="">Toda prioridad</option>
+                        {catalogs?.priorities?.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                     </Select>
                 </div>
 
@@ -108,14 +117,14 @@ export default function Tickets() {
                         <Table className="hidden md:block">
                             <thead>
                                 <tr>
-                                    <Th>Ticket</Th><Th>ATM</Th><Th>Agencia</Th><Th>Falla</Th><Th>Técnico</Th><Th>Estado</Th><Th className="text-right">Tiempo</Th>
+                                    <Th>Ticket</Th><Th>ATM</Th><Th>Agencia</Th><Th>Falla</Th><Th>Técnico</Th><Th>Estado</Th><Th>SLA</Th><Th className="text-right">Tiempo</Th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {data.data.map((t) => (
                                     <tr key={t.id} onClick={() => navigate(`/tickets/${t.id}`)} className="cursor-pointer hover:bg-brand-50/50">
                                         <Td className="whitespace-nowrap">
-                                            <div className="font-semibold text-brand-600 tabular">{t.number}</div>
+                                            <div className="flex items-center gap-1.5"><span className="font-semibold text-brand-600 tabular">{t.number}</span>{['alta', 'critica'].includes(t.priority) && <PriorityBadge priority={t.priority} size="sm" />}</div>
                                             <div className="text-xs text-muted">{formatDateTime(t.opened_at)}</div>
                                         </Td>
                                         <Td className="font-medium text-ink tabular">{t.atm.atm_number}</Td>
@@ -126,6 +135,7 @@ export default function Tickets() {
                                         <Td className="max-w-[160px] truncate">{t.fault_type ?? '—'}</Td>
                                         <Td className="whitespace-nowrap">{t.technician?.name ?? <span className="text-faint">Sin asignar</span>}</Td>
                                         <Td><StatusBadge status={t.status} size="sm" /></Td>
+                                        <Td><SlaBadge sla={t.sla} size="sm" /></Td>
                                         <Td className="text-right"><Elapsed ticket={t} /></Td>
                                     </tr>
                                 ))}
@@ -138,7 +148,7 @@ export default function Tickets() {
                                 <li key={t.id}>
                                     <Link to={`/tickets/${t.id}`} className="block px-4 py-3.5 active:bg-surface">
                                         <div className="flex items-center justify-between gap-2">
-                                            <span className="font-semibold text-brand-600 tabular">{t.number}</span>
+                                            <span className="flex items-center gap-1.5"><span className="font-semibold text-brand-600 tabular">{t.number}</span><PriorityBadge priority={t.priority} size="sm" /></span>
                                             <StatusBadge status={t.status} size="sm" />
                                         </div>
                                         <p className="mt-1 truncate text-sm font-medium text-ink">{t.atm.atm_number} · {t.atm.agency_name}</p>

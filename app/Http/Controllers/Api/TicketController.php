@@ -36,6 +36,7 @@ class TicketController extends Controller
             ->when($request->query('technician_id'), fn ($q, $v) => $q->where('assigned_to', $v))
             ->when($request->query('priority'), fn ($q, $v) => $q->whereIn('priority', explode(',', $v)))
             ->when($request->query('atm_id'), fn ($q, $v) => $q->where('atm_id', $v))
+            ->when($request->query('closed_from'), fn ($q, $v) => $q->whereDate('closed_at', '>=', $v))
             ->when($request->query('sla') === 'breached', fn ($q) => $q->sla('breached'))
             ->when($request->query('sla') === 'at_risk', fn ($q) => $q->sla('at_risk')->whereNot(fn ($n) => $n->sla('breached')))
             ->when($request->query('from'), fn ($q, $v) => $q->whereDate('opened_at', '>=', $v))
