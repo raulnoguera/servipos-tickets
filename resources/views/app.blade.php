@@ -2,6 +2,9 @@
 <html lang="es">
     <head>
         <meta charset="utf-8">
+        @unless (\Illuminate\Support\Facades\Vite::isRunningHot())
+            <meta http-equiv="Content-Security-Policy" content="{{ \App\Http\Middleware\SecurityHeaders::policy(request()->isSecure(), meta: true) }}">
+        @endunless
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="theme-color" content="#00194c">
         <meta name="apple-mobile-web-app-capable" content="yes">

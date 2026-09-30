@@ -41,23 +41,7 @@ class SecurityHeaders
 
         // En desarrollo con el servidor de Vite (recarga en caliente) no se aplica la CSP.
         if (! Vite::isRunningHot()) {
-            $headers->set('Content-Security-Policy', implode('; ', array_filter([
-                "default-src 'self'",
-                "script-src 'self'",
-                "style-src 'self' 'unsafe-inline'",
-                "img-src 'self' data: blob:",
-                "font-src 'self' data:",
-                "connect-src 'self'",
-                "worker-src 'self'",
-                "manifest-src 'self'",
-                "media-src 'self' blob:",
-                "frame-src 'none'",
-                "frame-ancestors 'none'",
-                "object-src 'none'",
-                "base-uri 'self'",
-                "form-action 'self'",
-                $request->isSecure() ? 'upgrade-insecure-requests' : null,
-            ])));
+            $headers->set('Content-Security-Policy', self::policy($request->isSecure()));
         }
 
         // Las respuestas de la API con datos de usuario no deben quedar en cachés intermedias.
@@ -66,5 +50,31 @@ class SecurityHeaders
         }
 
         return $response;
+    }
+
+    /**
+     * Política de contenido. También se incluye como <meta> en la página, porque
+     * la CDN de Hostinger (opción "Forzar HTTPS") reemplaza la cabecera por la suya.
+     * En <meta> no se admite frame-ancestors; X-Frame-Options cubre ese caso.
+     */
+    public static function policy(bool $secure, bool $meta = false): string
+    {
+        return implode('; ', array_filter([
+            "default-src 'self'",
+            "script-src 'self'",
+            "style-src 'self' 'unsafe-inline'",
+            "img-src 'self' data: blob:",
+            "font-src 'self' data:",
+            "connect-src 'self'",
+            "worker-src 'self'",
+            "manifest-src 'self'",
+            "media-src 'self' blob:",
+            "frame-src 'none'",
+            $meta ? null : "frame-ancestors 'none'",
+            "object-src 'none'",
+            "base-uri 'self'",
+            "form-action 'self'",
+            $secure ? 'upgrade-insecure-requests' : null,
+        ]));
     }
 }

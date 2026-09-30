@@ -46,6 +46,8 @@ class SecurityTest extends TestCase
         $this->assertStringContainsString("frame-ancestors 'none'", $csp);
         $this->assertStringNotContainsString("'unsafe-eval'", $csp);
         $this->assertFalse($response->headers->has('X-Powered-By'));
+        // También en la página, por si un proxy o CDN reemplaza la cabecera.
+        $response->assertSee('<meta http-equiv="Content-Security-Policy" content="default-src &#039;self&#039;; script-src &#039;self&#039;', false);
 
         $this->getJson('/api/v1/auth/me')->assertHeader('Cache-Control', 'no-store, private');
     }
