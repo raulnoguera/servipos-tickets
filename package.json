@@ -1,5 +1,7 @@
 {
     "$schema": "https://www.schemastore.org/package.json",
+    "name": "servipos-tickets",
+    "author": "Raúl Noguera",
     "private": true,
     "type": "module",
     "scripts": {

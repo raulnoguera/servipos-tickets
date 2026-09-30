@@ -1,8 +1,14 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "raulnoguera/servipos-tickets",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "ServiPos Tickets: sistema de monitoreo de tickets de cajeros automáticos (ATM).",
+    "authors": [
+        {
+            "name": "Raúl Noguera",
+            "role": "Diseño y desarrollo"
+        }
+    ],
     "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {

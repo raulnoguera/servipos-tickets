@@ -2,6 +2,8 @@
 <html lang="es">
     <head>
         <meta charset="utf-8">
+        <meta name="author" content="Raúl Noguera">
+        <meta name="generator" content="ServiPos Tickets · desarrollado por Raúl Noguera">
         @unless (\Illuminate\Support\Facades\Vite::isRunningHot())
             <meta http-equiv="Content-Security-Policy" content="{{ \App\Http\Middleware\SecurityHeaders::policy(request()->isSecure(), meta: true) }}">
         @endunless

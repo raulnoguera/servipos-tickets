@@ -9,6 +9,10 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
+/**
+ * ServiPos Tickets · Sistema de monitoreo de tickets ATM.
+ * Diseñado y desarrollado por Raúl Noguera · 2026.
+ */
 class AppServiceProvider extends ServiceProvider
 {
     /**

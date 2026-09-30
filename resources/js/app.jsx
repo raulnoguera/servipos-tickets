@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from './lib/auth';
 import { LoadingBlock, Toaster } from './components/ui';
 import Layout from './components/Layout';
 import Login from './pages/Login';
+import { printSignature } from './lib/signature';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Tickets = lazy(() => import('./pages/Tickets'));
@@ -87,6 +88,8 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
         }
     });
 }
+
+printSignature();
 
 createRoot(document.getElementById('app')).render(
     <StrictMode>

@@ -17,6 +17,13 @@ export default defineConfig({
         react(),
         tailwindcss(),
     ],
+    build: {
+        rolldownOptions: {
+            output: {
+                postBanner: '/*! ServiPos Tickets · Diseñado y desarrollado por Raúl Noguera · 2026 */',
+            },
+        },
+    },
     server: {
         watch: {
             ignored: ['**/storage/framework/views/**'],
