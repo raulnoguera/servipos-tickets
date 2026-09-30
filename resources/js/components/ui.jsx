@@ -265,19 +265,27 @@ export function Alert({ tone = 'danger', children, className }) {
 
 /* ---------- Modal ---------- */
 
+/** Ventanas abiertas, de abajo hacia arriba: Escape cierra solo la de encima. */
+const openModals = [];
+
 export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
+    const id = useId();
     useEffect(() => {
         if (!open) {
             return undefined;
         }
-        const onKey = (e) => e.key === 'Escape' && onClose();
+        openModals.push(id);
+        const onKey = (e) => e.key === 'Escape' && openModals[openModals.length - 1] === id && onClose();
         document.addEventListener('keydown', onKey);
         document.body.style.overflow = 'hidden';
         return () => {
+            openModals.splice(openModals.indexOf(id), 1);
             document.removeEventListener('keydown', onKey);
-            document.body.style.overflow = '';
+            if (!openModals.length) {
+                document.body.style.overflow = '';
+            }
         };
-    }, [open, onClose]);
+    }, [open, onClose, id]);
 
     if (!open) {
         return null;

@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Camera, CheckCircle2, ImagePlus, Minus, Plus, Trash2 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
+import PartPicker from './PartPicker';
 import { outbox } from '../lib/outbox';
 import { useCatalogs } from '../lib/queries';
 import { compressImage, formatBytes } from '../lib/compressImage';
@@ -24,6 +25,7 @@ export default function VisitForm({ ticket, onDone }) {
         parts_changed: null,
     });
     const [parts, setParts] = useState([{ part_id: '', quantity: 1 }]);
+    const [partsError, setPartsError] = useState(null);
     const [photo, setPhoto] = useState(null);
     const [photoInfo, setPhotoInfo] = useState(null);
     const [compressing, setCompressing] = useState(false);
@@ -109,6 +111,10 @@ export default function VisitForm({ ticket, onDone }) {
             className="space-y-6"
             onSubmit={(e) => {
                 e.preventDefault();
+                if (form.parts_changed && parts.some((p) => !p.part_id)) {
+                    setPartsError('Elija el repuesto en cada fila, o quite las filas vacías.');
+                    return;
+                }
                 save.mutate();
             }}
         >
@@ -181,19 +187,17 @@ export default function VisitForm({ ticket, onDone }) {
                 {form.parts_changed && (
                     <div className="space-y-2">
                         {parts.map((p, i) => (
-                            <div key={i} className="flex items-center gap-2">
-                                <Select
+                            <div key={i} className="flex flex-wrap items-center justify-end gap-2 rounded-xl border border-line p-2 sm:flex-nowrap sm:border-0 sm:p-0">
+                                <PartPicker
+                                    parts={catalogs?.parts ?? []}
                                     value={p.part_id}
-                                    onChange={(e) => setParts((list) => list.map((x, j) => (j === i ? { ...x, part_id: e.target.value } : x)))}
-                                    className="flex-1"
-                                    aria-label={`Repuesto ${i + 1}`}
-                                    required
-                                >
-                                    <option value="">Seleccione el repuesto…</option>
-                                    {catalogs?.parts.filter((c) => c.active && (!usedParts.has(String(c.id)) || String(c.id) === p.part_id)).map((c) => (
-                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                    ))}
-                                </Select>
+                                    exclude={[...usedParts]}
+                                    label={`Repuesto ${i + 1}`}
+                                    onChange={(partId) => {
+                                        setPartsError(null);
+                                        setParts((list) => list.map((x, j) => (j === i ? { ...x, part_id: partId } : x)));
+                                    }}
+                                />
                                 <div className="flex h-10 items-center rounded-lg border border-line bg-white">
                                     <button type="button" className="grid h-full w-9 place-items-center text-muted hover:text-ink" aria-label="Menos" onClick={() => setParts((list) => list.map((x, j) => (j === i ? { ...x, quantity: Math.max(1, x.quantity - 1) } : x)))}>
                                         <Minus className="size-4" />
@@ -211,7 +215,7 @@ export default function VisitForm({ ticket, onDone }) {
                         <Button type="button" variant="ghost" size="sm" icon={Plus} onClick={() => setParts((list) => [...list, { part_id: '', quantity: 1 }])}>
                             Agregar otro repuesto
                         </Button>
-                        {partError && <p className="text-sm text-red-600">{partError}</p>}
+                        {(partsError || partError) && <p className="text-sm text-red-600">{partsError || partError}</p>}
                     </div>
                 )}
                 {err?.field?.('parts_changed') && <p className="text-sm text-red-600">Indique si hubo cambio de repuesto.</p>}
