@@ -23,8 +23,9 @@ class StoreVisitRequest extends FormRequest
             'fault_type_id' => ['nullable', 'integer', 'exists:fault_types,id'],
             'work_done' => ['required', 'string', 'max:5000'],
             'atm_condition_id' => ['required', 'integer', 'exists:atm_conditions,id'],
-            'arrived_at' => ['nullable', 'date'],
             'finished_at' => ['nullable', 'date'],
+            // El envío estuvo guardado en el teléfono sin señal: se acepta su hora y queda marcado como tardío.
+            'queued' => ['sometimes', 'boolean'],
             'parts_changed' => ['required', 'boolean'],
             // RF-3.2: si hubo cambio de repuesto, es obligatorio indicar cuál y cuántos.
             'parts' => ['exclude_unless:parts_changed,true', 'required', 'array', 'min:1'],

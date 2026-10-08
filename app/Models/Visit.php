@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\TicketService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -26,6 +27,17 @@ class Visit extends Model
             'finished_at' => 'datetime',
             'parts_changed' => 'boolean',
         ];
+    }
+
+    /** Milisegundos entre el cierre declarado por el teléfono y su llegada al servidor, si fue un envío tardío. */
+    public function lateMs(): ?int
+    {
+        if (! $this->finished_at || ! $this->created_at) {
+            return null;
+        }
+        $ms = (int) $this->finished_at->diffInMilliseconds($this->created_at);
+
+        return $ms >= TicketService::LATE_REPORT_SECONDS * 1000 ? $ms : null;
     }
 
     /** Columna DATE: se guarda siempre como AAAA-MM-DD para que los filtros por fecha funcionen igual en SQLite y MySQL. */

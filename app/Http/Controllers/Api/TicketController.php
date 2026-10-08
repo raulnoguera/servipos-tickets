@@ -25,8 +25,26 @@ class TicketController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
+        // Filtros siempre como texto simple: un valor en forma de lista provocaba errores 500.
+        $request->validate([
+            'q' => ['nullable', 'string', 'max:100'],
+            'status' => ['nullable', 'string', 'max:200'],
+            'priority' => ['nullable', 'string', 'max:60'],
+            'open' => ['nullable', 'string', 'max:5'],
+            'history' => ['nullable', 'string', 'max:5'],
+            'sla' => ['nullable', 'string', 'max:20'],
+            'sort' => ['nullable', 'string', 'max:20'],
+            'bank_id' => ['nullable', 'integer'],
+            'technician_id' => ['nullable', 'integer'],
+            'atm_id' => ['nullable', 'integer'],
+            'closed_from' => ['nullable', 'date'],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date'],
+            'per_page' => ['nullable', 'integer'],
+        ]);
         $user = $request->user();
-        $term = trim((string) $request->query('q'));
+        // % y _ se buscan como texto, no como comodines.
+        $term = addcslashes(trim((string) $request->query('q')), '%_\\');
         $statuses = array_filter(explode(',', (string) $request->query('status')));
 
         $tickets = Ticket::query()
@@ -88,11 +106,12 @@ class TicketController extends Controller
             'status' => ['required', Rule::in([TicketStatus::InTransit->value, TicketStatus::OnSite->value, TicketStatus::Cancelled->value])],
             'note' => ['nullable', 'string', 'max:255', 'required_if:status,'.TicketStatus::Cancelled->value],
             'at' => ['nullable', 'date'],
+            'queued' => ['sometimes', 'boolean'],
         ]);
         $to = TicketStatus::from($data['status']);
         Gate::authorize($to === TicketStatus::Cancelled ? 'manage' : 'work', $ticket);
 
-        $this->tickets->transition($ticket, $to, $request->user(), $data['note'] ?? null, isset($data['at']) ? CarbonImmutable::parse($data['at']) : null);
+        $this->tickets->transition($ticket, $to, $request->user(), $data['note'] ?? null, isset($data['at']) ? CarbonImmutable::parse($data['at']) : null, (bool) ($data['queued'] ?? false));
 
         return $this->detail($ticket);
     }
@@ -140,19 +159,25 @@ class TicketController extends Controller
         $data = $request->validate(['body' => ['required', 'string', 'max:2000']]);
 
         $this->tickets->comment($ticket, trim($data['body']), $request->user());
-        // Quien comenta queda siguiendo el ticket, como en JIRA.
-        $ticket->watchers()->syncWithoutDetaching([$request->user()->id]);
+        // Quien comenta queda siguiendo el ticket, como en JIRA (si todavía le corresponde).
+        if ($request->user()->can('work', $ticket)) {
+            $ticket->watchers()->syncWithoutDetaching([$request->user()->id]);
+        }
 
         return $this->detail($ticket);
     }
 
-    public function watch(Request $request, Ticket $ticket): TicketResource
+    public function watch(Request $request, Ticket $ticket): TicketResource|JsonResponse
     {
-        // Dejar de seguir siempre se puede; seguir, solo si aún le corresponde el ticket.
-        Gate::authorize($request->isMethod('delete') ? 'view' : 'work', $ticket);
-        $request->isMethod('delete')
-            ? $ticket->watchers()->detach($request->user()->id)
-            : $ticket->watchers()->syncWithoutDetaching([$request->user()->id]);
+        // Dejar de seguir siempre se puede, aunque ya no pueda ver el ticket.
+        if ($request->isMethod('delete')) {
+            $ticket->watchers()->detach($request->user()->id);
+
+            return $request->user()->can('view', $ticket) ? $this->detail($ticket) : response()->json(['ok' => true]);
+        }
+        // Seguir, solo si aún le corresponde el ticket.
+        Gate::authorize('work', $ticket);
+        $ticket->watchers()->syncWithoutDetaching([$request->user()->id]);
 
         return $this->detail($ticket);
     }

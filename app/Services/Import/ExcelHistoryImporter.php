@@ -21,7 +21,6 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Reader\IReadFilter;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use RuntimeException;
 
 /**
  * Importa el "Libro Consolidado Relación de Atenciones" (pestañas "Tablas" y
@@ -77,7 +76,7 @@ class ExcelHistoryImporter
         $this->technicians = $this->atms = $this->reportedFixes = [];
 
         if (Ticket::where('source', 'import')->exists()) {
-            throw new RuntimeException('Ya existe un histórico importado. Para repetir la importación, limpie la base de datos (php artisan migrate:fresh --seed).');
+            throw new ImportException('Ya existe un histórico importado. Para repetir la importación, consulte con el administrador del sistema.');
         }
 
         $reader = IOFactory::createReader('Xlsx');
@@ -93,8 +92,8 @@ class ExcelHistoryImporter
         });
         $book = $reader->load($path);
 
-        $tables = $book->getSheetByName('Tablas') ?? throw new RuntimeException('No se encontró la pestaña "Tablas".');
-        $base = $book->getSheetByName('Base General') ?? throw new RuntimeException('No se encontró la pestaña "Base General".');
+        $tables = $book->getSheetByName('Tablas') ?? throw new ImportException('No se encontró la pestaña "Tablas".');
+        $base = $book->getSheetByName('Base General') ?? throw new ImportException('No se encontró la pestaña "Base General".');
 
         DB::beginTransaction();
         try {
@@ -136,7 +135,7 @@ class ExcelHistoryImporter
     private function loadAtms(Worksheet $sheet): void
     {
         $cols = $this->headers($sheet);
-        $col = fn (string $header) => $cols[Normalizer::key($header)] ?? throw new RuntimeException("Falta la columna \"{$header}\" en Tablas.");
+        $col = fn (string $header) => $cols[Normalizer::key($header)] ?? throw new ImportException("Falta la columna \"{$header}\" en Tablas.");
 
         foreach ($this->rows($sheet, $col('N° ATM´s')) as $row) {
             $where = "Tablas fila {$row}";
@@ -198,7 +197,7 @@ class ExcelHistoryImporter
     private function loadVisits(Worksheet $sheet): void
     {
         $cols = $this->headers($sheet);
-        $col = fn (string $header) => $cols[Normalizer::key($header)] ?? throw new RuntimeException("Falta la columna \"{$header}\" en Base General.");
+        $col = fn (string $header) => $cols[Normalizer::key($header)] ?? throw new ImportException("Falta la columna \"{$header}\" en Base General.");
 
         // Se leen todas las filas primero para procesarlas en orden cronológico.
         $rows = [];

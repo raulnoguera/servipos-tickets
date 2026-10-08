@@ -5,7 +5,7 @@
         <meta name="author" content="Raúl Noguera">
         <meta name="generator" content="ServiPos Tickets · desarrollado por Raúl Noguera">
         @unless (\Illuminate\Support\Facades\Vite::isRunningHot())
-            <meta http-equiv="Content-Security-Policy" content="{{ \App\Http\Middleware\SecurityHeaders::policy(request()->isSecure(), meta: true) }}">
+            <meta http-equiv="Content-Security-Policy" content="{{ \App\Http\Middleware\SecurityHeaders::policy(request()->isSecure(), meta: true, nonce: \Illuminate\Support\Facades\Vite::cspNonce()) }}">
         @endunless
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <meta name="theme-color" content="#00194c">

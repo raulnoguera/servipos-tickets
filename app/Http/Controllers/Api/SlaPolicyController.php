@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Enums\Priority;
 use App\Http\Controllers\Controller;
 use App\Models\SlaPolicy;
+use App\Services\AuditLogger;
 use App\Services\SlaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,7 +19,7 @@ class SlaPolicyController extends Controller
         return response()->json(['data' => $this->list()]);
     }
 
-    public function update(Request $request, SlaService $sla): JsonResponse
+    public function update(Request $request, SlaService $sla, AuditLogger $audit): JsonResponse
     {
         $data = $request->validate([
             'policies' => ['required', 'array'],
@@ -33,6 +34,7 @@ class SlaPolicyController extends Controller
             ]);
         }
         $sla->forget();
+        $audit->record('sla.updated', 'Metas de SLA modificadas', meta: ['metas' => $data['policies']]);
 
         return response()->json(['data' => $this->list()]);
     }

@@ -2,6 +2,7 @@
 
 namespace App\Services\Reports;
 
+use App\Services\AuditLogger;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -138,6 +139,7 @@ class TableExporter
 
         $path = tempnam(sys_get_temp_dir(), 'reporte');
         (new Xlsx($book))->save($path);
+        app(AuditLogger::class)->record('export.report', "Descarga a Excel: {$title}", meta: ['filtros' => $filtersText, 'registros' => $count]);
 
         return response()->download($path, $fileName)->deleteFileAfterSend();
     }

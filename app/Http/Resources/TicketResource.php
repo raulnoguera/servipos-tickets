@@ -34,7 +34,12 @@ class TicketResource extends JsonResource
             'fault_type_id' => $this->fault_type_id,
             'fault_type' => $this->faultType?->name,
             'atm' => new AtmResource($this->whenLoaded('atm')),
-            'technician' => $this->technician ? ['id' => $this->technician->id, 'name' => $this->technician->name, 'phone' => $this->technician->phone] : null,
+            'technician' => $this->technician ? [
+                'id' => $this->technician->id,
+                'name' => $this->technician->name,
+                // Un técnico no ve el teléfono de sus compañeros (sí el propio).
+                'phone' => $request->user()?->role->value !== 'technician' || $request->user()->is($this->technician) ? $this->technician->phone : null,
+            ] : null,
             'opened_by' => $this->whenLoaded('opener', fn () => $this->opener?->name),
             'opened_at' => $this->opened_at?->toIso8601String(),
             'assigned_at' => $this->assigned_at?->toIso8601String(),
@@ -45,6 +50,9 @@ class TicketResource extends JsonResource
             'visits' => VisitResource::collection($this->whenLoaded('visits')),
             'events' => $this->whenLoaded('events', fn () => $this->events->map(fn ($e) => [
                 'at' => $e->created_at->toIso8601String(),
+                // Enviado tarde (guardado sin señal): hora en que llegó al servidor y demora.
+                'received_at' => $e->lateMs() ? $e->received_at->toIso8601String() : null,
+                'late_ms' => $e->lateMs(),
                 'user' => $e->user?->name,
                 'from' => $e->from_status,
                 'to' => $e->to_status,

@@ -166,7 +166,8 @@ class PushNotifier
     /** @return Collection<int, User> */
     private function watchersOf(Ticket $ticket, ?User $except): Collection
     {
-        return $ticket->watchers()->where('active', true)->when($except, fn ($q) => $q->whereKeyNot($except->id))->get();
+        return $ticket->watchers()->where('active', true)->when($except, fn ($q) => $q->whereKeyNot($except->id))->get()
+            ->filter(fn (User $user) => $user->can('view', $ticket))->values();
     }
 
     /** Comentario nuevo: al técnico, a quien abrió el ticket y a los seguidores. */

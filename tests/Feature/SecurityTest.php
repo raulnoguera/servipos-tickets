@@ -5,11 +5,14 @@ namespace Tests\Feature;
 use App\Enums\TicketStatus;
 use App\Models\Atm;
 use App\Models\AtmCondition;
+use App\Models\AuditLog;
 use App\Models\PushSubscription;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Services\Reports\TableExporter;
+use App\Services\TicketService;
 use Database\Seeders\AtmConditionSeeder;
+use Database\Seeders\DemoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\RateLimiter;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
@@ -188,23 +191,46 @@ class SecurityTest extends TestCase
         $this->assertSame(0, $technician->pushSubscriptions()->count());
     }
 
-    public function test_technician_cannot_backdate_arrival_to_fake_the_sla(): void
+    public function test_times_sent_with_signal_use_the_server_clock(): void
     {
         $this->seed(AtmConditionSeeder::class);
         $technician = User::factory()->technician()->create();
         $ticket = Ticket::create([
-            'number' => 'TK-2026-00001', 'atm_id' => Atm::factory()->create()->id, 'status' => TicketStatus::OnSite,
+            'number' => 'TK-2026-00001', 'atm_id' => Atm::factory()->create()->id, 'status' => TicketStatus::Assigned,
             'assigned_to' => $technician->id, 'opened_at' => now()->subHours(5), 'assigned_at' => now()->subHours(4),
         ]);
 
+        // Llega 4 horas después de la asignación, pero declara que llegó y terminó casi de inmediato.
+        $this->actingAs($technician)->postJson("/api/v1/tickets/{$ticket->id}/status", ['status' => 'en_sitio', 'at' => now()->subHours(4)->addMinutes(2)->toIso8601String()])->assertOk();
         $this->actingAs($technician)->postJson("/api/v1/tickets/{$ticket->id}/visits", [
-            'work_done' => 'Cambio de dispensador', 'atm_condition_id' => AtmCondition::first()->id, 'parts_changed' => false,
-            'arrived_at' => now()->subDays(2)->toIso8601String(),
+            'work_done' => 'Cambio de dispensador', 'atm_condition_id' => AtmCondition::where('resulting_ticket_status', 'concluido')->first()->id,
+            'parts_changed' => false, 'finished_at' => now()->subHours(4)->addMinutes(3)->toIso8601String(),
+            'arrived_at' => now()->subHours(4)->toIso8601String(), // ya no se acepta del cliente
         ])->assertOk();
 
         $ticket->refresh();
-        $this->assertTrue($ticket->responded_at->greaterThanOrEqualTo($ticket->assigned_at), 'no antes de la asignación');
-        $this->assertTrue($ticket->visits()->first()->arrived_at->lessThanOrEqualTo(now()), 'no en el futuro');
+        $this->assertTrue($ticket->responded_at->greaterThan(now()->subMinutes(2)), 'la llegada es la hora del servidor');
+        $this->assertTrue($ticket->closed_at->greaterThan(now()->subMinutes(2)), 'el cierre es la hora del servidor');
+        $this->assertGreaterThan(4 * 3600 * 1000, $ticket->duration_ms);
+    }
+
+    public function test_times_saved_without_signal_are_accepted_but_flagged_as_late(): void
+    {
+        $technician = User::factory()->technician()->create();
+        $ticket = Ticket::create([
+            'number' => 'TK-2026-00001', 'atm_id' => Atm::factory()->create()->id, 'status' => TicketStatus::Assigned,
+            'assigned_to' => $technician->id, 'opened_at' => now()->subHours(5), 'assigned_at' => now()->subHours(4),
+        ]);
+        $claimed = now()->subHours(2);
+
+        $response = $this->actingAs($technician)->postJson("/api/v1/tickets/{$ticket->id}/status", [
+            'status' => 'en_transito', 'at' => $claimed->toIso8601String(), 'queued' => true,
+        ])->assertOk();
+
+        $event = collect($response->json('data.events'))->firstWhere('to', 'en_transito');
+        $this->assertSame($claimed->toIso8601String(), $event['at'], 'se respeta la hora en que ocurrió');
+        $this->assertNotNull($event['received_at'], 'pero queda la hora en que llegó al servidor');
+        $this->assertGreaterThan(110 * 60 * 1000, $event['late_ms']);
     }
 
     public function test_reports_reject_huge_date_ranges(): void
@@ -226,5 +252,155 @@ class SecurityTest extends TestCase
 
         $this->actingAs($before)->postJson("/api/v1/tickets/{$ticket->id}/watch")->assertForbidden();
         $this->actingAs($before)->deleteJson("/api/v1/tickets/{$ticket->id}/watch")->assertOk();
+    }
+
+    public function test_account_is_locked_when_guessed_from_many_ips(): void
+    {
+        $user = User::factory()->create(['email' => 'carla@servipos.test']);
+        RateLimiter::clear('login-cuenta:carla@servipos.test');
+
+        foreach (range(1, 30) as $i) {
+            $this->withServerVariables(['REMOTE_ADDR' => "10.0.0.{$i}"])
+                ->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'incorrecta'])
+                ->assertJsonPath('errors.email.0', 'Correo o contraseña incorrectos.');
+        }
+
+        // Desde una IP nueva y con la contraseña correcta: la cuenta sigue bloqueada.
+        $this->withServerVariables(['REMOTE_ADDR' => '10.0.9.9'])
+            ->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'password'])
+            ->assertStatus(422)
+            ->assertJsonPath('errors.email.0', fn ($msg) => str_starts_with($msg, 'Demasiados intentos fallidos'));
+        $this->assertDatabaseHas('audit_logs', ['action' => 'auth.lockout']);
+    }
+
+    public function test_sensitive_actions_are_audited_without_secrets(): void
+    {
+        $admin = User::factory()->admin()->create(['email' => 'jefe@servipos.test']);
+        $technician = User::factory()->technician()->create();
+
+        $this->postJson('/api/v1/auth/login', ['email' => $admin->email, 'password' => 'password'])->assertOk();
+        $this->putJson("/api/v1/users/{$technician->id}", [
+            'name' => $technician->name, 'email' => $technician->email, 'role' => 'operator', 'active' => true, 'password' => 'NuevaClave2026x',
+        ])->assertOk();
+        $this->get('/api/v1/reports/technicians?format=xlsx')->assertOk();
+
+        $this->assertDatabaseHas('audit_logs', ['action' => 'auth.login', 'user_id' => $admin->id]);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'export.report', 'user_id' => $admin->id]);
+        $update = AuditLog::where('action', 'user.updated')->sole();
+        $this->assertSame('operator', $update->meta['rol']['ahora']);
+        $this->assertSame('cambiada', $update->meta['contraseña']);
+        $this->assertStringNotContainsString('NuevaClave2026x', json_encode(AuditLog::all()));
+
+        // La consulta de la auditoría es solo para administradores, y el intento queda registrado.
+        $this->getJson('/api/v1/audit')->assertOk()->assertJsonPath('meta.total', 3);
+        $this->actingAs(User::factory()->create())->getJson('/api/v1/audit')->assertForbidden();
+        $this->assertDatabaseHas('audit_logs', ['action' => 'auth.denied', 'description' => 'Acceso denegado: GET /api/v1/audit']);
+    }
+
+    public function test_contact_data_is_only_shown_to_those_who_need_it(): void
+    {
+        $operator = User::factory()->create();
+        [$ana, $luis] = User::factory()->technician()->count(2)->create();
+        $ticket = Ticket::create([
+            'number' => 'TK-2026-00001', 'atm_id' => Atm::factory()->create()->id, 'status' => TicketStatus::Assigned,
+            'assigned_to' => $luis->id, 'opened_at' => now(),
+        ]);
+        $ticket->visits()->create(['technician_id' => $ana->id, 'visit_date' => now(), 'work_done' => 'Revisión']);
+
+        // El operador ya no lista usuarios (correos de administradores); sí ve teléfonos para asignar.
+        $this->actingAs($operator)->getJson('/api/v1/users')->assertForbidden();
+        $this->actingAs($operator)->getJson('/api/v1/catalogs')->assertOk()->assertJsonPath('technicians.0.phone', fn ($phone) => $phone !== null);
+        // Un técnico no ve los teléfonos de sus compañeros.
+        $this->actingAs($ana)->getJson('/api/v1/catalogs')->assertOk()->assertJsonPath('technicians.0.phone', null)->assertJsonPath('technicians.1.phone', null);
+        $this->actingAs($ana)->getJson("/api/v1/tickets/{$ticket->id}")->assertOk()->assertJsonPath('data.technician.phone', null);
+        $this->actingAs($luis)->getJson("/api/v1/tickets/{$ticket->id}")->assertOk()->assertJsonPath('data.technician.phone', $luis->phone);
+    }
+
+    public function test_downloads_and_errors_do_not_leak(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        // Los Excel no deben quedar en cachés intermedias ni en el disco del navegador.
+        $cache = $this->actingAs($admin)->get('/api/v1/reports/technicians?format=xlsx')->assertOk()->headers->get('Cache-Control');
+        $this->assertStringContainsString('no-store', $cache);
+        $this->assertStringNotContainsString('public', $cache);
+
+        // Un registro inexistente no revela clases ni ids; filtros con forma de lista no provocan un error 500.
+        $this->actingAs($admin)->getJson('/api/v1/tickets/999999')->assertNotFound()->assertExactJson(['message' => 'No se encontró lo solicitado.']);
+        $this->actingAs($admin)->getJson('/api/v1/tickets?q[]=a&priority[]=x')->assertStatus(422);
+        $this->actingAs($admin)->getJson('/api/v1/atms?q[]=a')->assertStatus(422);
+    }
+
+    public function test_reassigned_technician_stops_following_and_can_always_unfollow(): void
+    {
+        $operator = User::factory()->create();
+        [$before, $after] = User::factory()->technician()->count(2)->create();
+        $ticket = Ticket::create([
+            'number' => 'TK-2026-00001', 'atm_id' => Atm::factory()->create()->id, 'status' => TicketStatus::Assigned,
+            'assigned_to' => $before->id, 'opened_at' => now(), 'assigned_at' => now(),
+        ]);
+        $this->actingAs($before)->postJson("/api/v1/tickets/{$ticket->id}/watch")->assertOk();
+
+        $this->actingAs($operator)->postJson("/api/v1/tickets/{$ticket->id}/assign", ['technician_id' => $after->id])->assertOk();
+        $this->assertFalse($ticket->watchers()->whereKey($before->id)->exists(), 'deja de seguirlo al perder el ticket');
+
+        // Aunque quedara como seguidor, puede dejar de seguir sin poder ver el ticket, y no recibe sus datos.
+        $ticket->watchers()->attach($before->id);
+        $this->actingAs($before)->deleteJson("/api/v1/tickets/{$ticket->id}/watch")->assertOk()->assertExactJson(['ok' => true]);
+        $this->assertFalse($ticket->watchers()->whereKey($before->id)->exists());
+    }
+
+    public function test_commenting_on_a_ticket_no_longer_yours_does_not_follow_it(): void
+    {
+        [$before, $now] = User::factory()->technician()->count(2)->create();
+        $ticket = Ticket::create([
+            'number' => 'TK-2026-00001', 'atm_id' => Atm::factory()->create()->id, 'status' => TicketStatus::Assigned,
+            'assigned_to' => $now->id, 'opened_at' => now(),
+        ]);
+        $ticket->visits()->create(['technician_id' => $before->id, 'visit_date' => now(), 'work_done' => 'Revisión']);
+
+        $this->actingAs($before)->postJson("/api/v1/tickets/{$ticket->id}/comments", ['body' => 'Dejé el repuesto en la agencia.'])->assertOk();
+
+        $this->assertFalse($ticket->watchers()->whereKey($before->id)->exists());
+    }
+
+    public function test_password_reset_disconnects_the_users_devices(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $technician = User::factory()->technician()->create();
+        $technician->pushSubscriptions()->create(['endpoint' => 'https://fcm.googleapis.com/fcm/send/x', 'public_key' => 'k', 'auth_token' => 'a']);
+
+        $this->actingAs($admin)->putJson("/api/v1/users/{$technician->id}", [
+            'name' => $technician->name, 'email' => $technician->email, 'role' => 'technician', 'active' => true, 'password' => 'OtraClave2026x',
+        ])->assertOk();
+
+        $this->assertSame(0, $technician->pushSubscriptions()->count());
+    }
+
+    public function test_a_replayed_upload_id_from_another_ticket_is_rejected_cleanly(): void
+    {
+        $this->seed(AtmConditionSeeder::class);
+        $technician = User::factory()->technician()->create();
+        $make = fn (string $number) => Ticket::create([
+            'number' => $number, 'atm_id' => Atm::factory()->create()->id, 'status' => TicketStatus::Assigned,
+            'assigned_to' => $technician->id, 'opened_at' => now(),
+        ]);
+        [$first, $second] = [$make('TK-2026-00001'), $make('TK-2026-00002')];
+        $visit = ['client_uuid' => '7f1c1d3e-8a4b-4c5d-9e6f-0a1b2c3d4e5f', 'work_done' => 'Limpieza', 'atm_condition_id' => AtmCondition::first()->id, 'parts_changed' => false];
+
+        $this->actingAs($technician)->postJson("/api/v1/tickets/{$first->id}/visits", $visit)->assertOk();
+        // El mismo envío repetido devuelve la visita ya creada; en otro ticket se rechaza sin error 500.
+        $this->actingAs($technician)->postJson("/api/v1/tickets/{$first->id}/visits", $visit)->assertOk();
+        $this->actingAs($technician)->postJson("/api/v1/tickets/{$second->id}/visits", $visit)->assertStatus(422);
+        $this->assertSame(1, $first->visits()->count());
+        $this->assertSame(0, $second->visits()->count());
+    }
+
+    public function test_demo_data_cannot_be_seeded_in_production(): void
+    {
+        $this->app->detectEnvironment(fn () => 'production');
+
+        $this->expectExceptionMessage('DemoSeeder no se ejecuta en producción');
+        $this->app->make(DemoSeeder::class)->run($this->app->make(TicketService::class));
     }
 }

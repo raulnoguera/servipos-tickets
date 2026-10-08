@@ -14,9 +14,12 @@ use App\Models\User;
 use App\Models\Visit;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 /** Ciclo de vida del ticket: apertura, asignación, cambios de estado y visitas. */
 class TicketService
@@ -26,6 +29,12 @@ class TicketService
 
     /** Máximo que se acepta retrodatar un evento enviado por el teléfono (p. ej. hecho sin señal). */
     private const MAX_BACKDATE_HOURS = 24;
+
+    /** Diferencia tolerada entre el reloj del teléfono y el del servidor en un envío hecho con señal. */
+    private const CLOCK_TOLERANCE_SECONDS = 120;
+
+    /** A partir de esta demora entre lo ocurrido y lo recibido, el registro se muestra como "enviado tarde". */
+    public const LATE_REPORT_SECONDS = 300;
 
     public function __construct(
         private TicketNumberGenerator $numbers,
@@ -77,11 +86,17 @@ class TicketService
         }
 
         $from = $ticket->status;
+        $previous = $ticket->assigned_to !== $technician->id ? $ticket->technician : null;
         $ticket->update([
             'assigned_to' => $technician->id,
             'assigned_at' => $ticket->assigned_at ?? CarbonImmutable::now(),
             'status' => TicketStatus::Assigned,
         ]);
+        $ticket->unsetRelation('technician');
+        // El técnico anterior deja de seguirlo si ya no puede verlo (no llegó a atenderlo).
+        if ($previous && $previous->cannot('view', $ticket)) {
+            $ticket->watchers()->detach($previous->id);
+        }
         $this->log($ticket, $by, $from, TicketStatus::Assigned, "Asignado a {$technician->name}");
 
         if ($this->notify) {
@@ -93,10 +108,10 @@ class TicketService
     }
 
     /**
-     * Cambios manuales de estado: en tránsito, en sitio, anulado. $at es la hora
-     * real en que ocurrió (p. ej. un cambio hecho sin señal que se envía después).
+     * Cambios manuales de estado: en tránsito, en sitio, anulado. $at es la hora que
+     * informa el teléfono; solo se usa si el cambio estuvo guardado sin señal ($queued).
      */
-    public function transition(Ticket $ticket, TicketStatus $to, User $by, ?string $note = null, ?CarbonImmutable $at = null): Ticket
+    public function transition(Ticket $ticket, TicketStatus $to, User $by, ?string $note = null, ?CarbonImmutable $at = null, bool $queued = false): Ticket
     {
         $allowed = [TicketStatus::InTransit, TicketStatus::OnSite, TicketStatus::Cancelled];
         if (! in_array($to, $allowed, true) || ! $ticket->status->canTransitionTo($to)) {
@@ -106,7 +121,7 @@ class TicketService
         }
 
         $from = $ticket->status;
-        $at = $this->clampToCycle($ticket, $at, $this->lastEventAt($ticket));
+        $at = $this->clientTime($ticket, $at, $queued, $this->lastEventAt($ticket));
         $ticket->update(['status' => $to]
             + ($to === TicketStatus::Cancelled ? $this->closingTimes($ticket, $at) : [])
             + ($to === TicketStatus::OnSite && ! $ticket->responded_at ? ['responded_at' => $at] : []));
@@ -129,63 +144,93 @@ class TicketService
      */
     public function registerVisit(Ticket $ticket, array $data, User $by, ?UploadedFile $photo = null): Visit
     {
-        // Reintento de una sincronización offline: devolver la visita ya creada.
-        if (! empty($data['client_uuid']) && $existing = $ticket->visits()->firstWhere('client_uuid', $data['client_uuid'])) {
-            return $existing;
+        $photoPath = null;
+        try {
+            return DB::transaction(function () use ($ticket, $data, $by, $photo, &$photoPath) {
+                // Se bloquea el ticket: dos envíos simultáneos (dos pestañas, un reintento) se
+                // procesan uno tras otro, y el segundo ya ve lo que hizo el primero.
+                Ticket::whereKey($ticket->id)->lockForUpdate()->first();
+                $ticket->refresh();
+
+                // Reintento de una sincronización offline: devolver la visita ya creada.
+                if (! empty($data['client_uuid']) && $existing = $ticket->visits()->firstWhere('client_uuid', $data['client_uuid'])) {
+                    return $existing;
+                }
+                if ($ticket->status->isFinal() || $ticket->status === TicketStatus::Open) {
+                    throw ValidationException::withMessages([
+                        'status' => $ticket->status === TicketStatus::Open
+                            ? 'Asigne el ticket a un técnico antes de registrar la atención.'
+                            : 'El ticket ya está cerrado.',
+                    ]);
+                }
+
+                return $this->storeVisit($ticket, $data, $by, $photo, $photoPath);
+            });
+        } catch (UniqueConstraintViolationException) {
+            $this->discardPhoto($photoPath);
+            throw ValidationException::withMessages(['client_uuid' => 'Este envío ya fue registrado.']);
+        } catch (Throwable $e) {
+            $this->discardPhoto($photoPath);
+            throw $e;
         }
-        if ($ticket->status->isFinal() || $ticket->status === TicketStatus::Open) {
-            throw ValidationException::withMessages([
-                'status' => $ticket->status === TicketStatus::Open
-                    ? 'Asigne el ticket a un técnico antes de registrar la atención.'
-                    : 'El ticket ya está cerrado.',
-            ]);
+    }
+
+    /** La foto se guarda antes de confirmar la visita; si algo falla no debe quedar huérfana en el disco. */
+    private function discardPhoto(?string $path): void
+    {
+        if ($path) {
+            Storage::delete($path);
+        }
+    }
+
+    /** @param  array<string, mixed>  $data */
+    private function storeVisit(Ticket $ticket, array $data, User $by, ?UploadedFile $photo, ?string &$photoPath): Visit
+    {
+        $condition = AtmCondition::findOrFail($data['atm_condition_id']);
+        $finishedAt = $this->clientTime(
+            $ticket,
+            isset($data['finished_at']) ? CarbonImmutable::parse($data['finished_at']) : null,
+            (bool) ($data['queued'] ?? false),
+            $this->lastEventAt($ticket),
+        );
+        // La llegada es la hora en que marcó "Llegué al sitio"; si no lo marcó, la del cierre.
+        $arrivedAt = $ticket->events()
+            ->where('to_status', TicketStatus::OnSite->value)
+            ->where('created_at', '<=', $finishedAt)
+            ->reorder()->latest('created_at')->value('created_at');
+        $parts = collect($data['parts'] ?? [])->filter(fn ($p) => ($p['quantity'] ?? 0) > 0);
+
+        $visit = $ticket->visits()->create([
+            'client_uuid' => $data['client_uuid'] ?? null,
+            'technician_id' => $by->role === Role::Technician ? $by->id : ($ticket->assigned_to ?? $by->id),
+            'fault_type_id' => $data['fault_type_id'] ?? $ticket->fault_type_id,
+            'constancia_number' => $data['constancia_number'] ?? null,
+            'visit_date' => $finishedAt,
+            'arrived_at' => $arrivedAt,
+            'finished_at' => $finishedAt,
+            'work_done' => $data['work_done'] ?? null,
+            'parts_changed' => $parts->isNotEmpty(),
+            'atm_condition_id' => $condition->id,
+            'constancia_path' => $photoPath = $photo ? $this->constancias->store($photo, $ticket) : null,
+        ]);
+        foreach ($parts as $part) {
+            $visit->parts()->attach($part['part_id'], ['quantity' => $part['quantity']]);
         }
 
-        return DB::transaction(function () use ($ticket, $data, $by, $photo) {
-            $condition = AtmCondition::findOrFail($data['atm_condition_id']);
-            $finishedAt = $this->clampToCycle($ticket, isset($data['finished_at']) ? CarbonImmutable::parse($data['finished_at']) : null, $this->lastEventAt($ticket));
-            // Si no se indica la llegada, se toma la hora en que marcó "Llegué al sitio".
-            // Si se indica, no puede ser antes de la asignación ni después del cierre (protege el SLA).
-            $arrivedAt = isset($data['arrived_at'])
-                ? $this->clampToCycle($ticket, CarbonImmutable::parse($data['arrived_at']), $ticket->assigned_at)->min($finishedAt)
-                : $ticket->events()
-                    ->where('to_status', TicketStatus::OnSite->value)
-                    ->where('created_at', '<=', $finishedAt)
-                    ->reorder()->latest('created_at')->value('created_at');
-            $parts = collect($data['parts'] ?? [])->filter(fn ($p) => ($p['quantity'] ?? 0) > 0);
+        $from = $ticket->status;
+        $to = $condition->resulting_ticket_status;
+        $ticket->update(['status' => $to]
+            + ($to === TicketStatus::Closed ? $this->closingTimes($ticket, $finishedAt) : [])
+            + (! $ticket->responded_at ? ['responded_at' => $arrivedAt ? CarbonImmutable::parse($arrivedAt) : $finishedAt] : []));
+        $this->log($ticket, $by, $from, $to, "Atención registrada: {$condition->name}", $finishedAt);
 
-            $visit = $ticket->visits()->create([
-                'client_uuid' => $data['client_uuid'] ?? null,
-                'technician_id' => $by->role === Role::Technician ? $by->id : ($ticket->assigned_to ?? $by->id),
-                'fault_type_id' => $data['fault_type_id'] ?? $ticket->fault_type_id,
-                'constancia_number' => $data['constancia_number'] ?? null,
-                'visit_date' => $finishedAt,
-                'arrived_at' => $arrivedAt,
-                'finished_at' => $finishedAt,
-                'work_done' => $data['work_done'] ?? null,
-                'parts_changed' => $parts->isNotEmpty(),
-                'atm_condition_id' => $condition->id,
-                'constancia_path' => $photo ? $this->constancias->store($photo, $ticket) : null,
-            ]);
-            foreach ($parts as $part) {
-                $visit->parts()->attach($part['part_id'], ['quantity' => $part['quantity']]);
-            }
+        if ($this->notify) {
+            defer(fn () => $to === TicketStatus::Closed
+                ? $this->push->ticketClosed($ticket->fresh(), $by)
+                : $this->push->visitPending($ticket->fresh(), $by, $condition, $finishedAt));
+        }
 
-            $from = $ticket->status;
-            $to = $condition->resulting_ticket_status;
-            $ticket->update(['status' => $to]
-                + ($to === TicketStatus::Closed ? $this->closingTimes($ticket, $finishedAt) : [])
-                + (! $ticket->responded_at ? ['responded_at' => $arrivedAt ? CarbonImmutable::parse($arrivedAt) : $finishedAt] : []));
-            $this->log($ticket, $by, $from, $to, "Atención registrada: {$condition->name}", $finishedAt);
-
-            if ($this->notify) {
-                defer(fn () => $to === TicketStatus::Closed
-                    ? $this->push->ticketClosed($ticket->fresh(), $by)
-                    : $this->push->visitPending($ticket->fresh(), $by, $condition, $finishedAt));
-            }
-
-            return $visit;
-        });
+        return $visit;
     }
 
     /**
@@ -240,6 +285,21 @@ class TicketService
     }
 
     /**
+     * Hora que se registra para un cambio hecho por el técnico. Con señal vale la del
+     * servidor: la del teléfono solo se acepta si prácticamente coincide. Si el cambio
+     * estuvo guardado sin señal ($queued) se acepta la del teléfono, acotada, y queda
+     * a la vista la hora en que realmente llegó (received_at), para que nadie pueda
+     * declarar una hora anterior sin que se note.
+     */
+    private function clientTime(Ticket $ticket, ?CarbonImmutable $at, bool $queued, ?CarbonInterface $notBefore = null): CarbonImmutable
+    {
+        $now = CarbonImmutable::now();
+        $at = $this->clampToCycle($ticket, $at, $notBefore);
+
+        return ! $queued && $at->diffInSeconds($now, true) > self::CLOCK_TOLERANCE_SECONDS ? $now : $at;
+    }
+
+    /**
      * Hora informada por el teléfono (suele venir en UTC), llevada a la zona
      * horaria de la app y acotada entre la apertura del ticket y ahora.
      */
@@ -277,6 +337,7 @@ class TicketService
             'to_status' => $to?->value,
             'note' => $note,
             'created_at' => $at ?? CarbonImmutable::now(),
+            'received_at' => CarbonImmutable::now(),
         ]);
     }
 }

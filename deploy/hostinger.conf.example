@@ -1,7 +1,7 @@
 # Copiar como deploy/hostinger.conf (no se sube a GitHub) y ajustar.
-SSH_HOST=5.183.10.122
-SSH_PORT=65002
-SSH_USER=u863678701
-SSH_KEY=~/.ssh/servipos_hostinger
-APP_DIR=domains/firebrick-quail-381357.hostingersite.com/public_html
-SITE_URL=https://firebrick-quail-381357.hostingersite.com
+SSH_HOST=0.0.0.0
+SSH_PORT=22
+SSH_USER=usuario
+SSH_KEY=~/.ssh/llave_de_despliegue
+APP_DIR=domains/midominio.com/public_html
+SITE_URL=https://midominio.com

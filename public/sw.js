@@ -6,7 +6,7 @@
  * - Muestra las notificaciones push y abre el ticket al tocarlas.
  * Los envíos hechos sin señal los maneja la app (bandeja en IndexedDB).
  */
-const SHELL = 'servipos-shell-v2';
+const SHELL = 'servipos-shell-v3';
 const ASSETS = 'servipos-assets-v2';
 const API = 'servipos-api-v1';
 const KEEP = [SHELL, ASSETS, API];
@@ -68,13 +68,24 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-/** Red primero; si falla o tarda demasiado, lo último guardado. */
-async function networkFirst(request, cacheName, cacheKey = request, timeoutMs = 6000) {
+/** Solo la página de la app se guarda como pantalla para abrir sin señal (nunca JSON, imágenes ni errores). */
+const isAppPage = (response) => (response.headers.get('Content-Type') || '').includes('text/html');
+
+/**
+ * Red primero; si falla o tarda demasiado, lo último guardado.
+ * @param {(response: Response) => boolean} [canStore] qué respuestas correctas se guardan
+ */
+async function networkFirst(request, cacheName, cacheKey = request, timeoutMs = 6000, canStore = () => true) {
     const cache = await caches.open(cacheName);
     const cached = await cache.match(cacheKey);
-    const network = fetch(request).then((response) => {
-        if (response.ok) {
+    const network = fetch(request).then(async (response) => {
+        if (response.ok && canStore(response)) {
             cache.put(cacheKey, response.clone());
+        } else if (cacheName === API && response.status === 401) {
+            // La sesión terminó en el servidor: nada de lo guardado de ese usuario debe seguir en el teléfono.
+            await caches.delete(API);
+        } else if (cacheName === API && (response.status === 403 || response.status === 404)) {
+            await cache.delete(cacheKey); // ya no le corresponde o dejó de existir
         }
         return response;
     });
@@ -118,8 +129,12 @@ self.addEventListener('fetch', (event) => {
     }
 
     if (request.mode === 'navigate') {
+        // Direcciones que no son pantallas de la app (API, fotos, chequeo de salud): van directo a la red.
+        if (/^\/(api|sanctum|up|build|storage)(\/|$)/.test(url.pathname)) {
+            return;
+        }
         // Todas las pantallas son la misma página (SPA): se guarda como "/".
-        event.respondWith(networkFirst(request, SHELL, '/', 4000));
+        event.respondWith(networkFirst(request, SHELL, '/', 4000, isAppPage));
         return;
     }
     if (url.pathname.startsWith('/build/') || url.pathname.startsWith('/icons/') || url.pathname.startsWith('/brand/')) {

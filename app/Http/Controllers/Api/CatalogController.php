@@ -12,6 +12,7 @@ use App\Models\FaultType;
 use App\Models\Part;
 use App\Models\State;
 use App\Models\User;
+use App\Services\AuditLogger;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -32,9 +33,17 @@ class CatalogController extends Controller
         'atm-conditions' => AtmCondition::class,
     ];
 
+    private const LABELS = [
+        'banks' => 'Bancos', 'states' => 'Estados', 'fault-types' => 'Tipos de falla',
+        'parts' => 'Repuestos', 'atm-conditions' => 'Estatus final',
+    ];
+
     /** Todo lo que necesitan los formularios, en una sola llamada (también sirve de caché offline). */
-    public function all(): JsonResponse
+    public function all(Request $request): JsonResponse
     {
+        // Los teléfonos de los técnicos son para quien asigna; un técnico no ve los de sus compañeros.
+        $staff = $request->user()->role !== Role::Technician;
+
         $list = fn (string $model) => $model::query()->orderBy('name')->get(['id', 'name', ...($model === State::class ? [] : ['active'])]);
 
         return response()->json([
@@ -44,24 +53,29 @@ class CatalogController extends Controller
             'parts' => $list(Part::class),
             'atm_conditions' => AtmCondition::orderBy('sort')->get(['id', 'name', 'resulting_ticket_status', 'active']),
             'technicians' => User::technicians()->where('active', true)->with('states:id')->orderBy('name')->get()
-                ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->name, 'phone' => $u->phone, 'state_ids' => $u->states->pluck('id')]),
+                ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->name, 'phone' => $staff ? $u->phone : null, 'state_ids' => $u->states->pluck('id')]),
             'statuses' => collect(TicketStatus::cases())->map(fn ($s) => ['value' => $s->value, 'label' => $s->label()]),
             'priorities' => collect(Priority::cases())->sortByDesc(fn (Priority $p) => $p->weight())->map(fn ($p) => ['value' => $p->value, 'label' => $p->label()])->values(),
             'roles' => collect(Role::cases())->map(fn ($r) => ['value' => $r->value, 'label' => $r->label()]),
         ]);
     }
 
-    public function store(Request $request, string $type): JsonResponse
+    public function store(Request $request, string $type, AuditLogger $audit): JsonResponse
     {
         $model = $this->model($type);
+        $record = $model::create($this->validated($request, $type));
+        $audit->record('catalog.created', self::LABELS[$type].": se agregó \"{$record->name}\"", $record);
 
-        return response()->json($model::create($this->validated($request, $type)), 201);
+        return response()->json($record, 201);
     }
 
-    public function update(Request $request, string $type, int $id): JsonResponse
+    public function update(Request $request, string $type, int $id, AuditLogger $audit): JsonResponse
     {
         $record = $this->model($type)::findOrFail($id);
         $record->update($this->validated($request, $type, $id));
+        if ($record->wasChanged()) {
+            $audit->record('catalog.updated', self::LABELS[$type].": se modificó \"{$record->name}\"", $record, ['cambios' => array_keys($record->getChanges())]);
+        }
 
         return response()->json($record);
     }

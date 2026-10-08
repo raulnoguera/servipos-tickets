@@ -77,14 +77,14 @@ class PushAndOfflineSyncTest extends TestCase
 
         // Todo se envía a las 14:00, cuando el teléfono recupera la señal.
         $this->travelTo(now()->setTime(14, 0));
-        $this->actingAs($technician)->postJson("/api/v1/tickets/{$ticket->id}/status", ['status' => 'en_transito', 'at' => now()->setTime(9, 0)->toIso8601String()])->assertOk();
-        $this->actingAs($technician)->postJson("/api/v1/tickets/{$ticket->id}/status", ['status' => 'en_sitio', 'at' => $arrived->toIso8601String()])->assertOk();
+        $this->actingAs($technician)->postJson("/api/v1/tickets/{$ticket->id}/status", ['status' => 'en_transito', 'at' => now()->setTime(9, 0)->toIso8601String(), 'queued' => true])->assertOk();
+        $this->actingAs($technician)->postJson("/api/v1/tickets/{$ticket->id}/status", ['status' => 'en_sitio', 'at' => $arrived->toIso8601String(), 'queued' => true])->assertOk();
         $this->actingAs($technician)->postJson("/api/v1/tickets/{$ticket->id}/visits", [
             'client_uuid' => (string) Str::uuid(),
             'work_done' => 'Cambio de correas',
             'atm_condition_id' => AtmCondition::firstWhere('name', 'Operativo')->id,
             'parts_changed' => false,
-            'finished_at' => $finished->toIso8601String(),
+            'finished_at' => $finished->toIso8601String(), 'queued' => true,
         ])->assertOk()
             ->assertJsonPath('data.status', 'concluido')
             ->assertJsonPath('data.duration_ms', (int) (2.75 * 3600 * 1000));
@@ -106,7 +106,7 @@ class PushAndOfflineSyncTest extends TestCase
 
         // 13:30 UTC = 09:30 en Caracas (UTC-4), tal como lo envía JavaScript con toISOString().
         $utc = now()->setTime(9, 30)->utc()->format('Y-m-d\TH:i:s.v\Z');
-        $this->actingAs($technician)->postJson("/api/v1/tickets/{$ticket->id}/status", ['status' => 'en_transito', 'at' => $utc])->assertOk();
+        $this->actingAs($technician)->postJson("/api/v1/tickets/{$ticket->id}/status", ['status' => 'en_transito', 'at' => $utc, 'queued' => true])->assertOk();
 
         $this->assertSame('09:30:00', $ticket->events()->where('to_status', 'en_transito')->first()->created_at->format('H:i:s'));
         $this->assertStringStartsWith(now()->toDateString().' 09:30:00', \DB::table('ticket_events')->where('to_status', 'en_transito')->value('created_at'));

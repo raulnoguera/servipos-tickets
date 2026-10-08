@@ -6,10 +6,12 @@ let running = false;
 
 async function send(item) {
     if (item.type === 'status') {
-        return api(`tickets/${item.ticketId}/status`, { method: 'POST', body: item.payload, timeout: 20000 });
+        // "queued": el cambio estuvo guardado sin señal; el servidor respeta su hora y lo marca como enviado tarde.
+        return api(`tickets/${item.ticketId}/status`, { method: 'POST', body: { ...item.payload, queued: true }, timeout: 20000 });
     }
     const body = new FormData();
     Object.entries(item.payload.fields).forEach(([key, value]) => body.append(key, value));
+    body.append('queued', '1');
     if (item.payload.photo) {
         body.append('photo', item.payload.photo, item.payload.photoName || 'constancia.jpg');
     }

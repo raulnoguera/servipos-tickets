@@ -14,7 +14,7 @@ export default function Login() {
     const { login } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [remember, setRemember] = useState(true);
+    const [remember, setRemember] = useState(false);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
 

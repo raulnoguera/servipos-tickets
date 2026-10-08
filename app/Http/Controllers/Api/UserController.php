@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\SaveUserRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Str;
@@ -26,16 +27,17 @@ class UserController extends Controller
         return UserResource::collection($users);
     }
 
-    public function store(SaveUserRequest $request): UserResource
+    public function store(SaveUserRequest $request, AuditLogger $audit): UserResource
     {
         $data = $request->validated();
         $user = User::create($data + ['email_verified_at' => now()]);
         $user->states()->sync($data['state_ids'] ?? []);
+        $audit->record('user.created', "Usuario creado: {$user->name} ({$user->role->label()})", $user, ['correo' => $user->email]);
 
         return new UserResource($user->load('states'));
     }
 
-    public function update(SaveUserRequest $request, User $user): UserResource
+    public function update(SaveUserRequest $request, User $user, AuditLogger $audit): UserResource
     {
         $data = $request->validated();
         if ($user->is($request->user()) && (($data['active'] ?? true) === false || $data['role'] !== $user->role->value)) {
@@ -44,18 +46,49 @@ class UserController extends Controller
         if (empty($data['password'])) {
             unset($data['password']);
         }
+        $before = $user->only(['name', 'email', 'phone', 'active']) + ['role' => $user->role->value];
         $user->update($data);
         $user->states()->sync($data['state_ids'] ?? []);
 
         // Al desactivar o cambiar la contraseña: se invalida "recordarme" en todos sus
-        // equipos y, si se desactivó, deja de recibir notificaciones en sus teléfonos.
-        if ($user->wasChanged(['active', 'password'])) {
+        // equipos y dejan de llegar notificaciones a sus teléfonos (puede ser un equipo
+        // perdido); el usuario las reactiva al volver a entrar.
+        $passwordChanged = $user->wasChanged('password');
+        if ($passwordChanged || $user->wasChanged('active')) {
             $user->forceFill(['remember_token' => Str::random(60)])->saveQuietly();
         }
-        if (! $user->active) {
+        if (! $user->active || $passwordChanged) {
             $user->pushSubscriptions()->delete();
         }
 
+        $changes = $this->changes($before, $user, $passwordChanged);
+        if ($changes) {
+            $audit->record('user.updated', "Usuario modificado: {$user->name} · ".implode(', ', array_keys($changes)), $user, $changes);
+        }
+
         return new UserResource($user->load('states'));
+    }
+
+    /**
+     * Qué cambió, para la auditoría. De la contraseña solo se anota que cambió.
+     *
+     * @param  array<string, mixed>  $before
+     * @return array<string, mixed>
+     */
+    private function changes(array $before, User $user, bool $passwordChanged): array
+    {
+        $labels = ['name' => 'nombre', 'email' => 'correo', 'phone' => 'teléfono', 'active' => 'activo', 'role' => 'rol'];
+        $after = $user->only(['name', 'email', 'phone', 'active']) + ['role' => $user->role->value];
+        $changes = [];
+        foreach ($labels as $field => $label) {
+            if ($before[$field] != $after[$field]) {
+                $changes[$label] = ['antes' => $before[$field], 'ahora' => $after[$field]];
+            }
+        }
+        if ($passwordChanged) {
+            $changes['contraseña'] = 'cambiada';
+        }
+
+        return $changes;
     }
 }

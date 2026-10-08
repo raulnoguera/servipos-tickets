@@ -54,7 +54,7 @@ function UserForm({ user, onClose }) {
                 </Field>
                 <Field label="Correo (usuario)" required error={err?.field?.('email')}>{(id) => <Input id={id} type="email" value={form.email} onChange={set('email')} />}</Field>
                 <Field label="Teléfono (WhatsApp)" hint="Ej. 0414-1234567" error={err?.field?.('phone')}>{(id) => <Input id={id} type="tel" value={form.phone} onChange={set('phone')} />}</Field>
-                <Field label={user ? 'Nueva contraseña' : 'Contraseña'} required={!user} hint={user ? 'Déjela vacía para no cambiarla' : 'Mínimo 8 caracteres'} error={err?.field?.('password')} className="sm:col-span-2">
+                <Field label={user ? 'Nueva contraseña' : 'Contraseña'} required={!user} hint={user ? 'Déjela vacía para no cambiarla' : 'Mínimo 10 caracteres, con letras y números'} error={err?.field?.('password')} className="sm:col-span-2">
                     {(id) => <Input id={id} type="password" autoComplete="new-password" value={form.password} onChange={set('password')} />}
                 </Field>
                 {form.role === 'technician' && (

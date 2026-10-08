@@ -41,12 +41,15 @@ class SecurityHeaders
 
         // En desarrollo con el servidor de Vite (recarga en caliente) no se aplica la CSP.
         if (! Vite::isRunningHot()) {
-            $headers->set('Content-Security-Policy', self::policy($request->isSecure()));
+            $headers->set('Content-Security-Policy', self::policy($request->isSecure(), nonce: Vite::cspNonce()));
         }
 
-        // Las respuestas de la API con datos de usuario no deben quedar en cachés intermedias.
-        if ($request->is('api/*') && ! $headers->has('Content-Disposition')) {
+        // Nada de la API (datos, descargas de Excel, fotos de constancias) debe quedar en
+        // cachés intermedias ni en el disco del navegador después de cerrar sesión.
+        if ($request->is('api/*')) {
             $headers->set('Cache-Control', 'no-store, private');
+            $headers->remove('Expires');
+            $headers->remove('Pragma');
         }
 
         return $response;
@@ -56,15 +59,21 @@ class SecurityHeaders
      * Política de contenido. También se incluye como <meta> en la página, porque
      * la CDN de Hostinger (opción "Forzar HTTPS") reemplaza la cabecera por la suya.
      * En <meta> no se admite frame-ancestors; X-Frame-Options cubre ese caso.
+     *
+     * @param  string|null  $nonce  nonce de Vite (Vite::cspNonce()) para la hoja de estilos en línea de las fuentes
      */
-    public static function policy(bool $secure, bool $meta = false): string
+    public static function policy(bool $secure, bool $meta = false, ?string $nonce = null): string
     {
         return implode('; ', array_filter([
             "default-src 'self'",
             "script-src 'self'",
+            // Hojas de estilo solo del sitio; los estilos en línea se limitan a atributos (gráficos, anchos).
             "style-src 'self' 'unsafe-inline'",
+            // La única hoja en línea es la de las fuentes (@fonts), autorizada con el nonce de esta respuesta.
+            "style-src-elem 'self'".($nonce ? " 'nonce-{$nonce}'" : ''),
+            "style-src-attr 'unsafe-inline'",
             "img-src 'self' data: blob:",
-            "font-src 'self' data:",
+            "font-src 'self'",
             "connect-src 'self'",
             "worker-src 'self'",
             "manifest-src 'self'",

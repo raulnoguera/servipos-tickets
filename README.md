@@ -84,7 +84,7 @@ php artisan migrate --seed --force
 php artisan config:cache && php artisan route:cache
 ```
 
-7. Entrar con el administrador del `.env` → **Importar Excel** (simular, luego importar). Opcional: `php artisan db:seed --class=DemoSeeder --force`.
+7. Entrar con el administrador del `.env` → **Importar Excel** (simular, luego importar). Los datos de demostración (`DemoSeeder`) no se ejecutan en producción; solo en un sitio de pruebas con `ALLOW_DEMO_DATA=true` en `.env`.
 
 8. Notificaciones push: `php artisan servipos:claves-push && php artisan config:cache`.
 

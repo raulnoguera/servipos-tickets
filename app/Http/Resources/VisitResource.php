@@ -20,6 +20,8 @@ class VisitResource extends JsonResource
             'visit_date' => $this->visit_date?->toDateString(),
             'arrived_at' => $this->arrived_at?->toIso8601String(),
             'finished_at' => $this->finished_at?->toIso8601String(),
+            // Atención enviada tarde (guardada sin señal): demora entre el cierre declarado y su llegada al servidor.
+            'late_ms' => $this->lateMs(),
             'technician' => $this->technician?->name,
             'fault_type' => $this->faultType?->name,
             'work_done' => $this->work_done,

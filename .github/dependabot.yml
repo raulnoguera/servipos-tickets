@@ -1,0 +1,13 @@
+# Avisos automáticos de GitHub cuando una dependencia tiene una vulnerabilidad o una versión nueva.
+version: 2
+updates:
+  - package-ecosystem: composer
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5

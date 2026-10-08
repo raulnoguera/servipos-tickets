@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Eye, EyeOff, Gauge, MessageSquare, Pencil, Send } from 'lucide-react';
+import { CloudUpload, Eye, EyeOff, Gauge, MessageSquare, Pencil, Send } from 'lucide-react';
 import { api } from '../lib/api';
 import { useCatalogs } from '../lib/queries';
-import { formatDateTime, initials } from '../lib/format';
+import { formatDateTime, formatDuration, initials } from '../lib/format';
 import { Alert, Button, Card, CardHeader, Field, Input, Modal, Select, STATUS, Textarea, cx, toast } from './ui';
 import { SlaMeter } from './Sla';
 
@@ -131,6 +131,16 @@ export function EditButton({ onClick }) {
 }
 
 /** Actividad: comentarios y cambios del ticket en una sola línea de tiempo, con caja para comentar. */
+/** El registro se hizo sin señal: la hora la declaró el teléfono y llegó al servidor después. */
+export function LateNote({ ms, receivedAt }) {
+    return (
+        <p className="mt-1 inline-flex items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-800 ring-1 ring-amber-200 ring-inset" title="Hora declarada por el teléfono; se envió después por falta de señal">
+            <CloudUpload className="size-3 shrink-0" />
+            Enviado {formatDuration(ms)} después{receivedAt && ` · recibido ${formatDateTime(receivedAt)}`}
+        </p>
+    );
+}
+
 export function ActivityCard({ ticket }) {
     const update = useTicketUpdate(ticket.id);
     const [body, setBody] = useState('');
@@ -213,6 +223,7 @@ export function ActivityCard({ ticket }) {
                                     {item.note && <span className="text-body"> — {item.to ? item.note : item.note.replace(/^Editado:\s*/, '')}</span>}
                                 </p>
                                 <p className="text-xs text-muted">{formatDateTime(item.at)}{item.user && ` · ${item.user}`}</p>
+                                {item.late_ms && <LateNote ms={item.late_ms} receivedAt={item.received_at} />}
                             </div>
                         </li>
                     ),

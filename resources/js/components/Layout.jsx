@@ -1,7 +1,7 @@
 import { Component, Suspense, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
-    BarChart3, Building2, ClipboardList, Columns3, FileUp, History, LayoutDashboard, ListChecks, LogOut, Menu, PlusCircle, Users, Wrench, X,
+    BarChart3, Building2, ClipboardList, Columns3, FileUp, History, LayoutDashboard, ListChecks, LogOut, Menu, PlusCircle, ShieldCheck, Users, Wrench, X,
 } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { initials } from '../lib/format';
@@ -23,6 +23,7 @@ const NAV = [
     { to: '/catalogos', label: 'Catálogos', icon: ListChecks, roles: ['admin'] },
     { to: '/usuarios', label: 'Usuarios y técnicos', icon: Users, roles: ['admin'] },
     { to: '/importar', label: 'Importar Excel', icon: FileUp, roles: ['admin'] },
+    { to: '/auditoria', label: 'Auditoría', icon: ShieldCheck, roles: ['admin'] },
 ];
 
 function NavItems({ role, onNavigate }) {

@@ -23,6 +23,7 @@ const Users = lazy(() => import('./pages/Users'));
 const Reports = lazy(() => import('./pages/Reports'));
 const ReportDetail = lazy(() => import('./pages/ReportDetail'));
 const Import = lazy(() => import('./pages/Import'));
+const Audit = lazy(() => import('./pages/Audit'));
 
 const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: true, staleTime: 15000 } },
@@ -64,6 +65,7 @@ function AppRoutes() {
                 <Route path="catalogos" element={<Guard roles={['admin']}><Catalogs /></Guard>} />
                 <Route path="usuarios" element={<Guard roles={['admin']}><Users /></Guard>} />
                 <Route path="importar" element={<Guard roles={['admin']}><Import /></Guard>} />
+                <Route path="auditoria" element={<Guard roles={['admin']}><Audit /></Guard>} />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
         </Routes>

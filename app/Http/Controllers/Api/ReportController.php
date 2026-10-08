@@ -9,6 +9,7 @@ use App\Models\FaultType;
 use App\Models\Part;
 use App\Models\State;
 use App\Models\User;
+use App\Services\AuditLogger;
 use App\Services\Export\ConsolidadoExporter;
 use App\Services\Reports\ReportService;
 use App\Services\Reports\TableExporter;
@@ -190,6 +191,7 @@ class ReportController extends Controller
         $path = tempnam(sys_get_temp_dir(), 'consolidado');
         $exporter->save($exporter->build($from, $to, $data['bank_id'] ?? null), $path);
         $name = sprintf('Consolidado Relación de Atenciones %s al %s.xlsx', $from->format('d-m-Y'), $to->format('d-m-Y'));
+        app(AuditLogger::class)->record('export.consolidado', 'Descarga a Excel: Libro Consolidado', meta: ['filtros' => 'Del '.$from->format('d/m/Y').' al '.$to->format('d/m/Y')]);
 
         return response()->download($path, $name)->deleteFileAfterSend();
     }

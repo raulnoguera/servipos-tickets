@@ -1,10 +1,10 @@
-# Hostinger: la carpeta pública del dominio (public_html) contiene todo el proyecto.
+# La carpeta pública del dominio (public_html) contiene todo el proyecto.
 # Todo se redirige a /public, así .env, vendor y storage nunca quedan expuestos.
-<IfModule mod_rewrite.c>
-    RewriteEngine On
-    RewriteCond %{REQUEST_URI} !^/public/
-    RewriteRule ^(.*)$ public/$1 [L]
-</IfModule>
+# Sin <IfModule>: si el servidor no tuviera mod_rewrite, el sitio da error en vez de
+# quedar abierto. Cada carpeta interna lleva además su propio "Require all denied".
+RewriteEngine On
+RewriteCond %{REQUEST_URI} !^/public/
+RewriteRule ^(.*)$ public/$1 [L]
 
 <FilesMatch "^\.">
     Require all denied

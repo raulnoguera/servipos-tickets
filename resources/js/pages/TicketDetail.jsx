@@ -15,7 +15,7 @@ import {
 } from '../components/ui';
 import VisitForm from '../components/VisitForm';
 import { PriorityBadge, SlaBadge } from '../components/Sla';
-import { ActivityCard, EditButton, EditTicketModal, SlaCard, WatchButton } from '../components/TicketTracking';
+import { ActivityCard, EditButton, EditTicketModal, LateNote, SlaCard, WatchButton } from '../components/TicketTracking';
 
 function Info({ label, children }) {
     return (
@@ -125,6 +125,7 @@ function VisitCard({ visit, index, onPhoto }) {
                 </div>
                 {visit.atm_condition && <Badge tone={visit.atm_condition === 'Operativo' ? 'ok' : visit.atm_condition.startsWith('Operativo') ? 'warn' : 'danger'}>{visit.atm_condition}</Badge>}
             </div>
+            {visit.late_ms && <LateNote ms={visit.late_ms} />}
             <dl className="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
                 <Info label="Técnico">{visit.technician}</Info>
                 <Info label="N° constancia">{visit.constancia_number}</Info>

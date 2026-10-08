@@ -32,6 +32,6 @@ class VisitController extends Controller
         Gate::authorize('view', $visit->ticket);
         abort_unless($visit->constancia_path && Storage::exists($visit->constancia_path), 404);
 
-        return Storage::response($visit->constancia_path, null, ['Cache-Control' => 'private, max-age=86400']);
+        return Storage::response($visit->constancia_path);
     }
 }

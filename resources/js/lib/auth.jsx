@@ -12,6 +12,44 @@ function clearOfflineCache() {
 
 const AuthContext = createContext(null);
 const STORED_USER = 'servipos:user';
+const LOGOUT_PENDING = 'servipos:logout-pendiente';
+
+/**
+ * Cierre de sesión hecho sin señal: el servidor aún no se enteró y sus cookies siguen
+ * vigentes. Se recuerda aquí para cerrarla de verdad antes de cualquier otra cosa.
+ */
+const pendingLogout = {
+    get() {
+        try {
+            return localStorage.getItem(LOGOUT_PENDING) === '1';
+        } catch {
+            return false;
+        }
+    },
+    set(value) {
+        try {
+            value ? localStorage.setItem(LOGOUT_PENDING, '1') : localStorage.removeItem(LOGOUT_PENDING);
+        } catch {
+            // Sin almacenamiento no se puede recordar; queda como antes.
+        }
+    },
+    /** Intenta cerrar la sesión en el servidor. Devuelve true si ya no queda nada pendiente. */
+    async flush() {
+        if (!this.get()) {
+            return true;
+        }
+        try {
+            await api('auth/logout', { method: 'POST', timeout: 8000 });
+        } catch (error) {
+            if (error.offline) {
+                return false; // sigue sin señal: se reintenta en el próximo arranque
+            }
+            // 401: la sesión ya no existía. Cualquier otro error tampoco deja una sesión utilizable.
+        }
+        this.set(false);
+        return true;
+    },
+};
 
 /** Último usuario con sesión, para abrir la app sin señal. */
 const storedUser = {
@@ -36,28 +74,44 @@ export function AuthProvider({ children }) {
     const queryClient = useQueryClient();
 
     useEffect(() => {
-        api('auth/me')
-            .then((r) => {
+        // La sesión terminó en el servidor (venció, desactivaron al usuario o le cambiaron la
+        // contraseña): se borra lo guardado para leer sin señal. Los envíos pendientes se
+        // conservan: son trabajo del técnico y se envían cuando vuelva a entrar.
+        setUnauthorizedHandler(() => {
+            storedUser.set(null);
+            clearOfflineCache();
+            queryClient.clear();
+            setUser(null);
+        });
+
+        (async () => {
+            // Si alguien cerró sesión sin señal, primero se cierra de verdad en el servidor.
+            if (!(await pendingLogout.flush())) {
+                storedUser.set(null);
+                setUser(null);
+                return;
+            }
+            try {
+                const r = await api('auth/me');
                 storedUser.set(r.data);
                 setUser(r.data);
                 ensurePush();
-            })
-            .catch((error) => {
+            } catch (error) {
                 // Sin señal: se sigue con el último usuario conocido. Con 401 la sesión terminó.
                 const offlineUser = error.offline ? storedUser.get() : null;
                 if (!offlineUser) {
                     storedUser.set(null);
                 }
                 setUser(offlineUser);
-            });
-        setUnauthorizedHandler(() => {
-            storedUser.set(null);
-            setUser(null);
-        });
-    }, []);
+            }
+        })();
+    }, [queryClient]);
 
     const login = useCallback(async (email, password, remember) => {
+        // Si quedó un cierre de sesión sin enviar, se completa antes de entrar con otra cuenta.
+        await pendingLogout.flush();
         const r = await api('auth/login', { method: 'POST', body: { email, password, remember } });
+        pendingLogout.set(false);
         await clearOfflineCache();
         queryClient.clear();
         storedUser.set(r.data);
@@ -72,7 +126,14 @@ export function AuthProvider({ children }) {
             return;
         }
         await disablePush();
-        await api('auth/logout', { method: 'POST' }).catch(() => {});
+        try {
+            await api('auth/logout', { method: 'POST', timeout: 8000 });
+        } catch (error) {
+            // Sin señal el servidor no se entera: se deja anotado para cerrarla en cuanto haya conexión.
+            if (error.offline) {
+                pendingLogout.set(true);
+            }
+        }
         if (user) {
             await outbox.clear(user.id).catch(() => {});
         }

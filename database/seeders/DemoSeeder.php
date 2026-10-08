@@ -42,6 +42,10 @@ class DemoSeeder extends Seeder
 
     public function run(TicketService $tickets): void
     {
+        // Crea cuentas con una contraseña compartida y tickets ficticios: nunca en producción.
+        if (app()->isProduction() && ! env('ALLOW_DEMO_DATA')) {
+            throw new RuntimeException('DemoSeeder no se ejecuta en producción. Para un sitio de pruebas público defina ALLOW_DEMO_DATA=true en .env.');
+        }
         $tickets->notify = false;
         $password = env('DEMO_PASSWORD') ?: throw new RuntimeException('Defina DEMO_PASSWORD en .env para crear los usuarios de demostración.');
         $this->call(AtmConditionSeeder::class);
@@ -141,16 +145,24 @@ class DemoSeeder extends Seeder
     private function visit(TicketService $tickets, Ticket $ticket, User $tech, int $conditionId, CarbonImmutable $at, $parts, bool $withParts): void
     {
         $this->at($at);
-        $tickets->registerVisit($ticket, [
+        $visit = $tickets->registerVisit($ticket, [
             'constancia_number' => (string) random_int(6300, 7999),
             'work_done' => self::WORK[array_rand(self::WORK)],
             'atm_condition_id' => $conditionId,
-            'arrived_at' => $at->subMinutes(random_int(30, 120))->toIso8601String(),
             'finished_at' => $at->toIso8601String(),
             'parts' => $withParts
                 ? $parts->random(random_int(1, 2))->map(fn (Part $p) => ['part_id' => $p->id, 'quantity' => random_int(1, 3)])->values()->all()
                 : [],
         ], $tech);
+        // La API ya no acepta la hora de llegada del teléfono; en los datos de muestra se
+        // fija aquí para que los tiempos de llegada no coincidan siempre con el cierre.
+        if (! $visit->arrived_at) {
+            $arrived = $at->subMinutes(random_int(30, 120))->max($ticket->assigned_at ?? $ticket->opened_at);
+            $visit->update(['arrived_at' => $arrived]);
+            if ($ticket->responded_at?->equalTo($at)) {
+                $ticket->update(['responded_at' => $arrived]);
+            }
+        }
     }
 
     private function at(?CarbonImmutable $moment): void

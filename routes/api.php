@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AtmController;
+use App\Http\Controllers\Api\AuditController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\Api\DashboardController;
@@ -50,7 +51,7 @@ Route::prefix('v1')->group(function () {
         Route::get('visits/{visit}/constancia', [VisitController::class, 'constancia'])->name('visits.constancia');
 
         Route::middleware('role:admin,operator')->group(function () {
-            Route::get('dashboard', DashboardController::class);
+            Route::get('dashboard', DashboardController::class)->middleware('throttle:heavy');
             Route::get('atms', [AtmController::class, 'index']);
             Route::get('atms/lookup/{number}', [AtmController::class, 'lookup']);
             Route::get('reports/summary', [ReportController::class, 'summary'])->middleware('throttle:heavy');
@@ -61,7 +62,6 @@ Route::prefix('v1')->group(function () {
             Route::get('reports/detail', [ReportController::class, 'detail'])->middleware('throttle:heavy');
             Route::get('reports/parts', [ReportController::class, 'parts'])->middleware('throttle:heavy');
             Route::get('reports/consolidado', [ReportController::class, 'consolidado'])->middleware('throttle:heavy');
-            Route::get('users', [UserController::class, 'index']);
         });
 
         Route::middleware('role:admin')->group(function () {
@@ -69,10 +69,12 @@ Route::prefix('v1')->group(function () {
             Route::put('atms/{atm}', [AtmController::class, 'update']);
             Route::post('catalogs/{type}', [CatalogController::class, 'store']);
             Route::put('catalogs/{type}/{id}', [CatalogController::class, 'update']);
+            Route::get('users', [UserController::class, 'index']);
             Route::post('users', [UserController::class, 'store']);
             Route::put('users/{user}', [UserController::class, 'update']);
             Route::post('import/excel', ImportController::class)->middleware('throttle:heavy');
             Route::put('sla-policies', [SlaPolicyController::class, 'update']);
+            Route::get('audit', AuditController::class);
         });
     });
 });
