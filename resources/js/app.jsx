@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './lib/auth';
 import { LoadingBlock, Toaster } from './components/ui';
 import Layout from './components/Layout';
+import { UpdateWatcher } from './components/AppUpdate';
 import Login from './pages/Login';
 import { printSignature } from './lib/signature';
 
@@ -98,6 +99,7 @@ createRoot(document.getElementById('app')).render(
         <QueryClientProvider client={queryClient}>
             <BrowserRouter>
                 <AuthProvider>
+                    <UpdateWatcher />
                     <AppRoutes />
                     <Toaster />
                 </AuthProvider>

@@ -14,6 +14,7 @@ use App\Services\TicketService;
 use Database\Seeders\AtmConditionSeeder;
 use Database\Seeders\DemoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\RateLimiter;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -402,5 +403,21 @@ class SecurityTest extends TestCase
 
         $this->expectExceptionMessage('DemoSeeder no se ejecuta en producción');
         $this->app->make(DemoSeeder::class)->run($this->app->make(TicketService::class));
+    }
+
+    public function test_published_version_is_public_and_never_cached(): void
+    {
+        File::ensureDirectoryExists(public_path('build'));
+        $file = public_path('build/version.json');
+        $previous = is_file($file) ? file_get_contents($file) : null;
+        file_put_contents($file, json_encode(['build' => '2026.10.08-213000']));
+
+        try {
+            // Sin sesión: la app la consulta también desde la pantalla de inicio.
+            $response = $this->getJson('/api/v1/version')->assertOk()->assertExactJson(['build' => '2026.10.08-213000']);
+            $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
+        } finally {
+            $previous === null ? unlink($file) : file_put_contents($file, $previous);
+        }
     }
 }

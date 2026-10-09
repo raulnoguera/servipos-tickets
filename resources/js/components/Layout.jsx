@@ -9,6 +9,7 @@ import { LoadingBlock, cx } from './ui';
 import { Logo } from './Logo';
 import { ConnectivityBar, OutboxSync } from './Offline';
 import NotificationBell, { PushListener } from './NotificationBell';
+import { UpdateButton } from './AppUpdate';
 
 const NAV = [
     { to: '/', label: 'Monitor', icon: LayoutDashboard, roles: ['admin', 'operator'], end: true },
@@ -122,7 +123,8 @@ export default function Layout() {
                 <div className="flex-1 overflow-y-auto pb-4">
                     <NavItems role={user.role} />
                 </div>
-                <UserCard user={user} onLogout={logout} />
+                <UpdateButton />
+                        <UserCard user={user} onLogout={logout} />
             </aside>
 
             {/* Barra superior (teléfono / tablet) */}
@@ -151,6 +153,7 @@ export default function Layout() {
                         <div className="flex-1 overflow-y-auto">
                             <NavItems role={user.role} onNavigate={() => setOpen(false)} />
                         </div>
+                        <UpdateButton />
                         <UserCard user={user} onLogout={logout} />
                     </div>
                 </div>

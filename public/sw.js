@@ -153,7 +153,30 @@ self.addEventListener('message', (event) => {
     if (event.data === 'precache') {
         event.waitUntil(precacheBuild());
     }
+    // La app encontró una versión nueva: se guardan sus archivos y su página antes de que
+    // recargue, para que la actualización quede completa aunque después no haya señal.
+    if (event.data === 'update') {
+        event.waitUntil(
+            (async () => {
+                await precacheBuild();
+                await refreshShell();
+                event.ports[0]?.postMessage('ready');
+            })(),
+        );
+    }
 });
+
+/** Guarda la página actual de la app como pantalla para abrir sin señal. */
+async function refreshShell() {
+    try {
+        const response = await fetch('/', { cache: 'no-store', credentials: 'same-origin' });
+        if (response.ok && isAppPage(response)) {
+            await (await caches.open(SHELL)).put('/', response);
+        }
+    } catch {
+        // Sin señal: queda la anterior y se renueva en la próxima apertura.
+    }
+}
 
 /* ---------- Notificaciones push ---------- */
 
