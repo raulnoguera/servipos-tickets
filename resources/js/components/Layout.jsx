@@ -1,11 +1,14 @@
 import { Component, Suspense, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
-    BarChart3, Building2, ClipboardList, Columns3, FileUp, History, LayoutDashboard, ListChecks, LogOut, Menu, PlusCircle, ShieldCheck, Users, Wrench, X,
+    BarChart3, Building2, ClipboardList, Columns3, FileUp, History, KeyRound, LayoutDashboard, ListChecks, LogOut, Menu, PlusCircle, ShieldCheck, Users, Wrench, X,
 } from 'lucide-react';
+import { useMutation } from '@tanstack/react-query';
+import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { initials } from '../lib/format';
-import { LoadingBlock, cx } from './ui';
+import { Alert, Button, Field, Input, LoadingBlock, Modal, cx, toast } from './ui';
+import { NewPasswordFields, passwordOk } from './PasswordFields';
 import { Logo } from './Logo';
 import { ConnectivityBar, OutboxSync } from './Offline';
 import NotificationBell, { PushListener } from './NotificationBell';
@@ -62,17 +65,60 @@ function NavItems({ role, onNavigate }) {
     );
 }
 
-function UserCard({ user, onLogout }) {
+/** El usuario cambia su propia contraseña; debe escribir la actual. */
+function ChangePasswordModal({ onClose }) {
+    const [current, setCurrent] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmation, setConfirmation] = useState('');
+    const save = useMutation({
+        mutationFn: () => api('me/password', { method: 'PUT', body: { current_password: current, password, password_confirmation: confirmation } }),
+        onSuccess: () => {
+            toast('Contraseña cambiada');
+            onClose();
+        },
+    });
+    const err = save.error;
     return (
-        <div className="m-3 flex items-center gap-3 rounded-xl bg-white/5 p-3">
+        <Modal
+            open
+            onClose={onClose}
+            title="Cambiar mi contraseña"
+            size="sm"
+            footer={
+                <>
+                    <Button variant="secondary" onClick={onClose}>Cancelar</Button>
+                    <Button loading={save.isPending} disabled={!current || !passwordOk(password) || password !== confirmation} onClick={() => save.mutate()}>Guardar</Button>
+                </>
+            }
+        >
+            <div className="space-y-4">
+                <Field label="Contraseña actual" required error={err?.field?.('current_password')}>
+                    {(id) => <Input id={id} type="password" autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} className="h-11" autoFocus />}
+                </Field>
+                <NewPasswordFields password={password} confirmation={confirmation} onPassword={setPassword} onConfirmation={setConfirmation} error={err?.field?.('password')} />
+                {err && !Object.keys(err.errors).length && <Alert>{err.message}</Alert>}
+                <p className="text-xs text-muted">Al cambiarla se cierra su sesión en los demás equipos; en este sigue abierta.</p>
+            </div>
+        </Modal>
+    );
+}
+
+function UserCard({ user, onLogout }) {
+    const [changing, setChanging] = useState(false);
+    return (
+        <div className="m-3 flex items-center gap-2 rounded-xl bg-white/5 p-3">
             <div className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-500 text-xs font-bold text-white">{initials(user.name)}</div>
             <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-semibold text-white">{user.name}</div>
                 <div className="truncate text-xs text-white/50">{user.role_label}</div>
             </div>
+            <button type="button" onClick={() => setChanging(true)} className="rounded-lg p-2 text-white/60 hover:bg-white/10 hover:text-white" title="Cambiar mi contraseña" aria-label="Cambiar mi contraseña">
+                <KeyRound className="size-4" />
+            </button>
             <button type="button" onClick={onLogout} className="rounded-lg p-2 text-white/60 hover:bg-white/10 hover:text-white" title="Cerrar sesión" aria-label="Cerrar sesión">
                 <LogOut className="size-4" />
             </button>
+            {changing && <ChangePasswordModal onClose={() => setChanging(false)} />}
         </div>
     );
 }

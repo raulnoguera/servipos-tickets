@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AccessLinkController;
 use App\Http\Controllers\Api\AtmController;
 use App\Http\Controllers\Api\AuditController;
 use App\Http\Controllers\Api\AuthController;
@@ -19,10 +20,14 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->group(function () {
     Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
     Route::get('version', VersionController::class);
+    // Enlace de acceso de un solo uso (crear contraseña): público, con el mismo límite que el inicio de sesión.
+    Route::post('access/check', [AccessLinkController::class, 'check'])->middleware('throttle:login');
+    Route::post('access/complete', [AccessLinkController::class, 'complete'])->middleware('throttle:login');
 
     Route::middleware(['auth:sanctum', 'active'])->group(function () {
         Route::get('auth/me', [AuthController::class, 'me']);
         Route::post('auth/logout', [AuthController::class, 'logout']);
+        Route::put('me/password', [AuthController::class, 'changePassword'])->middleware('throttle:5,1');
 
         Route::get('catalogs', [CatalogController::class, 'all']);
 
@@ -76,6 +81,7 @@ Route::prefix('v1')->group(function () {
             Route::get('users', [UserController::class, 'index']);
             Route::post('users', [UserController::class, 'store']);
             Route::put('users/{user}', [UserController::class, 'update']);
+            Route::post('users/{user}/access-link', [AccessLinkController::class, 'create']);
             Route::post('import/excel', ImportController::class)->middleware('throttle:heavy');
             Route::put('sla-policies', [SlaPolicyController::class, 'update']);
             Route::get('audit', AuditController::class);

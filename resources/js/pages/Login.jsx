@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowRight, BarChart3, Camera, Clock3, Lock, Mail } from 'lucide-react';
+import { ArrowRight, BarChart3, Camera, Clock3, Lock, UserRound } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { Alert, Button, Field, Input } from '../components/ui';
 import { Logo } from '../components/Logo';
@@ -65,15 +65,15 @@ export default function Login() {
                         <Logo large />
                     </div>
                     <h2 className="text-3xl font-extrabold tracking-tight">Iniciar sesión</h2>
-                    <p className="mt-2 text-sm text-muted">Ingrese con su correo corporativo.</p>
+                    <p className="mt-2 text-sm text-muted">Ingrese con su correo o con su número de teléfono.</p>
 
                     <form onSubmit={submit} className="mt-8 space-y-5">
                         {error && <Alert>{error}</Alert>}
-                        <Field label="Correo">
+                        <Field label="Correo o teléfono">
                             {(id) => (
                                 <div className="relative">
-                                    <Mail className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-faint" />
-                                    <Input id={id} type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} className="h-11 pl-9" placeholder="nombre@servipos2019.com" />
+                                    <UserRound className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-faint" />
+                                    <Input id={id} type="text" inputMode="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} className="h-11 pl-9" placeholder="correo@empresa.com o 0414-1234567" />
                                 </div>
                             )}
                         </Field>
@@ -92,6 +92,7 @@ export default function Login() {
                         <Button type="submit" size="lg" className="w-full" loading={loading}>
                             Entrar <ArrowRight className="size-4" />
                         </Button>
+                        <p className="text-center text-xs text-muted">¿Olvidó su contraseña? Pida al administrador un enlace de acceso nuevo.</p>
                     </form>
                 </div>
             </section>

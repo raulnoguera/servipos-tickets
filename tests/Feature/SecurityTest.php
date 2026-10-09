@@ -74,7 +74,7 @@ class SecurityTest extends TestCase
 
         foreach (range(1, 5) as $i) {
             $this->postJson('/api/v1/auth/login', ['email' => 'ana@servipos.test', 'password' => 'incorrecta'])
-                ->assertJsonPath('errors.email.0', 'Correo o contraseña incorrectos.');
+                ->assertJsonPath('errors.email.0', 'Usuario o contraseña incorrectos.');
         }
 
         // Incluso con la contraseña correcta queda bloqueada unos minutos.
@@ -184,7 +184,7 @@ class SecurityTest extends TestCase
         $technician->pushSubscriptions()->create(['endpoint' => 'https://fcm.googleapis.com/fcm/send/x', 'public_key' => 'k', 'auth_token' => 'a']);
 
         $this->actingAs($admin)->putJson("/api/v1/users/{$technician->id}", [
-            'name' => $technician->name, 'email' => $technician->email, 'role' => 'technician', 'active' => false,
+            'name' => $technician->name, 'email' => $technician->email, 'phone' => $technician->phone, 'role' => 'technician', 'active' => false,
         ])->assertOk();
 
         $technician->refresh();
@@ -263,7 +263,7 @@ class SecurityTest extends TestCase
         foreach (range(1, 30) as $i) {
             $this->withServerVariables(['REMOTE_ADDR' => "10.0.0.{$i}"])
                 ->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'incorrecta'])
-                ->assertJsonPath('errors.email.0', 'Correo o contraseña incorrectos.');
+                ->assertJsonPath('errors.email.0', 'Usuario o contraseña incorrectos.');
         }
 
         // Desde una IP nueva y con la contraseña correcta: la cuenta sigue bloqueada.
@@ -372,7 +372,7 @@ class SecurityTest extends TestCase
         $technician->pushSubscriptions()->create(['endpoint' => 'https://fcm.googleapis.com/fcm/send/x', 'public_key' => 'k', 'auth_token' => 'a']);
 
         $this->actingAs($admin)->putJson("/api/v1/users/{$technician->id}", [
-            'name' => $technician->name, 'email' => $technician->email, 'role' => 'technician', 'active' => true, 'password' => 'OtraClave2026x',
+            'name' => $technician->name, 'email' => $technician->email, 'phone' => $technician->phone, 'role' => 'technician', 'active' => true, 'password' => 'OtraClave2026x',
         ])->assertOk();
 
         $this->assertSame(0, $technician->pushSubscriptions()->count());

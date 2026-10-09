@@ -30,9 +30,11 @@ class UserController extends Controller
     public function store(SaveUserRequest $request, AuditLogger $audit): UserResource
     {
         $data = $request->validated();
+        // Sin contraseña: queda una aleatoria que nadie conoce, hasta que el usuario cree la suya con el enlace de acceso.
+        $data['password'] = $data['password'] ?? Str::password(32);
         $user = User::create($data + ['email_verified_at' => now()]);
         $user->states()->sync($data['state_ids'] ?? []);
-        $audit->record('user.created', "Usuario creado: {$user->name} ({$user->role->label()})", $user, ['correo' => $user->email]);
+        $audit->record('user.created', "Usuario creado: {$user->name} ({$user->role->label()})", $user, ['usuario' => $user->loginIdentifier()]);
 
         return new UserResource($user->load('states'));
     }

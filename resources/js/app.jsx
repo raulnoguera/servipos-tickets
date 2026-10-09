@@ -1,13 +1,14 @@
 import '../css/app.css';
 import { StrictMode, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './lib/auth';
 import { LoadingBlock, Toaster } from './components/ui';
 import Layout from './components/Layout';
 import { UpdateWatcher } from './components/AppUpdate';
 import Login from './pages/Login';
+import Access from './pages/Access';
 import { printSignature } from './lib/signature';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
@@ -40,6 +41,12 @@ function Guard({ roles, children }) {
 
 function AppRoutes() {
     const { user } = useAuth();
+    const location = useLocation();
+
+    // Enlace de acceso enviado por el administrador: funciona con o sin sesión iniciada.
+    if (location.pathname === '/acceso') {
+        return <Access />;
+    }
 
     if (user === undefined) {
         return <LoadingBlock label="Iniciando…" />;

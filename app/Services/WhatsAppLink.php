@@ -12,13 +12,10 @@ class WhatsAppLink
 {
     public static function forTicket(Ticket $ticket): ?string
     {
-        $phone = preg_replace('/\D+/', '', (string) $ticket->technician?->phone);
-        if ($phone === '') {
-            return null;
-        }
         // Números venezolanos locales (0414…) → formato internacional (58414…).
-        if (str_starts_with($phone, '0')) {
-            $phone = '58'.substr($phone, 1);
+        $phone = $ticket->technician?->whatsappNumber();
+        if ($phone === null) {
+            return null;
         }
 
         $atm = $ticket->atm;

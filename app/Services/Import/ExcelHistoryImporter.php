@@ -492,14 +492,13 @@ class ExcelHistoryImporter
         }
 
         // Correo provisional: debe actualizarse en el maestro de técnicos antes de dar acceso.
-        $email = Str::slug($name, '.').'@tecnicos.servipos.test';
-        $user = User::firstOrCreate(['email' => $email], [
-            'name' => $name,
-            'role' => Role::Technician,
+        // El Excel solo trae el nombre. El técnico queda creado sin acceso: el administrador
+        // le carga el teléfono (su usuario) y le envía el enlace para crear su contraseña.
+        $user = User::firstOrCreate(['name' => $name, 'role' => Role::Technician], [
             'password' => Str::password(32),
         ]);
         if ($user->wasRecentlyCreated) {
-            $this->report->count('Técnicos creados (con correo provisional)');
+            $this->report->count('Técnicos creados (falta cargar su teléfono para darles acceso)');
         }
 
         return $this->technicians[$key] = $user;

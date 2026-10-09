@@ -18,6 +18,10 @@ class UserResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
+            // Con qué inicia sesión (teléfono para técnicos, correo para el resto).
+            'login' => $this->loginIdentifier(),
+            'last_login_at' => $this->last_login_at?->toIso8601String(),
+            'access_link_expires_at' => $this->access_token_expires_at?->isFuture() ? $this->access_token_expires_at->toIso8601String() : null,
             'role' => $this->role->value,
             'role_label' => $this->role->label(),
             'phone' => $this->phone,

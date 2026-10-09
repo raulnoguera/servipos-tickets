@@ -120,6 +120,16 @@ export function AuthProvider({ children }) {
         return r.data;
     }, [queryClient]);
 
+    /** La sesión ya se inició en el servidor (enlace de acceso): se deja la app lista para ese usuario. */
+    const adopt = useCallback(async (next) => {
+        pendingLogout.set(false);
+        await clearOfflineCache();
+        queryClient.clear();
+        storedUser.set(next);
+        setUser(next);
+        ensurePush();
+    }, [queryClient]);
+
     const logout = useCallback(async () => {
         const pending = user ? (await outbox.all().catch(() => [])).filter((i) => i.userId === user.id) : [];
         if (pending.length && !window.confirm(`Hay ${pending.length} envío(s) guardados sin señal que aún no llegan al servidor. Si cierra sesión se perderán. ¿Cerrar sesión de todas formas?`)) {
@@ -152,6 +162,7 @@ export function AuthProvider({ children }) {
         user,
         updateUser,
         login,
+        adopt,
         logout,
         isAdmin: user?.role === 'admin',
         isTechnician: user?.role === 'technician',
