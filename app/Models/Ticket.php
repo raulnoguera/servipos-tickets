@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
     'number', 'atm_id', 'bank_id', 'fault_type_id', 'description', 'bank_reference', 'status', 'priority', 'source',
-    'assigned_to', 'opened_by', 'opened_at', 'assigned_at', 'responded_at', 'closed_at', 'duration_ms',
+    'assigned_to', 'opened_by', 'opened_at', 'assigned_at', 'responded_at', 'closed_at', 'confirmed_at', 'confirmed_by', 'duration_ms',
 ])]
 class Ticket extends Model
 {
@@ -30,6 +30,7 @@ class Ticket extends Model
             'assigned_at' => 'datetime',
             'responded_at' => 'datetime',
             'closed_at' => 'datetime',
+            'confirmed_at' => 'datetime',
             'duration_ms' => 'integer',
         ];
     }
@@ -48,14 +49,14 @@ class Ticket extends Model
                     $q->where('priority', $priority)->where(function (Builder $breach) use ($policy, $now, $ratio, $state) {
                         if ($policy->resolution_minutes) {
                             $limit = (int) round($policy->resolution_minutes * $ratio);
-                            $breach->orWhere(fn ($r) => $r->whereNotIn('status', [TicketStatus::Closed, TicketStatus::Cancelled])->where('opened_at', '<', $now->copy()->subMinutes($limit)));
+                            $breach->orWhere(fn ($r) => $r->whereNotIn('status', TicketStatus::stopped())->where('opened_at', '<', $now->copy()->subMinutes($limit)));
                             if ($state === 'breached') {
-                                $breach->orWhere(fn ($r) => $r->where('status', TicketStatus::Closed)->where('duration_ms', '>', $policy->resolution_minutes * 60000));
+                                $breach->orWhere(fn ($r) => $r->whereIn('status', [TicketStatus::Closed, TicketStatus::PendingClosure])->where('duration_ms', '>', $policy->resolution_minutes * 60000));
                             }
                         }
                         if ($policy->response_minutes) {
                             $limit = (int) round($policy->response_minutes * $ratio);
-                            $breach->orWhere(fn ($r) => $r->whereNull('responded_at')->whereNotIn('status', [TicketStatus::Closed, TicketStatus::Cancelled])->where('opened_at', '<', $now->copy()->subMinutes($limit)));
+                            $breach->orWhere(fn ($r) => $r->whereNull('responded_at')->whereNotIn('status', TicketStatus::stopped())->where('opened_at', '<', $now->copy()->subMinutes($limit)));
                         }
                     });
                 });
@@ -94,6 +95,12 @@ class Ticket extends Model
     public function opener(): BelongsTo
     {
         return $this->belongsTo(User::class, 'opened_by');
+    }
+
+    /** Administrador que confirmó el cierre. */
+    public function confirmer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'confirmed_by');
     }
 
     public function visits(): HasMany

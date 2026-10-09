@@ -116,6 +116,28 @@ class TicketController extends Controller
         return $this->detail($ticket);
     }
 
+    /** Última confirmación del administrador sobre el cierre informado por el técnico. */
+    public function confirm(Request $request, Ticket $ticket): TicketResource
+    {
+        Gate::authorize('confirm', $ticket);
+        $data = $request->validate(['note' => ['nullable', 'string', 'max:255']]);
+
+        $this->tickets->confirmClosure($ticket, $request->user(), $data['note'] ?? null);
+
+        return $this->detail($ticket);
+    }
+
+    /** El administrador devuelve el ticket al técnico indicando el motivo. */
+    public function reject(Request $request, Ticket $ticket): TicketResource
+    {
+        Gate::authorize('confirm', $ticket);
+        $data = $request->validate(['note' => ['required', 'string', 'min:5', 'max:255']]);
+
+        $this->tickets->rejectClosure($ticket, $request->user(), trim($data['note']));
+
+        return $this->detail($ticket);
+    }
+
     /** Resumen del técnico para su historial: este mes y total. */
     public function technicianSummary(Request $request): JsonResponse
     {
@@ -185,7 +207,7 @@ class TicketController extends Controller
     private function detail(Ticket $ticket): TicketResource
     {
         return new TicketResource($ticket->load([
-            'atm.state', 'atm.bank', 'bank', 'faultType', 'technician', 'opener',
+            'atm.state', 'atm.bank', 'bank', 'faultType', 'technician', 'opener', 'confirmer',
             'visits.parts', 'visits.technician', 'visits.faultType', 'visits.atmCondition',
             'events.user', 'comments.user', 'watchers',
         ]));

@@ -125,5 +125,8 @@ class ReportsTest extends TestCase
             'parts_changed' => true,
             'parts' => collect($parts)->map(fn ($p) => ['part_id' => Part::firstOrCreate(['name' => $p[0]])->id, 'quantity' => $p[1]])->all(),
         ])->assertOk();
+        if ($condition === 'Operativo') {
+            $this->actingAs($this->admin)->postJson("/api/v1/tickets/{$id}/confirm")->assertOk();
+        }
     }
 }

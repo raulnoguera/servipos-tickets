@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from 'react';
 import {
-    AlertTriangle, Bell, CheckCircle2, CircleDot, Clock3, Inbox, Loader2, MapPin, PackageX, UserCheck, X, XCircle, Truck,
+    AlertTriangle, Bell, CheckCircle2, CircleDot, Clock3, Hourglass, Inbox, Loader2, MapPin, PackageX, UserCheck, X, XCircle, Truck,
 } from 'lucide-react';
 import { formatDuration } from '../lib/format';
 
@@ -165,6 +165,8 @@ export const STATUS = {
     asignado: { label: 'Asignado', icon: UserCheck, className: 'bg-brand-50 text-brand-700 ring-brand-200' },
     en_transito: { label: 'En tránsito', icon: Truck, className: 'bg-violet-50 text-violet-700 ring-violet-200' },
     en_sitio: { label: 'En sitio', icon: MapPin, className: 'bg-sky-50 text-sky-700 ring-sky-200' },
+    // El técnico informó el cierre; falta la última confirmación del administrador.
+    por_confirmar: { label: 'Por confirmar', icon: Hourglass, className: 'bg-teal-50 text-teal-800 ring-teal-200' },
     concluido: { label: 'Concluido', icon: CheckCircle2, className: 'bg-emerald-50 text-emerald-700 ring-emerald-200' },
     pendiente_repuesto: { label: 'Pend. repuesto', icon: PackageX, className: 'bg-amber-50 text-amber-800 ring-amber-200' },
     pendiente_validacion: { label: 'Pend. validación', icon: AlertTriangle, className: 'bg-orange-50 text-orange-800 ring-orange-200' },

@@ -93,5 +93,8 @@ class TechnicianHistoryTest extends TestCase
             'parts_changed' => $parts,
             'parts' => $parts ? [['part_id' => Part::firstOrCreate(['name' => 'PICKER'])->id, 'quantity' => 2]] : [],
         ])->assertOk();
+        if ($condition === 'Operativo') {
+            $this->actingAs(User::factory()->admin()->create())->postJson("/api/v1/tickets/{$ticket->id}/confirm")->assertOk();
+        }
     }
 }

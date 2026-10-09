@@ -41,6 +41,7 @@ class DashboardController extends Controller
                 'in_field' => $count([TicketStatus::InTransit, TicketStatus::OnSite]),
                 'pending_part' => $count([TicketStatus::PendingPart]),
                 'pending_validation' => $count([TicketStatus::PendingValidation]),
+                'pending_closure' => $count([TicketStatus::PendingClosure]),
                 'opened' => Ticket::where('opened_at', '>=', $from)->count(),
                 'closed' => (clone $closedInPeriod)->count(),
                 'avg_duration_ms' => (int) round((float) (clone $closedInPeriod)->whereNotNull('duration_ms')->avg('duration_ms')),

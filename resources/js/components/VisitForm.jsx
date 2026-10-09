@@ -96,7 +96,7 @@ export default function VisitForm({ ticket, onDone }) {
             queryClient.invalidateQueries({ queryKey: ['tickets'] });
             queryClient.invalidateQueries({ queryKey: ['my-tickets'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-            toast(`Atención registrada · ${r.response.data.status_label}`);
+            toast(r.response.data.status === 'por_confirmar' ? 'Atención enviada · el administrador confirmará el cierre' : `Atención registrada · ${r.response.data.status_label}`);
             onDone?.(r.response.data);
         },
     });
@@ -239,7 +239,7 @@ export default function VisitForm({ ticket, onDone }) {
                                 <span className="min-w-0">
                                     <span className="block text-sm font-semibold text-ink">{c.name}</span>
                                     <span className="mt-1 flex items-center gap-1.5 text-xs text-muted">
-                                        El ticket pasa a <StatusBadge status={c.resulting_ticket_status} size="sm" />
+                                        El ticket pasa a <StatusBadge status={c.resulting_ticket_status === 'concluido' ? 'por_confirmar' : c.resulting_ticket_status} size="sm" />
                                     </span>
                                 </span>
                             </label>

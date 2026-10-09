@@ -85,15 +85,75 @@ class TicketApiTest extends TestCase
             'photo' => UploadedFile::fake()->image('constancia.jpg', 2400, 3200),
         ]);
 
-        $response->assertJsonPath('data.status', TicketStatus::Closed->value)
+        // El técnico informa el cierre: queda por confirmar y el reloj se detiene ahí.
+        $response->assertJsonPath('data.status', TicketStatus::PendingClosure->value)
+            ->assertJsonPath('data.is_running', false)
+            ->assertJsonPath('data.can_confirm', false)
             ->assertJsonPath('data.duration_ms', 26 * 3600 * 1000)
             ->assertJsonPath('data.visits.1.parts.0.quantity', 2);
         $this->assertCount(2, $response->json('data.visits'));
+
+        // El administrador confirma horas después: el ticket concluye con el tiempo del técnico.
+        $this->travel(5)->hours();
+        $this->actingAs(User::factory()->admin()->create(['name' => 'Ana Admin']))->postJson("/api/v1/tickets/{$ticket->id}/confirm")
+            ->assertOk()
+            ->assertJsonPath('data.status', TicketStatus::Closed->value)
+            ->assertJsonPath('data.duration_ms', 26 * 3600 * 1000)
+            ->assertJsonPath('data.confirmed_by', 'Ana Admin')
+            ->assertJsonPath('data.events', fn (array $events) => collect($events)->contains('note', 'Cierre confirmado'));
+        $this->assertTrue($ticket->refresh()->confirmed_at->equalTo(now()));
+        $this->assertTrue($ticket->closed_at->equalTo(now()->subHours(5)), 'el cierre conserva la hora en que terminó el técnico');
 
         $path = $ticket->visits()->reorder()->latest('id')->first()->constancia_path;
         Storage::assertExists($path);
         [$width, $height] = getimagesizefromstring(Storage::get($path));
         $this->assertSame([1200, 1600], [$width, $height], 'la foto se reduce a 1600 px');
+    }
+
+    public function test_only_an_admin_gives_the_final_confirmation(): void
+    {
+        $ticket = $this->openAssignedTicket();
+        $this->visit($ticket, 'Operativo')->assertJsonPath('data.status', TicketStatus::PendingClosure->value);
+
+        // Ni el técnico ni el operador pueden cerrarlo; tampoco se registra otra atención ni se reasigna.
+        $this->actingAs($this->technician)->postJson("/api/v1/tickets/{$ticket->id}/confirm")->assertForbidden();
+        $this->actingAs($this->operator)->postJson("/api/v1/tickets/{$ticket->id}/confirm")->assertForbidden();
+        $this->actingAs($this->technician);
+        $this->visit($ticket, 'Operativo', [], 422)->assertJsonValidationErrors('status');
+        $this->actingAs($this->operator)->postJson("/api/v1/tickets/{$ticket->id}/assign", ['technician_id' => $this->technician->id])->assertStatus(422);
+        $this->actingAs($this->operator)->getJson("/api/v1/tickets/{$ticket->id}")->assertJsonPath('data.can_confirm', false);
+
+        $admin = User::factory()->admin()->create();
+        $this->actingAs($admin)->getJson("/api/v1/tickets/{$ticket->id}")->assertJsonPath('data.can_confirm', true);
+        $this->actingAs($admin)->postJson("/api/v1/tickets/{$ticket->id}/confirm")->assertOk()->assertJsonPath('data.status', TicketStatus::Closed->value);
+        // Ya concluido no hay nada que confirmar.
+        $this->actingAs($admin)->postJson("/api/v1/tickets/{$ticket->id}/confirm")->assertStatus(422);
+    }
+
+    public function test_admin_can_return_the_ticket_to_the_technician_with_a_reason(): void
+    {
+        $this->travelTo(now()->setTime(8, 0));
+        $ticket = $this->openAssignedTicket();
+        $this->travel(1)->hours();
+        $this->visit($ticket, 'Operativo');
+        $admin = User::factory()->admin()->create();
+
+        // El motivo es obligatorio.
+        $this->actingAs($admin)->postJson("/api/v1/tickets/{$ticket->id}/reject", [])->assertJsonValidationErrors('note');
+        $this->actingAs($admin)->postJson("/api/v1/tickets/{$ticket->id}/reject", ['note' => 'El banco reporta que sigue sin dispensar'])
+            ->assertOk()
+            ->assertJsonPath('data.status', TicketStatus::Assigned->value)
+            ->assertJsonPath('data.is_running', true)
+            ->assertJsonPath('data.closed_at', null)
+            ->assertJsonPath('data.events', fn (array $events) => collect($events)->contains('note', 'Cierre devuelto: El banco reporta que sigue sin dispensar'));
+
+        // El reloj sigue desde la apertura: al volver a atenderlo la duración incluye todo el ciclo.
+        $this->travel(2)->hours();
+        $this->actingAs($this->technician);
+        $this->visit($ticket, 'Operativo')
+            ->assertJsonPath('data.status', TicketStatus::PendingClosure->value)
+            ->assertJsonPath('data.duration_ms', 3 * 3600 * 1000);
+        $this->assertSame(2, $ticket->visits()->count());
     }
 
     public function test_parts_are_mandatory_when_parts_were_changed(): void

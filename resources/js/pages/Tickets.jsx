@@ -15,6 +15,7 @@ const TABS = [
     { value: 'en_curso', label: 'En curso', query: { status: 'abierto,asignado,en_transito,en_sitio' } },
     { value: 'pendiente_repuesto', label: 'Pend. repuesto', query: { status: 'pendiente_repuesto' } },
     { value: 'pendiente_validacion', label: 'Pend. validación', query: { status: 'pendiente_validacion' } },
+    { value: 'por_confirmar', label: 'Por confirmar', query: { status: 'por_confirmar' } },
     { value: 'concluido', label: 'Concluidos', query: { status: 'concluido' } },
     { value: 'vencidos', label: 'SLA vencido', query: { sla: 'breached', open: 1 } },
     { value: 'por_vencer', label: 'Por vencer', query: { sla: 'at_risk', open: 1 } },

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronRight, ClipboardCheck, CloudUpload, History, MapPin, Navigation, PartyPopper, Truck } from 'lucide-react';
+import { ChevronRight, ClipboardCheck, CloudUpload, History, Hourglass, MapPin, Navigation, PartyPopper, Truck } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { changeStatus } from '../lib/actions';
@@ -10,7 +10,7 @@ import { mapsUrl } from '../lib/format';
 import { Alert, Badge, Button, Card, Elapsed, EmptyState, LoadingBlock, StatusBadge, toast } from '../components/ui';
 import PushPrompt from '../components/PushPrompt';
 
-const ORDER = { en_sitio: 0, en_transito: 1, asignado: 2, pendiente_repuesto: 3, pendiente_validacion: 4 };
+const ORDER = { en_sitio: 0, en_transito: 1, asignado: 2, pendiente_repuesto: 3, pendiente_validacion: 4, por_confirmar: 5 };
 
 function TicketCard({ ticket, queued }) {
     const { user } = useAuth();
@@ -54,7 +54,12 @@ function TicketCard({ ticket, queued }) {
                     <span className="inline-flex items-center text-brand-600">Ver detalle <ChevronRight className="size-4" /></span>
                 </div>
             </Link>
-            {!queued.visitQueued && (
+            {status === 'por_confirmar' && (
+                <p className="flex items-center gap-2 border-t border-line bg-teal-50/60 px-4 py-3 text-sm font-medium text-teal-900">
+                    <Hourglass className="size-4 shrink-0" /> Atención enviada · en espera de que el administrador confirme el cierre
+                </p>
+            )}
+            {!queued.visitQueued && status !== 'por_confirmar' && (
                 <div className="flex gap-2 border-t border-line bg-surface/60 p-3">
                     <Button as="a" href={mapsUrl(ticket.atm)} target="_blank" rel="noreferrer" variant="secondary" icon={Navigation} className="flex-1 px-3">Cómo llegar</Button>
                     {next ? (
@@ -87,9 +92,12 @@ export default function TechnicianHome() {
     const tickets = [...(data?.data ?? [])]
         .map((t) => ({ ticket: t, queued: queuedState(queuedItems, t.id) }))
         .sort((a, b) => (ORDER[a.queued.status ?? a.ticket.status] ?? 9) - (ORDER[b.queued.status ?? b.ticket.status] ?? 9));
-    const isPending = ({ ticket, queued }) => (queued.status ?? ticket.status).startsWith('pendiente') || queued.visitQueued;
-    const active = tickets.filter((t) => !isPending(t));
+    const statusOf = ({ ticket, queued }) => queued.status ?? ticket.status;
+    const isAwaiting = (t) => statusOf(t) === 'por_confirmar';
+    const isPending = (t) => !isAwaiting(t) && (statusOf(t).startsWith('pendiente') || t.queued.visitQueued);
+    const active = tickets.filter((t) => !isPending(t) && !isAwaiting(t));
     const pending = tickets.filter(isPending);
+    const awaiting = tickets.filter(isAwaiting);
     const hour = new Date().getHours();
 
     return (
@@ -121,6 +129,12 @@ export default function TechnicianHome() {
                         <section>
                             <h2 className="mb-3 text-sm font-bold tracking-wide text-muted uppercase">Pendientes ({pending.length})</h2>
                             <div className="space-y-3">{pending.map((t) => <TicketCard key={t.ticket.id} {...t} />)}</div>
+                        </section>
+                    )}
+                    {awaiting.length > 0 && (
+                        <section>
+                            <h2 className="mb-3 text-sm font-bold tracking-wide text-muted uppercase">Por confirmar cierre ({awaiting.length})</h2>
+                            <div className="space-y-3">{awaiting.map((t) => <TicketCard key={t.ticket.id} {...t} />)}</div>
                         </section>
                     )}
                 </div>

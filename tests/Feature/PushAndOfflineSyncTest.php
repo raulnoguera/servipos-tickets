@@ -86,7 +86,7 @@ class PushAndOfflineSyncTest extends TestCase
             'parts_changed' => false,
             'finished_at' => $finished->toIso8601String(), 'queued' => true,
         ])->assertOk()
-            ->assertJsonPath('data.status', 'concluido')
+            ->assertJsonPath('data.status', 'por_confirmar')
             ->assertJsonPath('data.duration_ms', (int) (2.75 * 3600 * 1000));
 
         $visit = $ticket->visits()->first();

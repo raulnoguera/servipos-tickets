@@ -7,10 +7,10 @@ import { useCatalogs } from '../lib/queries';
 import { Button, Elapsed, LoadingBlock, PageHeader, Select, STATUS, Toggle, cx } from '../components/ui';
 import { PriorityBadge, SlaBadge, worstSla } from '../components/Sla';
 
-const COLUMNS = ['abierto', 'asignado', 'en_transito', 'en_sitio', 'pendiente_repuesto', 'pendiente_validacion', 'concluido'];
+const COLUMNS = ['abierto', 'asignado', 'en_transito', 'en_sitio', 'pendiente_repuesto', 'pendiente_validacion', 'por_confirmar', 'concluido'];
 const COLUMN_ACCENT = {
     abierto: 'bg-slate-400', asignado: 'bg-brand-500', en_transito: 'bg-violet-500', en_sitio: 'bg-sky-500',
-    pendiente_repuesto: 'bg-amber-500', pendiente_validacion: 'bg-orange-500', concluido: 'bg-emerald-500',
+    pendiente_repuesto: 'bg-amber-500', pendiente_validacion: 'bg-orange-500', por_confirmar: 'bg-teal-500', concluido: 'bg-emerald-500',
 };
 const WEIGHT = { critica: 4, alta: 3, media: 2, baja: 1 };
 

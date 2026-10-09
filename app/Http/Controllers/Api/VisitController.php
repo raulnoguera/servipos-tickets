@@ -21,7 +21,7 @@ class VisitController extends Controller
         $tickets->registerVisit($ticket, $request->validated(), $request->user(), $request->file('photo'));
 
         return new TicketResource($ticket->refresh()->load([
-            'atm.state', 'bank', 'faultType', 'technician', 'opener',
+            'atm.state', 'bank', 'faultType', 'technician', 'opener', 'confirmer',
             'visits.parts', 'visits.technician', 'visits.faultType', 'visits.atmCondition', 'events.user', 'comments.user', 'watchers',
         ]));
     }

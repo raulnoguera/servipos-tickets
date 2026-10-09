@@ -94,7 +94,27 @@ class PushNotifier
         ]);
     }
 
-    /** Cierre: avisa a operadores/administradores y confirma al técnico que fue informado. */
+    /**
+     * El técnico informó que el cajero quedó operativo: falta la confirmación del
+     * administrador. Avisa a todos los administradores activos (son quienes deben
+     * actuar, sin importar su preferencia de avisos) y a los operadores que siguen el ticket.
+     */
+    public function closurePending(Ticket $ticket, User $actor, CarbonInterface $at): int
+    {
+        $ticket->loadMissing('atm');
+        $admins = User::query()->where('role', Role::Admin)->where('active', true)->whereKeyNot($actor->id)->get();
+
+        return $this->deliver($admins->merge($this->staffFor($ticket, $actor))->unique('id')->values(), [
+            'kind' => 'pending',
+            'ticket_id' => $ticket->id,
+            'title' => "{$ticket->number} · Por confirmar cierre",
+            'body' => "{$actor->name} informó que el ATM {$ticket->atm->atm_number} ({$ticket->atm->agency_name}) quedó operativo · {$this->time($at)}. Falta la confirmación del administrador.",
+            'url' => "/tickets/{$ticket->id}",
+            'tag' => $ticket->number,
+        ]);
+    }
+
+    /** Cierre confirmado por el administrador: avisa a operadores/administradores y al técnico. */
     public function ticketClosed(Ticket $ticket, User $actor): int
     {
         $ticket->loadMissing(['atm', 'technician']);
@@ -104,23 +124,41 @@ class PushNotifier
             'kind' => 'closed',
             'ticket_id' => $ticket->id,
             'title' => "✅ {$ticket->number} concluido",
-            'body' => "{$actor->name} cerró la atención en {$ticket->atm->agency_name} (ATM {$ticket->atm->atm_number}){$duration}",
+            'body' => "{$actor->name} confirmó el cierre en {$ticket->atm->agency_name} (ATM {$ticket->atm->atm_number}){$duration}",
             'url' => "/tickets/{$ticket->id}",
             'tag' => $ticket->number,
         ]);
 
-        if ($ticket->technician) {
+        if ($ticket->technician && ! $ticket->technician->is($actor)) {
             $sent += $this->send($ticket->technician, [
                 'kind' => 'closed',
                 'ticket_id' => $ticket->id,
-                'title' => "Cierre informado · {$ticket->number}",
-                'body' => "El ticket quedó concluido y el Call Center fue notificado{$duration}.",
+                'title' => "Cierre confirmado · {$ticket->number}",
+                'body' => "El administrador confirmó el cierre: el ticket quedó concluido{$duration}.",
                 'url' => "/tickets/{$ticket->id}",
                 'tag' => $ticket->number,
             ]);
         }
 
         return $sent;
+    }
+
+    /** El administrador devolvió el ticket: el técnico debe volver a atenderlo. */
+    public function closureRejected(Ticket $ticket, User $actor, string $reason): int
+    {
+        $ticket->loadMissing(['atm', 'technician']);
+        if (! $ticket->technician || $ticket->technician->is($actor)) {
+            return 0;
+        }
+
+        return $this->send($ticket->technician, [
+            'kind' => 'assigned',
+            'ticket_id' => $ticket->id,
+            'title' => "Cierre devuelto · {$ticket->number}",
+            'body' => "El administrador no confirmó el cierre del ATM {$ticket->atm->atm_number}. Motivo: {$reason}",
+            'url' => "/tickets/{$ticket->id}",
+            'tag' => $ticket->number,
+        ]);
     }
 
     /** Ticket anulado: el técnico ya no debe atenderlo. */

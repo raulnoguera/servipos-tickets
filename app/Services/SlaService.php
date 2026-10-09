@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\Priority;
+use App\Enums\TicketStatus;
 use App\Models\SlaPolicy;
 use App\Models\Ticket;
 use Carbon\CarbonInterface;
@@ -42,7 +43,8 @@ class SlaService
         $now ??= now();
         $policy = $this->policies()->get(($ticket->priority ?? Priority::Medium)->value);
         $imported = $ticket->source === 'import';
-        $finished = $ticket->status->isFinal();
+        // Con el cierre informado por el técnico el reloj ya está detenido, aunque falte la confirmación.
+        $finished = $ticket->status->clockStopped();
 
         return [
             'response' => $this->clock(
@@ -56,7 +58,7 @@ class SlaService
             'resolution' => $this->clock(
                 $imported ? null : $policy?->resolution_minutes,
                 $ticket->opened_at,
-                $ticket->status->value === 'concluido' ? $ticket->closed_at : null,
+                in_array($ticket->status, [TicketStatus::Closed, TicketStatus::PendingClosure], true) ? $ticket->closed_at : null,
                 $ticket->status->value === 'anulado' ? $ticket->closed_at : null,
                 $now,
             ),

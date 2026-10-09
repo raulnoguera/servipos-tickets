@@ -91,24 +91,58 @@ class TicketNotificationsTest extends TestCase
         $this->assertStringContainsString('Operativo / Pendiente por Repuesto', $this->sent[0]['body']);
     }
 
-    public function test_closing_notifies_staff_and_confirms_to_the_technician(): void
+    public function test_reported_closure_asks_the_admins_to_confirm(): void
     {
         $this->visit($this->technician, 'Operativo');
 
-        $this->assertCount(2, $this->sent);
+        $this->assertCount(1, $this->sent);
         $this->assertSame(['abre@x.test', 'admin@x.test', 'sin-dispositivo@x.test'], $this->sent[0]['to']);
+        $this->assertSame('TK-2026-00007 · Por confirmar cierre', $this->sent[0]['title']);
+        $this->assertStringContainsString('Falta la confirmación del administrador', $this->sent[0]['body']);
+    }
+
+    public function test_admins_are_always_asked_to_confirm_even_if_they_muted_other_notices(): void
+    {
+        $this->admin->update(['notify_scope' => 'none']);
+
+        $this->visit($this->technician, 'Operativo');
+
+        $this->assertContains('admin@x.test', $this->sent[0]['to']);
+    }
+
+    public function test_confirming_notifies_staff_and_the_technician(): void
+    {
+        $this->visit($this->technician, 'Operativo');
+        $this->sent = [];
+
+        $this->actingAs($this->admin)->postJson("/api/v1/tickets/{$this->ticket->id}/confirm")->assertOk();
+
+        $this->assertCount(2, $this->sent);
+        $this->assertSame(['abre@x.test', 'sin-dispositivo@x.test'], $this->sent[0]['to'], 'el administrador que confirma no se avisa a sí mismo');
         $this->assertSame('✅ TK-2026-00007 concluido', $this->sent[0]['title']);
         $this->assertStringContainsString('tiempo total 2 h', $this->sent[0]['body']);
         $this->assertSame(['tecnico@x.test'], $this->sent[1]['to']);
-        $this->assertSame('Cierre informado · TK-2026-00007', $this->sent[1]['title']);
+        $this->assertSame('Cierre confirmado · TK-2026-00007', $this->sent[1]['title']);
+    }
+
+    public function test_returning_the_ticket_notifies_the_technician_with_the_reason(): void
+    {
+        $this->visit($this->technician, 'Operativo');
+        $this->sent = [];
+
+        $this->actingAs($this->admin)->postJson("/api/v1/tickets/{$this->ticket->id}/reject", ['note' => 'Falta la foto de la constancia'])->assertOk();
+
+        $this->assertCount(1, $this->sent);
+        $this->assertSame(['tecnico@x.test'], $this->sent[0]['to']);
+        $this->assertSame('Cierre devuelto · TK-2026-00007', $this->sent[0]['title']);
+        $this->assertStringContainsString('Motivo: Falta la foto de la constancia', $this->sent[0]['body']);
     }
 
     public function test_the_person_who_acts_is_not_notified_of_their_own_action(): void
     {
         $this->visit($this->opener, 'Operativo');
 
-        $this->assertSame(['admin@x.test', 'sin-dispositivo@x.test'], $this->sent[0]['to'], 'el operador que registró el cierre no se avisa a sí mismo');
-        $this->assertSame(['tecnico@x.test'], $this->sent[1]['to']);
+        $this->assertSame(['admin@x.test', 'sin-dispositivo@x.test'], $this->sent[0]['to'], 'el operador que registró la atención no se avisa a sí mismo');
     }
 
     public function test_cancelling_notifies_the_technician(): void

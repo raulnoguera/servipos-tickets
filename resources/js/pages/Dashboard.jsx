@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, CheckCircle2, Clock3, PackageX, Plus, RefreshCw, Siren, TimerOff, Wrench } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock3, Hourglass, PackageX, Plus, RefreshCw, Siren, TimerOff, Wrench } from 'lucide-react';
 import { api } from '../lib/api';
+import { useAuth } from '../lib/auth';
 import { formatDuration, formatNumber, initials } from '../lib/format';
 import {
     Button, Card, CardHeader, Elapsed, EmptyState, LoadingBlock, PageHeader, Segmented, StatusBadge, Table, Td, Th, cx,
@@ -43,6 +44,7 @@ function Kpi({ icon: Icon, label, value, detail, tone, to }) {
 export default function Dashboard() {
     const [period, setPeriod] = useState('month');
     const navigate = useNavigate();
+    const { isAdmin } = useAuth();
     const { data, isLoading, isFetching, dataUpdatedAt, refetch } = useQuery({
         queryKey: ['dashboard', period],
         queryFn: () => api('dashboard', { query: { period } }),
@@ -87,6 +89,18 @@ export default function Dashboard() {
                         <Kpi icon={CheckCircle2} tone="ok" label="Concluidos" value={k.closed} detail={`${k.opened} abiertos ${PERIOD_TEXT[period]}`} to="/tickets?filtro=concluido" />
                         <Kpi icon={Clock3} tone="navy" label="Tiempo promedio" value={k.avg_duration_ms ? formatDuration(k.avg_duration_ms) : '—'} detail={`De apertura a cierre, ${PERIOD_TEXT[period]}`} />
                     </div>
+
+                    {k.pending_closure > 0 && (
+                        <Link to="/tickets?filtro=por_confirmar" className="flex items-center gap-4 rounded-xl border border-teal-200 bg-teal-50 p-4 transition hover:shadow-md">
+                            <span className="grid size-10 place-items-center rounded-lg bg-teal-600 text-white"><Hourglass className="size-5" /></span>
+                            <span>
+                                <span className="block font-display text-2xl font-extrabold text-teal-800 tabular">{k.pending_closure}</span>
+                                <span className="text-sm font-semibold text-teal-900">
+                                    {k.pending_closure === 1 ? 'ticket atendido espera' : 'tickets atendidos esperan'} la confirmación del cierre{isAdmin ? '' : ' por el administrador'}
+                                </span>
+                            </span>
+                        </Link>
+                    )}
 
                     {(k.sla_breached > 0 || k.sla_at_risk > 0) && (
                         <div className="grid gap-4 sm:grid-cols-2">

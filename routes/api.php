@@ -43,6 +43,8 @@ Route::prefix('v1')->group(function () {
         Route::post('tickets/{ticket}/assign', [TicketController::class, 'assign']);
         Route::post('tickets/{ticket}/status', [TicketController::class, 'status']);
         Route::post('tickets/{ticket}/visits', [VisitController::class, 'store']);
+        Route::post('tickets/{ticket}/confirm', [TicketController::class, 'confirm']);
+        Route::post('tickets/{ticket}/reject', [TicketController::class, 'reject']);
         Route::patch('tickets/{ticket}', [TicketController::class, 'update']);
         Route::post('tickets/{ticket}/comments', [TicketController::class, 'comment']);
         Route::post('tickets/{ticket}/watch', [TicketController::class, 'watch']);

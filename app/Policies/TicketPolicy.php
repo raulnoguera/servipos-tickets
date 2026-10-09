@@ -26,6 +26,12 @@ class TicketPolicy
         return $user->hasRole(Role::Admin, Role::Operator);
     }
 
+    /** Confirmar el cierre informado por el técnico, o devolvérselo: solo el administrador. */
+    public function confirm(User $user, ?Ticket $ticket = null): bool
+    {
+        return $user->hasRole(Role::Admin);
+    }
+
     /** Marcar en tránsito / en sitio y registrar la atención: solo quien lo tiene asignado. */
     public function work(User $user, Ticket $ticket): bool
     {

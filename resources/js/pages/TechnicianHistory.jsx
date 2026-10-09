@@ -10,7 +10,7 @@ import { Alert, Button, Card, EmptyState, Input, LoadingBlock, StatusBadge, cx }
 const FILTERS = [
     { value: '', label: 'Todos' },
     { value: 'concluido', label: 'Concluidos' },
-    { value: 'pendiente_repuesto,pendiente_validacion', label: 'Pendientes' },
+    { value: 'pendiente_repuesto,pendiente_validacion,por_confirmar', label: 'Pendientes' },
 ];
 
 function Stat({ icon: Icon, label, value }) {

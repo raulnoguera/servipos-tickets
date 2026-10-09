@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\TicketStatus;
 use App\Models\Ticket;
 use App\Services\SlaService;
 use App\Services\WhatsAppLink;
@@ -44,9 +45,13 @@ class TicketResource extends JsonResource
             'opened_at' => $this->opened_at?->toIso8601String(),
             'assigned_at' => $this->assigned_at?->toIso8601String(),
             'closed_at' => $this->closed_at?->toIso8601String(),
+            'confirmed_at' => $this->confirmed_at?->toIso8601String(),
+            'confirmed_by' => $this->whenLoaded('confirmer', fn () => $this->confirmer?->name),
+            // Qué puede hacer quien consulta con el cierre informado por el técnico.
+            'can_confirm' => $this->status === TicketStatus::PendingClosure && (bool) $request->user()?->can('confirm', $this->resource),
             // Histórico importado: sin horas, no se mide duración.
             'duration_ms' => $this->duration_ms ?? ($this->source === 'import' ? null : (int) $this->opened_at->diffInMilliseconds($end)),
-            'is_running' => ! $this->status->isFinal(),
+            'is_running' => ! $this->status->clockStopped(),
             'visits' => VisitResource::collection($this->whenLoaded('visits')),
             'events' => $this->whenLoaded('events', fn () => $this->events->map(fn ($e) => [
                 'at' => $e->created_at->toIso8601String(),

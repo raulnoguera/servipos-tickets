@@ -154,6 +154,13 @@ class DemoSeeder extends Seeder
                 ? $parts->random(random_int(1, 2))->map(fn (Part $p) => ['part_id' => $p->id, 'quantity' => random_int(1, 3)])->values()->all()
                 : [],
         ], $tech);
+        // El técnico informa el cierre y el administrador lo confirma un rato después.
+        // Algunos se dejan sin confirmar para que la demostración muestre ese paso.
+        if ($ticket->status === TicketStatus::PendingClosure && random_int(1, 12) > 1) {
+            $this->at($at->addMinutes(random_int(10, 90)));
+            $tickets->confirmClosure($ticket, User::where('role', Role::Operator)->firstOrFail());
+            $this->at($at);
+        }
         // La API ya no acepta la hora de llegada del teléfono; en los datos de muestra se
         // fija aquí para que los tiempos de llegada no coincidan siempre con el cierre.
         if (! $visit->arrived_at) {

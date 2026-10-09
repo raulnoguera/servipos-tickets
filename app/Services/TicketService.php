@@ -84,6 +84,9 @@ class TicketService
         if ($ticket->status->isFinal()) {
             throw ValidationException::withMessages(['status' => 'El ticket ya está cerrado.']);
         }
+        if ($ticket->status === TicketStatus::PendingClosure) {
+            throw ValidationException::withMessages(['status' => 'El técnico ya informó el cierre. Confírmelo o devuélvalo antes de reasignar.']);
+        }
 
         $from = $ticket->status;
         $previous = $ticket->assigned_to !== $technician->id ? $ticket->technician : null;
@@ -156,11 +159,13 @@ class TicketService
                 if (! empty($data['client_uuid']) && $existing = $ticket->visits()->firstWhere('client_uuid', $data['client_uuid'])) {
                     return $existing;
                 }
-                if ($ticket->status->isFinal() || $ticket->status === TicketStatus::Open) {
+                if ($ticket->status->isFinal() || in_array($ticket->status, [TicketStatus::Open, TicketStatus::PendingClosure], true)) {
                     throw ValidationException::withMessages([
-                        'status' => $ticket->status === TicketStatus::Open
-                            ? 'Asigne el ticket a un técnico antes de registrar la atención.'
-                            : 'El ticket ya está cerrado.',
+                        'status' => match ($ticket->status) {
+                            TicketStatus::Open => 'Asigne el ticket a un técnico antes de registrar la atención.',
+                            TicketStatus::PendingClosure => 'El cierre ya fue informado y espera la confirmación del administrador.',
+                            default => 'El ticket ya está cerrado.',
+                        },
                     ]);
                 }
 
@@ -218,19 +223,67 @@ class TicketService
         }
 
         $from = $ticket->status;
-        $to = $condition->resulting_ticket_status;
+        // "Operativo" ya no cierra el ticket: queda por confirmar hasta que el administrador
+        // dé la última confirmación. El reloj se detiene aquí, en la hora en que terminó el técnico.
+        $resolved = $condition->resulting_ticket_status === TicketStatus::Closed;
+        $to = $resolved ? TicketStatus::PendingClosure : $condition->resulting_ticket_status;
         $ticket->update(['status' => $to]
-            + ($to === TicketStatus::Closed ? $this->closingTimes($ticket, $finishedAt) : [])
+            + ($resolved ? $this->closingTimes($ticket, $finishedAt) : [])
             + (! $ticket->responded_at ? ['responded_at' => $arrivedAt ? CarbonImmutable::parse($arrivedAt) : $finishedAt] : []));
         $this->log($ticket, $by, $from, $to, "Atención registrada: {$condition->name}", $finishedAt);
 
         if ($this->notify) {
-            defer(fn () => $to === TicketStatus::Closed
-                ? $this->push->ticketClosed($ticket->fresh(), $by)
+            defer(fn () => $resolved
+                ? $this->push->closurePending($ticket->fresh(), $by, $finishedAt)
                 : $this->push->visitPending($ticket->fresh(), $by, $condition, $finishedAt));
         }
 
         return $visit;
+    }
+
+    /**
+     * Última confirmación del administrador: el ticket queda concluido. Las horas del
+     * cierre (closed_at, duración) son las que informó el técnico; aquí se anota quién
+     * confirmó y cuándo.
+     */
+    public function confirmClosure(Ticket $ticket, User $by, ?string $note = null): Ticket
+    {
+        $this->ensurePendingClosure($ticket);
+
+        $ticket->update(['status' => TicketStatus::Closed, 'confirmed_at' => CarbonImmutable::now(), 'confirmed_by' => $by->id]);
+        $this->log($ticket, $by, TicketStatus::PendingClosure, TicketStatus::Closed, 'Cierre confirmado'.($note ? ": {$note}" : ''));
+
+        if ($this->notify) {
+            defer(fn () => $this->push->ticketClosed($ticket->fresh(), $by));
+        }
+
+        return $ticket;
+    }
+
+    /**
+     * El administrador no da por bueno el cierre: el ticket vuelve al técnico, el reloj
+     * sigue corriendo desde la apertura y el motivo queda en el historial.
+     */
+    public function rejectClosure(Ticket $ticket, User $by, string $reason): Ticket
+    {
+        $this->ensurePendingClosure($ticket);
+
+        $to = $ticket->assigned_to ? TicketStatus::Assigned : TicketStatus::Open;
+        $ticket->update(['status' => $to, 'closed_at' => null, 'duration_ms' => null]);
+        $this->log($ticket, $by, TicketStatus::PendingClosure, $to, "Cierre devuelto: {$reason}");
+
+        if ($this->notify) {
+            defer(fn () => $this->push->closureRejected($ticket->fresh(), $by, $reason));
+        }
+
+        return $ticket;
+    }
+
+    private function ensurePendingClosure(Ticket $ticket): void
+    {
+        if ($ticket->status !== TicketStatus::PendingClosure) {
+            throw ValidationException::withMessages(['status' => 'Este ticket no está esperando la confirmación del cierre.']);
+        }
     }
 
     /**

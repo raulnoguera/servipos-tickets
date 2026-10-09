@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-    ArrowLeft, Ban, Building2, ClipboardCheck, FileImage, MapPin, MessageCircle, Navigation, Package, Truck, UserPlus,
+    ArrowLeft, Ban, Building2, CheckCircle2, ClipboardCheck, FileImage, Hourglass, MapPin, MessageCircle, Navigation, Package, Truck, Undo2, UserPlus,
 } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
@@ -11,7 +11,7 @@ import { changeStatus } from '../lib/actions';
 import { queuedState, useOutbox } from '../lib/sync';
 import { formatDate, formatDateTime, formatDurationExact, mapsUrl } from '../lib/format';
 import {
-    Alert, Badge, Button, Card, CardHeader, Elapsed, EmptyState, Field, Input, LoadingBlock, Modal, Select, StatusBadge, toast,
+    Alert, Badge, Button, Card, CardHeader, Elapsed, EmptyState, Field, Input, LoadingBlock, Modal, Select, StatusBadge, Textarea, toast,
 } from '../components/ui';
 import VisitForm from '../components/VisitForm';
 import { PriorityBadge, SlaBadge } from '../components/Sla';
@@ -114,6 +114,81 @@ function CancelModal({ ticket, open, onClose }) {
     );
 }
 
+/** Actualiza el ticket en pantalla y las listas donde aparece. */
+function useClosureAction(ticket, path, message, onClose) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (body) => api(`tickets/${ticket.id}/${path}`, { method: 'POST', body }),
+        onSuccess: (r) => {
+            queryClient.setQueryData(['ticket', String(ticket.id)], r);
+            ['tickets', 'board', 'dashboard', 'notifications-unread'].forEach((key) => queryClient.invalidateQueries({ queryKey: [key] }));
+            toast(message);
+            onClose();
+        },
+    });
+}
+
+/** Última confirmación del administrador: con ella el ticket queda concluido. */
+function ConfirmClosureModal({ ticket, open, onClose }) {
+    const [note, setNote] = useState('');
+    const confirm = useClosureAction(ticket, 'confirm', 'Cierre confirmado · ticket concluido', onClose);
+    const visit = ticket.visits[ticket.visits.length - 1];
+    return (
+        <Modal
+            open={open}
+            onClose={onClose}
+            title="Confirmar cierre del ticket"
+            size="sm"
+            footer={
+                <>
+                    <Button variant="secondary" onClick={onClose}>Volver</Button>
+                    <Button variant="success" icon={CheckCircle2} loading={confirm.isPending} onClick={() => confirm.mutate({ note: note.trim() || null })}>Sí, cerrar ticket</Button>
+                </>
+            }
+        >
+            <p className="text-sm text-body">
+                Va a dar por concluido el ticket <b className="text-ink tabular">{ticket.number}</b> del ATM <b className="text-ink">{ticket.atm.atm_number}</b> ({ticket.atm.agency_name}).
+                Esta es la última confirmación: después no se podrá modificar.
+            </p>
+            {visit && (
+                <dl className="mt-4 space-y-1 rounded-xl bg-surface p-3 text-sm">
+                    <div className="flex justify-between gap-3"><dt className="text-muted">Técnico</dt><dd className="font-semibold text-ink">{visit.technician ?? '—'}</dd></div>
+                    <div className="flex justify-between gap-3"><dt className="text-muted">Estatus final</dt><dd className="font-semibold text-ink">{visit.atm_condition ?? '—'}</dd></div>
+                    <div className="flex justify-between gap-3"><dt className="text-muted">Constancia</dt><dd className="font-semibold text-ink">{visit.constancia_number ?? 'Sin número'}{visit.constancia_url ? ' · con foto' : ' · sin foto'}</dd></div>
+                </dl>
+            )}
+            <Field label="Observación (opcional)" className="mt-4" error={confirm.error?.field?.('note') || confirm.error?.field?.('status') || confirm.error?.message}>
+                {(id) => <Input id={id} value={note} onChange={(e) => setNote(e.target.value)} maxLength={255} placeholder="Ej.: validado con el banco" />}
+            </Field>
+        </Modal>
+    );
+}
+
+/** El administrador no da por bueno el cierre y lo devuelve al técnico. */
+function RejectClosureModal({ ticket, open, onClose }) {
+    const [note, setNote] = useState('');
+    const reject = useClosureAction(ticket, 'reject', 'Ticket devuelto al técnico', onClose);
+    return (
+        <Modal
+            open={open}
+            onClose={onClose}
+            title="Devolver al técnico"
+            size="sm"
+            footer={
+                <>
+                    <Button variant="secondary" onClick={onClose}>Volver</Button>
+                    <Button variant="danger" icon={Undo2} disabled={note.trim().length < 5} loading={reject.isPending} onClick={() => reject.mutate({ note })}>Devolver</Button>
+                </>
+            }
+        >
+            <p className="mb-4 text-sm text-body">El ticket vuelve a quedar asignado a {ticket.technician?.name ?? 'el técnico'}, que recibe el aviso con el motivo. El reloj del SLA sigue corriendo desde la apertura.</p>
+            <Field label="Motivo" required hint="Por ejemplo: el banco reporta que el cajero sigue fallando, o falta la foto de la constancia." error={reject.error?.field?.('note') || reject.error?.field?.('status')}>
+                {(id) => <Textarea id={id} value={note} onChange={(e) => setNote(e.target.value)} maxLength={255} className="min-h-20" autoFocus />}
+            </Field>
+        </Modal>
+    );
+}
+
 function VisitCard({ visit, index, onPhoto }) {
     return (
         <li className="rounded-xl border border-line p-4">
@@ -206,7 +281,9 @@ export default function TicketDetail() {
     const queued = queuedState(queuedItems, data.data.id);
     const t = { ...data.data, status: queued.status ?? data.data.status };
     const finished = ['concluido', 'anulado'].includes(t.status);
-    const closed = finished || queued.visitQueued;
+    // El técnico ya informó el cierre: el reloj está detenido y solo falta la confirmación del administrador.
+    const awaiting = t.status === 'por_confirmar';
+    const closed = finished || awaiting || queued.visitQueued;
     // El técnico solo trabaja los tickets que tiene asignados; los de su historial son de consulta.
     const mine = !isTechnician || t.technician?.id === user.id;
     const canWork = !closed && t.status !== 'abierto' && mine;
@@ -231,15 +308,20 @@ export default function TicketDetail() {
                         {t.bank_reference && <> · Caso banco <b className="text-ink">{t.bank_reference}</b></>}
                         {t.source === 'import' && <> · <Badge>Histórico Excel</Badge></>}
                     </p>
+                    {t.confirmed_at && (
+                        <p className="mt-0.5 text-sm text-muted">
+                            Cierre confirmado {formatDateTime(t.confirmed_at)}{t.confirmed_by && ` por ${t.confirmed_by}`}
+                        </p>
+                    )}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                     <WatchButton ticket={t} />
                     {canManage && <EditButton onClick={() => setModal('edit')} />}
                 </div>
                 <div className="rounded-xl border border-line bg-white px-4 py-2.5 text-right">
-                    <p className="text-xs font-semibold text-muted">{finished ? 'Tiempo total del ciclo' : 'Tiempo transcurrido'}</p>
+                    <p className="text-xs font-semibold text-muted">{finished ? 'Tiempo total del ciclo' : awaiting ? 'Tiempo hasta la atención' : 'Tiempo transcurrido'}</p>
                     <p className="font-display text-2xl font-extrabold text-ink"><Elapsed ticket={t} /></p>
-                    {finished && t.duration_ms !== null && <p className="text-[11px] text-muted tabular" title="Duración exacta con milisegundos">{formatDurationExact(t.duration_ms)}</p>}
+                    {(finished || awaiting) && t.duration_ms !== null && <p className="text-[11px] text-muted tabular" title="Duración exacta con milisegundos">{formatDurationExact(t.duration_ms)}</p>}
                 </div>
             </div>
 
@@ -258,6 +340,29 @@ export default function TicketDetail() {
                     {isTechnician && !mine && (
                         <Alert tone="info">Este ticket ahora está a cargo de {t.technician?.name ?? 'otro técnico'}. Puede consultarlo, pero no registrar cambios.</Alert>
                     )}
+
+                    {/* Cierre informado por el técnico: última confirmación del administrador */}
+                    {awaiting && (t.can_confirm ? (
+                        <Card className="border-teal-200 bg-teal-50/60 p-5">
+                            <div className="flex items-start gap-3">
+                                <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-teal-600 text-white"><Hourglass className="size-5" /></span>
+                                <div className="min-w-0 flex-1">
+                                    <h2 className="font-display text-lg font-bold text-ink">El técnico informó que el cajero quedó operativo</h2>
+                                    <p className="mt-1 text-sm text-body">Revise la atención, los repuestos y la constancia. Con su confirmación el ticket queda concluido.</p>
+                                    <div className="mt-4 flex flex-wrap gap-2">
+                                        <Button size="lg" variant="success" icon={CheckCircle2} onClick={() => setModal('confirm')}>Confirmar cierre</Button>
+                                        <Button size="lg" variant="secondary" icon={Undo2} onClick={() => setModal('reject')}>Devolver al técnico</Button>
+                                    </div>
+                                </div>
+                            </div>
+                        </Card>
+                    ) : (
+                        <Alert tone="info">
+                            {isTechnician
+                                ? 'Atención enviada. El ticket quedará concluido cuando el administrador confirme el cierre; si necesita algo más, se lo devolverá con el motivo.'
+                                : 'El técnico informó que el cajero quedó operativo. El ticket queda concluido cuando el administrador confirme el cierre.'}
+                        </Alert>
+                    ))}
 
                     {/* Acciones */}
                     {!closed && mine && (
@@ -358,6 +463,8 @@ export default function TicketDetail() {
             </Modal>
             {modal === 'assign' && <AssignModal ticket={t} open onClose={() => setModal(null)} />}
             {modal === 'cancel' && <CancelModal ticket={t} open onClose={() => setModal(null)} />}
+            {modal === 'confirm' && <ConfirmClosureModal ticket={t} open onClose={() => setModal(null)} />}
+            {modal === 'reject' && <RejectClosureModal ticket={t} open onClose={() => setModal(null)} />}
             {modal === 'edit' && <EditTicketModal ticket={t} open onClose={() => setModal(null)} />}
             <Modal open={!!photo} onClose={() => setPhoto(null)} title="Constancia de servicio" size="lg">
                 {photo && <img src={photo} alt="Constancia de servicio" className="mx-auto max-h-[75dvh] rounded-lg" />}
