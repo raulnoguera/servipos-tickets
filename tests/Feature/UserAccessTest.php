@@ -159,4 +159,22 @@ class UserAccessTest extends TestCase
         // Sigue con su sesión abierta.
         $this->getJson('/api/v1/auth/me')->assertOk();
     }
+
+    public function test_first_admin_is_created_from_the_console_with_an_access_link(): void
+    {
+        $this->artisan('servipos:crear-admin', ['correo' => 'Jefe@ServiPos2019.com', '--nombre' => 'Ana Jefe'])
+            ->expectsOutputToContain('Administrador creado: Ana Jefe <jefe@servipos2019.com>')
+            ->expectsOutputToContain(config('app.url').'/acceso#')
+            ->assertSuccessful();
+
+        $admin = User::where('email', 'jefe@servipos2019.com')->sole();
+        $this->assertSame('admin', $admin->role->value);
+        $this->assertNotNull($admin->access_token_hash);
+        $this->assertTrue($admin->access_token_expires_at->isFuture());
+
+        // Volver a ejecutarlo no crea otro usuario: solo emite un enlace nuevo.
+        $this->artisan('servipos:crear-admin', ['correo' => 'jefe@servipos2019.com'])->expectsOutputToContain('ya existía')->assertSuccessful();
+        $this->assertSame(1, User::where('email', 'jefe@servipos2019.com')->count());
+        $this->artisan('servipos:crear-admin', ['correo' => 'no-es-correo'])->assertFailed();
+    }
 }

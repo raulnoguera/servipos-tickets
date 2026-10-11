@@ -1,0 +1,9 @@
+# Copiar como deploy/siteground.conf (no se sube a GitHub) y ajustar.
+# En SiteGround la app vive FUERA de public_html: public_html es un enlace a <APP_DIR>/public.
+SSH_HOST=ssh.midominio.com
+SSH_PORT=18765
+SSH_USER=usuario
+SSH_KEY=~/.ssh/llave_de_despliegue
+APP_DIR=www/sub.midominio.com/app
+SITE_URL=https://sub.midominio.com
+PHP_BIN=php83

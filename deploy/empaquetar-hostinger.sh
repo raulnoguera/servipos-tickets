@@ -21,7 +21,7 @@ rsync -a \
     --exclude '.git' --exclude 'node_modules' --exclude 'vendor' --exclude 'tests' --exclude 'dist' \
     --exclude '.env' --exclude '.env.*' --exclude 'auth.json' --exclude '*.sql' --exclude '*.pem' --exclude '*.key' \
     --exclude '.claude' --exclude '.github' --exclude 'public/hot' --exclude 'storage/framework/testing' \
-    --exclude 'deploy/hostinger.conf' --exclude 'deploy/brand/logo-original.png' \
+    --exclude 'deploy/*.conf' --exclude 'deploy/brand/logo-original.png' \
     --exclude 'CLAUDE.md' --exclude 'AGENTS.md' --exclude 'boost.json' --exclude '.phpunit.result.cache' \
     --exclude 'database/*.sqlite*' --exclude 'storage/logs/*.log' \
     --exclude 'storage/app/private/*' --exclude 'storage/framework/sessions/*' \

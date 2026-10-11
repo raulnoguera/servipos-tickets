@@ -1,12 +1,16 @@
 <?php
 
+use App\Enums\Role;
 use App\Models\Bank;
+use App\Models\User;
+use App\Services\AccessLinks;
 use App\Services\Export\ConsolidadoExporter;
 use App\Services\Import\ExcelHistoryImporter;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Minishlink\WebPush\VAPID;
 
 Artisan::command('inspire', function () {
@@ -81,3 +85,35 @@ Artisan::command('servipos:claves-push {--forzar : Reemplaza claves existentes (
 
     return 0;
 })->purpose('Genera las claves VAPID para las notificaciones push y las guarda en .env');
+
+Artisan::command('servipos:crear-admin
+    {correo : Correo del administrador (su usuario para ingresar)}
+    {--nombre=Administrador : Nombre completo}', function (AccessLinks $links) {
+    $email = mb_strtolower(trim($this->argument('correo')));
+    if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $this->error('Escriba un correo válido.');
+
+        return 1;
+    }
+
+    // Queda con una contraseña aleatoria que nadie conoce; el administrador crea la suya con el enlace.
+    $user = User::firstOrCreate(['email' => $email], [
+        'name' => $this->option('nombre'),
+        'password' => Str::password(32),
+        'role' => Role::Admin,
+        'active' => true,
+        'email_verified_at' => now(),
+    ]);
+    if (! $user->wasRecentlyCreated && $user->role !== Role::Admin) {
+        $this->error("Ya existe un usuario con ese correo y no es administrador ({$user->role->label()}).");
+
+        return 1;
+    }
+
+    $link = $links->issue($user);
+    $this->info(($user->wasRecentlyCreated ? 'Administrador creado: ' : 'El administrador ya existía: ').$user->name." <{$email}>");
+    $this->line('Enlace para crear su contraseña (un solo uso, vence '.$link['expires_at']->format('d/m/Y h:i a').'):');
+    $this->line($link['url']);
+
+    return 0;
+})->purpose('Crea el administrador inicial y muestra su enlace de acceso de un solo uso');

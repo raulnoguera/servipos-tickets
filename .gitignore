@@ -32,3 +32,4 @@ Thumbs.db
 /dist
 /.claude
 /deploy/hostinger.conf
+/deploy/siteground.conf

@@ -94,6 +94,16 @@ php artisan config:cache && php artisan route:cache
 ./deploy/actualizar-hostinger.sh
 ```
 
+### Producción en SiteGround (hosting del cliente)
+
+SiteGround entrega los archivos estáticos directamente con NGINX, sin pasar por `.htaccess`, así que la aplicación se instala **fuera** de la carpeta pública: el proyecto vive en `~/www/<subdominio>/app` y `public_html` es un enlace a `app/public`.
+
+- Configuración: `deploy/siteground.conf` (ver `siteground.conf.example`); la consola usa `PHP_BIN=php83`.
+- Reglas propias del servidor (versión de PHP, forzar HTTPS): archivo `~/www/<subdominio>/htaccess-servidor`, que cada publicación antepone a `public/.htaccess`.
+- Primer administrador, sin contraseñas en archivos: `php83 artisan servipos:crear-admin correo@empresa.com --nombre="Nombre"` muestra un enlace de un solo uso para que cree su contraseña.
+- Contraseña de MySQL: `PHP_BIN=php83 bash deploy/configurar-bd.sh` (la pide sin mostrarla).
+- Actualizaciones: `./deploy/actualizar-siteground.sh`.
+
 Empaqueta, sube, pone el sitio en mantenimiento unos segundos, extrae sin tocar `.env` ni `storage/`, migra y verifica.
 
 ## App del técnico: sin señal y notificaciones

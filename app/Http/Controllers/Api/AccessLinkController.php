@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\AccessLinks;
 use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,9 +21,7 @@ use Illuminate\Validation\ValidationException;
  */
 class AccessLinkController extends Controller
 {
-    private const VALID_HOURS = 48;
-
-    public function __construct(private AuditLogger $audit) {}
+    public function __construct(private AuditLogger $audit, private AccessLinks $links) {}
 
     /** Genera el enlace para un usuario (solo administradores). Anula cualquier enlace anterior. */
     public function create(User $user): JsonResponse
@@ -34,17 +33,12 @@ class AccessLinkController extends Controller
             throw ValidationException::withMessages(['user' => 'Cargue primero el teléfono del técnico: es su usuario para ingresar.']);
         }
 
-        // En la base de datos solo queda la huella del código; el código viaja únicamente en el enlace.
-        $token = Str::random(48);
-        $expires = now()->addHours(self::VALID_HOURS);
-        $user->forceFill(['access_token_hash' => hash('sha256', $token), 'access_token_expires_at' => $expires])->save();
+        ['url' => $url, 'expires_at' => $expires] = $this->links->issue($user);
         $this->audit->record('user.access_link', "Enlace de acceso generado para {$user->name}", $user);
 
-        // El código va después de "#": el navegador no lo envía al servidor ni queda en registros o vistas previas.
-        $url = url('/acceso').'#'.$token;
         $first = Str::before($user->name, ' ');
         $message = "Hola {$first}, este es su acceso a ServiPos Tickets.\n\n"
-            .'Abra este enlace para crear su contraseña (vale por '.self::VALID_HOURS." horas y un solo uso):\n{$url}\n\n"
+            .'Abra este enlace para crear su contraseña (vale por '.AccessLinks::VALID_HOURS." horas y un solo uso):\n{$url}\n\n"
             ."Después ingresará con su usuario: {$user->loginIdentifier()}";
 
         return response()->json([
