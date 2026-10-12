@@ -45,6 +45,22 @@ class TicketApiTest extends TestCase
             ->assertJsonPath('data.agency_name', $this->atm->agency_name);
     }
 
+    public function test_inactive_atms_are_not_offered_nor_accepted_when_opening_a_ticket(): void
+    {
+        $inactive = Atm::factory()->create(['atm_number' => 'A1918099', 'active' => false]);
+
+        $this->actingAs($this->operator)->getJson('/api/v1/atms?q=A1918&active=1')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.atm_number', 'A1918035');
+        $this->actingAs($this->operator)->getJson('/api/v1/atms?q=A1918')->assertOk()->assertJsonCount(2, 'data');
+
+        $this->actingAs($this->operator)->postJson('/api/v1/tickets', [
+            'atm_id' => $inactive->id,
+            'fault_type_id' => FaultType::create(['name' => 'Falla de Dispensación'])->id,
+        ])->assertStatus(422)->assertJsonValidationErrors('atm_id');
+    }
+
     public function test_operator_opens_and_assigns_a_ticket_with_whatsapp_link(): void
     {
         $response = $this->actingAs($this->operator)->postJson('/api/v1/tickets', [

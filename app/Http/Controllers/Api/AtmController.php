@@ -18,6 +18,7 @@ class AtmController extends Controller
             'q' => ['nullable', 'string', 'max:100'],
             'bank_id' => ['nullable', 'integer'],
             'state_id' => ['nullable', 'integer'],
+            'active' => ['nullable', 'boolean'],
             'per_page' => ['nullable', 'integer'],
         ]);
         $raw = trim((string) $request->query('q'));
@@ -33,6 +34,7 @@ class AtmController extends Controller
                 ->orWhere('agency_code', $raw)))
             ->when($request->query('bank_id'), fn ($q, $bank) => $q->where('bank_id', $bank))
             ->when($request->query('state_id'), fn ($q, $state) => $q->where('state_id', $state))
+            ->when($request->boolean('active'), fn ($q) => $q->where('active', true))
             ->orderBy('atm_number')
             ->paginate(max(1, min(100, (int) $request->query('per_page', 25))));
 

@@ -59,7 +59,7 @@ function AtmBrowser({ open, onClose, onPick, initialQuery = '' }) {
 
     const { data, isLoading, isFetching } = useQuery({
         queryKey: ['atm-browser', term, state, page],
-        queryFn: () => api('atms', { query: { q: term, state_id: state, page, per_page: 10 } }),
+        queryFn: () => api('atms', { query: { q: term, state_id: state, active: 1, page, per_page: 10 } }),
         placeholderData: keepPreviousData,
         enabled: open,
     });
@@ -116,7 +116,7 @@ export default function AtmSearch({ onSelect, onNotFound }) {
 
     const { data, isFetching } = useQuery({
         queryKey: ['atm-suggest', term],
-        queryFn: () => api('atms', { query: { q: term, per_page: 8 } }),
+        queryFn: () => api('atms', { query: { q: term, active: 1, per_page: 8 } }),
         enabled: term.length > 0,
         placeholderData: keepPreviousData,
         staleTime: 60000,
@@ -152,7 +152,12 @@ export default function AtmSearch({ onSelect, onNotFound }) {
         }
         setLooking(true);
         try {
-            pick((await api(`atms/lookup/${encodeURIComponent(value)}`)).data);
+            const found = (await api(`atms/lookup/${encodeURIComponent(value)}`)).data;
+            if (!found.active) {
+                onNotFound(`El ATM "${found.atm_number}" está inactivo. Un administrador puede activarlo en Cajeros.`);
+                return;
+            }
+            pick(found);
         } catch (err) {
             onNotFound(err.status === 404 ? `No existe el ATM "${value.toUpperCase()}" en el maestro de cajeros.` : err.message);
         } finally {

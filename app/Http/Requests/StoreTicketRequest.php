@@ -22,13 +22,21 @@ class StoreTicketRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'atm_id' => ['required', 'integer', 'exists:atms,id'],
+            'atm_id' => ['required', 'integer', Rule::exists('atms', 'id')->where('active', true)],
             'fault_type_id' => ['required', 'integer', 'exists:fault_types,id'],
             'priority' => ['nullable', Rule::enum(Priority::class)],
             'description' => ['nullable', 'string', 'max:2000'],
             'bank_reference' => ['nullable', 'string', 'max:60'],
             'assigned_to' => ['nullable', 'integer', Rule::exists('users', 'id')->where('role', Role::Technician->value)->where('active', true)],
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return ['atm_id.exists' => 'El cajero no existe o está inactivo.'];
     }
 
     /**
