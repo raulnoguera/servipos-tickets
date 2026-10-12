@@ -10,6 +10,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 PHP="${PHP_BIN:-php}"
 [ -f .env ] || { echo "No existe .env en $(pwd)"; exit 1; }
+command -v "$PHP" >/dev/null || { echo "No se encontró $PHP en este equipo. Este script se ejecuta en el servidor, entrando por SSH."; exit 1; }
 
 actual() { grep -E "^$1=" .env | tail -1 | cut -d= -f2- | tr -d '"' || true; }
 preguntar() { # variable, texto, valor por defecto
