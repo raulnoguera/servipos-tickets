@@ -135,7 +135,9 @@ class InboundMailProcessor
         if (! $allowed(Str::after($mail->fromEmail, '@'))) {
             return "El remitente {$mail->fromEmail} no es de un banco registrado";
         }
-        if (! $allowed($mail->verifiedDomain)) {
+        // El dominio verificado debe ser el del propio remitente (o uno que lo contenga).
+        $sender = Str::after($mail->fromEmail, '@');
+        if (! collect($mail->verifiedDomains)->contains(fn (string $domain) => $allowed($domain) && ($sender === $domain || str_ends_with($sender, '.'.$domain)))) {
             return "No se pudo verificar que el correo venga realmente de {$mail->fromEmail}";
         }
 

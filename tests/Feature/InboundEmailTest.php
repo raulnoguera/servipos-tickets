@@ -41,7 +41,7 @@ class InboundEmailTest extends TestCase
             subject: $with['subject'] ?? 'Reporte ATM',
             sentAt: $with['at'] ?? CarbonImmutable::now()->subMinutes(10),
             text: $text.self::LEGAL,
-            verifiedDomain: array_key_exists('verified', $with) ? $with['verified'] : 'banco.test',
+            verifiedDomains: $with['verified'] ?? ['banco.test'],
         );
     }
 
@@ -126,8 +126,8 @@ class InboundEmailTest extends TestCase
         Atm::factory()->create(['atm_number' => 'A1917000', 'serial' => 'INACT001', 'active' => false]);
 
         $cases = [
-            'no es de un banco registrado' => $this->process("ATM A1916524\nSerial: RDC52714\nFalla: X", ['from' => 'alguien@otro.test', 'verified' => 'otro.test']),
-            'No se pudo verificar' => $this->process("ATM A1916524\nSerial: RDC52714\nFalla: X", ['verified' => null]),
+            'no es de un banco registrado' => $this->process("ATM A1916524\nSerial: RDC52714\nFalla: X", ['from' => 'alguien@otro.test', 'verified' => ['otro.test']]),
+            'No se pudo verificar' => $this->process("ATM A1916524\nSerial: RDC52714\nFalla: X", ['verified' => []]),
             'no coincide con el del cajero' => $this->process("ATM A1916524\nSerial: XXX00000\nFalla: X"),
             'pero el correo indica el ATM' => $this->process("ATM A1926524\nSerial: RDC52714\nFalla: X"),
             'cajeros cuyo número termina en 6524' => $this->process("ATM 6524 Maracay\nFalla: X"),
@@ -144,13 +144,15 @@ class InboundEmailTest extends TestCase
         // El cajero más probable queda sugerido cuando solo falla el serial o el remitente.
         $this->assertSame($this->atm->id, $cases['no coincide con el del cajero']->atm_id);
 
-        $spam = $this->process('Oferta de préstamos.', ['from' => 'promo@otro.test', 'verified' => 'otro.test']);
+        $spam = $this->process('Oferta de préstamos.', ['from' => 'promo@otro.test', 'verified' => ['otro.test']]);
         $this->assertSame(InboundEmail::IGNORED, $spam->status);
     }
 
     public function test_real_message_headers_decide_who_is_verified(): void
     {
+        // Reenviado dentro de la empresa: la cabecera de arriba es del reenvío; la original sigue debajo.
         $raw = fn (string $authserv) => implode("\r\n", [
+            'Authentication-Results: entrada.antispam.hosting.test; spf=pass smtp.mailfrom=empresa.test; dkim=none',
             "Authentication-Results: {$authserv}; spf=pass smtp.mailfrom=banco.test; dkim=pass header.d=banco.test header.s=x",
             'From: Mesa de Ayuda <reportes@banco.test>',
             'To: atm@empresa.test',
@@ -170,13 +172,16 @@ class InboundEmailTest extends TestCase
         ]);
 
         $trusted = IncomingMail::fromMessage(Message::fromString($raw('entrada.antispam.hosting.test')), 'hosting.test');
-        $this->assertSame(['reportes@banco.test', 'banco.test', 'Reporte ATM D'], [$trusted->fromEmail, $trusted->verifiedDomain, $trusted->subject]);
+        $this->assertSame(['reportes@banco.test', 'Reporte ATM D'], [$trusted->fromEmail, $trusted->subject]);
+        $this->assertEqualsCanonicalizing(['empresa.test', 'banco.test'], $trusted->verifiedDomains);
+        $this->assertSame(InboundEmail::TICKET, app(InboundMailProcessor::class)->process($trusted)->status);
         $this->assertSame('2026-10-07T14:29:32+00:00', $trusted->sentAt->toIso8601String());
         $this->assertSame('Dispensación', (new BankReportParser)->parse($trusted->subject, $trusted->text)['fault']);
 
         // Una cabecera de verificación escrita por otro servidor (o por el remitente) no cuenta.
         $forged = IncomingMail::fromMessage(Message::fromString($raw('servidor.del-atacante.test')), 'hosting.test');
-        $this->assertNull($forged->verifiedDomain);
+        $this->assertSame(['empresa.test'], $forged->verifiedDomains);
+        $this->assertSame(InboundEmail::REVIEW, app(InboundMailProcessor::class)->process($forged)->status);
     }
 
     public function test_staff_resolve_emails_waiting_for_review(): void

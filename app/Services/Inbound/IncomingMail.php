@@ -17,8 +17,13 @@ final readonly class IncomingMail
         public ?string $subject,
         public CarbonImmutable $sentAt,
         public string $text,
-        /** Dominio cuya autenticidad confirmó el servidor de correo de la empresa (SPF o DKIM), si alguno. */
-        public ?string $verifiedDomain = null,
+        /**
+         * Dominios cuya autenticidad confirmó el servidor de correo de la empresa (SPF o DKIM).
+         * Puede haber más de uno si el correo llegó reenviado desde otro buzón de la empresa.
+         *
+         * @var list<string>
+         */
+        public array $verifiedDomains = [],
     ) {}
 
     public static function fromMessage(Message $message, string $trustedAuthserv): self
@@ -41,7 +46,7 @@ final readonly class IncomingMail
             subject: Str::limit(trim((string) $message->getSubject()), 480, '…') ?: null,
             sentAt: $sentAt,
             text: mb_scrub($text, 'UTF-8'),
-            verifiedDomain: self::verifiedDomain($message, $trustedAuthserv),
+            verifiedDomains: self::verifiedDomains($message, $trustedAuthserv),
         );
     }
 
@@ -49,25 +54,29 @@ final readonly class IncomingMail
      * Lee la cabecera Authentication-Results que agrega el servidor de la empresa
      * al recibir el correo. Las que no vienen de ese servidor se descartan: el
      * remitente puede escribir cualquier cabecera, esa no.
+     *
+     * @return list<string>
      */
-    private static function verifiedDomain(Message $message, string $trustedAuthserv): ?string
+    private static function verifiedDomains(Message $message, string $trustedAuthserv): array
     {
         if ($trustedAuthserv === '') {
-            return null;
+            return [];
         }
-        $results = $message->getHeader()?->get('authentication_results')?->toArray() ?? [];
-        foreach ($results as $result) {
+        $domains = [];
+        foreach ($message->getHeader()?->get('authentication_results')?->toArray() ?? [] as $result) {
             $result = strtolower(preg_replace('/\s+/', ' ', (string) $result));
-            $server = trim(strtok($result, ';'));
-            if (! str_ends_with($server, $trustedAuthserv)) {
+            if (! str_ends_with(trim(strtok($result, ';')), $trustedAuthserv)) {
                 continue;
             }
-            if (preg_match('/\bdkim=pass\b[^;]*\bheader\.d=([a-z0-9.-]+)/', $result, $m) || preg_match('/\bspf=pass\b[^;]*\bsmtp\.mailfrom=(?:[^@;\s]*@)?([a-z0-9.-]+)/', $result, $m)) {
-                return $m[1];
+            if (preg_match('/\bdkim=pass\b[^;]*\bheader\.d=([a-z0-9.-]+)/', $result, $m)) {
+                $domains[] = $m[1];
+            }
+            if (preg_match('/\bspf=pass\b[^;]*\bsmtp\.mailfrom=(?:[^@;\s]*@)?([a-z0-9.-]+)/', $result, $m)) {
+                $domains[] = $m[1];
             }
         }
 
-        return null;
+        return array_values(array_unique($domains));
     }
 
     private static function plain(string $html): string
