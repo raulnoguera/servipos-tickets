@@ -38,7 +38,7 @@
 <tr><th>Documento</th><td>Manual de usuario · Sistema de Monitoreo de Tickets ATM</td></tr>
 <tr><th>Cliente</th><td>ServiPos 2019, C.A.</td></tr>
 <tr><th>Desarrollado por</th><td>GT Consulting</td></tr>
-<tr><th>Versión del manual</th><td>1.0 · octubre de 2026</td></tr>
+<tr><th>Versión del manual</th><td>1.1 · octubre de 2026</td></tr>
 <tr><th>Versión del sistema descrita</th><td><!--VERSION--></td></tr>
 <tr><th>Dirección de producción</th><td>https://intra.servipos2019.com</td></tr>
 </table>
@@ -51,7 +51,7 @@
 <h2>1.1 Qué resuelve</h2>
 <table>
 <tr><th style="width:50%">Antes</th><th>Con el sistema</th></tr>
-<tr><td>Los reportes de los bancos llegaban por correo y se seguían por llamadas y WhatsApp.</td><td>Cada falla es un ticket con número propio, responsable, estado e historial.</td></tr>
+<tr><td>Los reportes de los bancos llegaban por correo y se seguían por llamadas y WhatsApp.</td><td>El correo del banco abre el ticket automáticamente, con número propio, responsable, estado e historial.</td></tr>
 <tr><td>El «Libro Consolidado» en Excel se armaba a mano.</td><td>El consolidado y los demás reportes se descargan en Excel en segundos.</td></tr>
 <tr><td>No se medían los tiempos de llegada ni de resolución.</td><td>El sistema calcula los tiempos y el cumplimiento de las metas (SLA) automáticamente.</td></tr>
 <tr><td>Las constancias de servicio quedaban en papel.</td><td>El técnico adjunta la foto de la constancia al ticket desde su teléfono.</td></tr>
@@ -91,6 +91,7 @@
 <thead><tr><th>Función</th><th class="c" style="width:15%">Administrador</th><th class="c" style="width:15%">Operador</th><th class="c" style="width:15%">Técnico</th></tr></thead>
 <tr><td>Ver el Monitor y el Tablero</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
 <tr><td>Abrir un ticket nuevo</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
+<tr><td>Revisar los correos del banco y abrir sus tickets</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
 <tr><td>Asignar o reasignar un técnico</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
 <tr><td>Editar prioridad, falla, detalle o caso del banco</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
 <tr><td>Anular un ticket</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
@@ -112,6 +113,7 @@
 
 <h2>2.2 El ticket</h2>
 <p>Un ticket representa <b>una falla de un cajero</b>, desde que se reporta hasta que se resuelve. Reúne en un solo lugar el cajero, la falla, la prioridad, el técnico responsable, las visitas realizadas, los repuestos usados, la foto de la constancia, los comentarios y el historial de todo lo ocurrido.</p>
+<p>Un ticket nace de dos maneras: lo abre el sistema al leer el correo del banco (sección 4.8), o lo registra el Call Center a mano (sección 4.3).</p>
 <p>Cada ticket recibe un número único con este formato:</p>
 <p style="text-align:center;font-family:'Urbanist';font-size:18pt;font-weight:800;color:#00194C;margin:4pt 0 2pt">TK-2026-00193</p>
 <p style="text-align:center;font-size:8.6pt;color:#5F6E8F">TK · año en que se abrió · número consecutivo de ese año</p>
@@ -159,7 +161,7 @@
 <tr><td>Media</td><td class="c">8 horas</td><td class="c">24 horas</td></tr>
 <tr><td>Baja</td><td class="c">24 horas</td><td class="c">48 horas</td></tr>
 </table>
-<div class="aviso"><b>Atención</b><p>Estos son los valores iniciales de ejemplo con los que se entrega el sistema. El administrador debe ajustarlos a lo acordado con cada banco en <b>Catálogos → SLA</b> (sección 4.11).</p></div>
+<div class="aviso"><b>Atención</b><p>Estos son los valores iniciales de ejemplo con los que se entrega el sistema. El administrador debe ajustarlos a lo acordado con cada banco en <b>Catálogos → SLA</b> (sección 4.12).</p></div>
 <p>Con esas metas, cada ticket muestra un semáforo para la llegada y otro para la resolución:</p>
 <table class="estrecha" style="min-width:70%">
 <tr><th>Semáforo</th><th>Significado</th></tr>
@@ -179,7 +181,7 @@
 <tr><td>Fuera de Servicio</td><td><span class="et e-validacion">Pend. validación</span></td></tr>
 <tr><td>Fuera de Servicio / Pendiente por 3ero</td><td><span class="et e-validacion">Pend. validación</span></td></tr>
 </table>
-<p>La lista se puede ampliar o ajustar en <b>Catálogos → Estatus final</b> (sección 4.10).</p>
+<p>La lista se puede ampliar o ajustar en <b>Catálogos → Estatus final</b> (sección 4.11).</p>
 
 <h2>2.6 Notificaciones</h2>
 <p>El sistema avisa a cada persona cuando ocurre algo que le concierne: al técnico cuando le asignan un ticket, al Call Center cuando el técnico avanza, al administrador cuando hay un cierre por confirmar. Los avisos llegan de dos formas:</p>

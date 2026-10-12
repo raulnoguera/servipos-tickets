@@ -10,6 +10,7 @@
 <tr><td><b>Nuevo ticket</b></td><td>Registrar la falla que reporta el banco.</td><td class="si">Sí</td><td class="si">Sí</td></tr>
 <tr><td><b>Tickets</b></td><td>Lista de todos los tickets, con búsqueda y filtros.</td><td class="si">Sí</td><td class="si">Sí</td></tr>
 <tr><td><b>Tablero</b></td><td>Los tickets en curso, en columnas por estado.</td><td class="si">Sí</td><td class="si">Sí</td></tr>
+<tr><td><b>Correos del banco</b></td><td>Reportes recibidos por correo y lo que el sistema hizo con cada uno.</td><td class="si">Sí</td><td class="si">Sí</td></tr>
 <tr><td><b>Reportes</b></td><td>Indicadores, detalle y descargas a Excel.</td><td class="si">Sí</td><td class="si">Sí</td></tr>
 <tr><td><b>Cajeros</b></td><td>Maestro de cajeros y hoja de vida de cada uno.</td><td class="si">Sí</td><td class="si">Consulta</td></tr>
 <tr><td><b>Catálogos</b></td><td>Listas de fallas, repuestos, estatus, bancos, estados y metas de SLA.</td><td class="si">Sí</td><td class="no">—</td></tr>
@@ -17,7 +18,7 @@
 <tr><td><b>Importar Excel</b></td><td>Cargar el Libro Consolidado.</td><td class="si">Sí</td><td class="no">—</td></tr>
 <tr><td><b>Auditoría</b></td><td>Registro de acciones sensibles.</td><td class="si">Sí</td><td class="no">—</td></tr>
 </table>
-<p>En la parte superior del menú está la <b>campana</b> de notificaciones (sección 4.15). En la parte inferior, la versión instalada con el botón <b>Buscar actualización</b>, y la tarjeta con su nombre y rol, con los íconos para <b>cambiar la contraseña</b> y <b>cerrar sesión</b>.</p>
+<p>En la parte superior del menú está la <b>campana</b> de notificaciones (sección 4.16). En la parte inferior, la versión instalada con el botón <b>Buscar actualización</b>, y la tarjeta con su nombre y rol, con los íconos para <b>cambiar la contraseña</b> y <b>cerrar sesión</b>.</p>
 
 <h2>4.2 Monitor</h2>
 <p>Es la pantalla inicial. Responde de un vistazo qué está pasando y qué requiere atención. Se actualiza sola cada 30 segundos.</p>
@@ -41,7 +42,7 @@
 <p>Cada tarjeta y cada franja es un acceso directo: al hacer clic se abre la lista de tickets correspondiente. El botón <b>Nuevo ticket</b> lleva al formulario de registro.</p>
 
 <h2>4.3 Nuevo ticket</h2>
-<p>Aquí el operador registra la falla que reporta el banco. El formulario tiene dos pasos: elegir el cajero y describir la falla.</p>
+<p>La mayoría de los tickets los abre el sistema al leer el correo del banco (sección 4.8). Aquí el operador registra a mano los que llegan por otra vía, como una llamada. El formulario tiene dos pasos: elegir el cajero y describir la falla.</p>
 <figure><img src="capturas/nuevo-buscar.jpg" alt="Búsqueda de cajeros al crear un ticket"><figcaption>Paso 1: el cajero se busca mientras se escribe.</figcaption></figure>
 <h3>Paso 1 · Cajero</h3>
 <p>Escriba en el buscador el <b>N° de ATM</b>, el nombre de la <b>agencia</b> o el <b>serial</b>. Aparecen las coincidencias mientras escribe. Si deja el campo vacío y toca <b>Buscar</b>, se abre la lista completa de cajeros para elegir. Los cajeros que ya tienen un ticket sin cerrar muestran la etiqueta amarilla «abierto».</p>
@@ -160,7 +161,65 @@
 </ul>
 <p>Al hacer clic en una tarjeta se abre el ticket. El estado se cambia desde el ticket, no arrastrando la tarjeta.</p>
 
-<h2>4.8 Reportes</h2>
+<h2>4.8 Correos del banco</h2>
+<p>Los bancos reportan las fallas por correo. El sistema lee ese buzón cada dos minutos y, cuando reconoce el banco y el cajero, abre el ticket sin que nadie lo transcriba. Esta pantalla muestra cada correo recibido y lo que el sistema hizo con él.</p>
+<figure><img src="capturas/correos.jpg" alt="Correos del banco"><figcaption>Correos del banco, con el resultado de cada uno.</figcaption></figure>
+
+<h3>Qué hace el sistema con cada correo</h3>
+<table>
+<thead><tr><th style="width:44%">Situación</th><th>Resultado</th></tr></thead>
+<tr><td>Viene de un banco registrado, con su firma válida, y el cajero se identifica.</td><td><b>Ticket abierto.</b> El ticket se abre solo y el Call Center recibe el aviso para asignar un técnico.</td></tr>
+<tr><td>El cajero ya tiene un ticket sin cerrar.</td><td><b>Agregado.</b> El correo queda como comentario en ese ticket; no se abre otro.</td></tr>
+<tr><td>Hay algo que no cuadra: el serial, el cajero o el remitente.</td><td><b>Por revisar.</b> Espera a que una persona decida.</td></tr>
+<tr><td>No viene de un banco registrado y no menciona ningún cajero.</td><td><b>Ignorado.</b> Queda en la lista, sin efecto.</td></tr>
+</table>
+
+<h3>Qué lee del correo</h3>
+<table>
+<thead><tr><th style="width:17%">Dato</th><th style="width:37%">Cómo lo escribe el banco</th><th>Para qué sirve</th></tr></thead>
+<tr><td><b>ATM</b></td><td>«ATM A1918189 BARCELONA CENTRO», o abreviado: «ATM 6524»</td><td>Identifica el cajero. Si viene abreviado, lo busca por sus últimos dígitos.</td></tr>
+<tr><td><b>Serial</b></td><td>«Serial: F3301065»</td><td>Confirma que se trata de ese cajero.</td></tr>
+<tr><td><b>Falla</b></td><td>«Falla: NO ENTRA EN SERVICIO», o solo «Monitor»</td><td>Elige el tipo de falla del catálogo. Si no coincide con ninguno, usa «Por clasificar».</td></tr>
+<tr><td><b>Observación</b></td><td>«Observación: queda la pantalla en negro»</td><td>Pasa al detalle del ticket.</td></tr>
+</table>
+<p>Si el banco reenvía un hilo interno, el sistema toma solo lo que escribió quien envía, no lo citado debajo.</p>
+
+<h3>La pantalla</h3>
+<ul>
+<li><b>Pestañas:</b> Por revisar, Tickets abiertos, Agregados, Ignorados y Todos, con la cantidad de cada una.</li>
+<li><b>Buscador:</b> por asunto, remitente o texto del correo.</li>
+<li><b>Cada fila:</b> fecha de envío, remitente, asunto, los datos reconocidos y el resultado, con el enlace al ticket.</li>
+<li><b>Estado de la lectura:</b> sobre la lista se indica cuándo se leyó el buzón por última vez.</li>
+</ul>
+<div class="aviso"><b>Atención</b><p>Si la pantalla advierte que el buzón lleva más de 15 minutos sin leerse, o que no logra leerlo, avise al administrador. Mientras dure, los reportes del banco no abren tickets: regístrelos a mano (sección 4.3).</p></div>
+
+<h3>Correos por revisar</h3>
+<figure class="media"><img src="capturas/d-correo-detalle.jpg" alt="Correo por revisar"><figcaption>Un correo por revisar: el motivo, el texto y la forma de resolverlo.</figcaption></figure>
+<table>
+<thead><tr><th style="width:38%">Motivo</th><th>Qué significa</th></tr></thead>
+<tr><td>El cajero no está en el maestro</td><td>El número o el serial no corresponden a ningún cajero cargado.</td></tr>
+<tr><td>El serial no coincide con el del cajero</td><td>El número y el serial apuntan a cajeros distintos, o el serial no es el registrado. El sistema propone el cajero más probable.</td></tr>
+<tr><td>Hay varios cajeros con ese número</td><td>El número abreviado coincide con más de un cajero.</td></tr>
+<tr><td>El cajero está inactivo</td><td>Un cajero inactivo no admite tickets nuevos (sección 4.10).</td></tr>
+<tr><td>El remitente no es de un banco registrado, o no se pudo verificar</td><td>El correo no trae la firma válida de un banco conocido.</td></tr>
+<tr><td>No se reconoció el cajero</td><td>El correo no sigue la plantilla: por ejemplo, una consulta general.</td></tr>
+</table>
+<ol class="pasos">
+<li>Abra el correo y lea el texto y el motivo.</li>
+<li>Confirme el cajero propuesto, o toque <b>Cambiar</b> y búsquelo.</li>
+<li>Si lo desea, elija el <b>tipo de falla</b> y la <b>prioridad</b>.</li>
+<li>Toque <b>Abrir ticket</b>. Si el correo no corresponde a una falla, toque <b>Descartar</b>.</li>
+</ol>
+
+<h3>Volver a evaluar</h3>
+<p>Si un reporte llegó antes de que su cajero estuviera cargado, no hace falta abrirlo a mano. Después de crear el cajero, toque <b>Volver a evaluar</b>: el sistema repite la decisión con los datos actuales y abre los tickets que ya pueda abrir. Lo mismo ocurre solo al terminar cada importación del Excel. Solo se reevalúan los correos de bancos verificados; los demás siguen esperando una decisión.</p>
+
+<h3>El ticket abierto por correo</h3>
+<figure><img src="capturas/correo-ticket.jpg" alt="Ticket abierto por correo"><figcaption>Ticket abierto por un correo del banco.</figcaption></figure>
+<p>Lleva la etiqueta <b>Por correo del banco</b>, nace en estado «Abierto» y sin técnico, y su detalle trae la falla, la observación y quién lo reportó. Desde ahí sigue el ciclo normal de cualquier ticket.</p>
+<div class="regla"><b>Regla del sistema</b><p>El tiempo del ticket se cuenta desde que el banco envió el correo, aunque el ticket se abra después. El sistema solo lee el buzón: no marca los correos como leídos, no los mueve ni los borra. Cada correo se procesa una sola vez, y los anteriores a la activación no se tocan.</p></div>
+
+<h2>4.9 Reportes</h2>
 <p>Los reportes se calculan con lo que registran los operadores y los técnicos; no hay que preparar nada. Tienen seis pestañas, que comparten los mismos filtros.</p>
 <h3>Filtros</h3>
 <ul>
@@ -210,7 +269,7 @@
 <p>Toda cifra de los reportes se puede abrir para ver los tickets o las atenciones que la forman. En el detalle hay un filtro instantáneo y el botón <b>Descargar Excel</b>. Cada tabla de los reportes tiene además su propio botón <b>Excel</b>.</p>
 <p>Los archivos se descargan con la imagen de ServiPos: logo, título, filtros aplicados, quién lo generó y cuándo, y el total de registros. Cada descarga queda en la auditoría.</p>
 
-<h2>4.9 Cajeros</h2>
+<h2>4.10 Cajeros</h2>
 <p>Es el maestro de cajeros automáticos. Los operadores lo consultan; solo el administrador crea o modifica.</p>
 <figure><img src="capturas/cajeros.jpg" alt="Maestro de cajeros"><figcaption>Maestro de cajeros.</figcaption></figure>
 <p>La lista muestra N° de ATM, serial, agencia con su código y tipo, estado, modelo, banco y cuántos tickets abiertos tiene. Se busca por N° de ATM, serial, agencia o código, y se filtra por estado. Al tocar el número se abre la hoja de vida.</p>
@@ -232,7 +291,7 @@
 <figure><img src="capturas/cajero-hoja.jpg" alt="Hoja de vida de un cajero"><figcaption>Hoja de vida de un cajero.</figcaption></figure>
 <p>Reúne todo el historial de un ATM: tickets totales, abiertos ahora, tickets de los últimos 90 días, visitas, repuestos usados y tiempo promedio de resolución; los gráficos de <b>fallas reportadas</b> y <b>repuestos cambiados</b>; y el <b>historial de tickets</b> con falla, prioridad, técnico, repuestos, estado y duración. Los botones <b>Mapa</b> y <b>Nuevo ticket</b> están arriba a la derecha. Sirve para detectar cajeros con fallas repetidas.</p>
 
-<h2>4.10 Catálogos</h2>
+<h2>4.11 Catálogos</h2>
 <p>Son las listas que alimentan los formularios. Solo el administrador las modifica.</p>
 <figure><img src="capturas/catalogos.jpg" alt="Catálogos"><figcaption>Catálogo de tipos de falla.</figcaption></figure>
 <table>
@@ -242,19 +301,19 @@
 <tr><td><b>Estatus final</b></td><td>Cómo queda el cajero tras la atención, y a qué estado lleva el ticket.</td></tr>
 <tr><td><b>Bancos</b></td><td>Clientes bancarios.</td></tr>
 <tr><td><b>Estados</b></td><td>Estados y regiones de cobertura.</td></tr>
-<tr><td><b>SLA</b></td><td>Metas de tiempo por prioridad (sección 4.11).</td></tr>
+<tr><td><b>SLA</b></td><td>Metas de tiempo por prioridad (sección 4.12).</td></tr>
 </table>
 <p>En cualquiera de ellos: escriba el nombre y toque <b>Agregar</b> para crear un elemento; use el <b>lápiz</b> para cambiarle el nombre; y el <b>interruptor</b> para activarlo o desactivarlo. Los <b>Estados</b> no tienen interruptor: solo se agregan o se renombran.</p>
 <div class="regla"><b>Regla del sistema</b><p>Los elementos no se eliminan, se desactivan. Uno inactivo deja de ofrecerse en los formularios nuevos, pero los tickets y reportes anteriores lo conservan. No se admiten dos elementos con el mismo nombre.</p></div>
 <figure><img src="capturas/catalogos-estatus.jpg" alt="Catálogo de estatus final"><figcaption>Estatus final: cada uno indica a qué estado lleva el ticket.</figcaption></figure>
 <p>En <b>Estatus final</b>, además del nombre, se elige el estado al que pasa el ticket: Concluido, Pendiente por repuesto o Pendiente por validación. Los de tipo «Concluido» llevan primero el ticket a «Por confirmar» (sección 4.6).</p>
 
-<h2>4.11 Metas de SLA</h2>
+<h2>4.12 Metas de SLA</h2>
 <figure><img src="capturas/catalogos-sla.jpg" alt="Metas de SLA"><figcaption>Metas de llegada y de resolución por prioridad.</figcaption></figure>
 <p>En <b>Catálogos → SLA</b> se definen, en horas, la meta de <b>llegada al sitio</b> y la de <b>resolución</b> para cada prioridad. Admite decimales (1,5 es una hora y media). Si se deja una casilla vacía, esa meta no se mide. Toque <b>Guardar metas</b> para aplicar.</p>
 <div class="aviso"><b>Atención</b><p>El cambio aplica de inmediato a todos los tickets, también a los ya abiertos, y queda en la auditoría. Los valores con los que se entrega el sistema son de ejemplo.</p></div>
 
-<h2>4.12 Usuarios y técnicos</h2>
+<h2>4.13 Usuarios y técnicos</h2>
 <figure><img src="capturas/usuarios.jpg" alt="Usuarios y técnicos"><figcaption>Lista de usuarios, con su último ingreso.</figcaption></figure>
 <p>La lista muestra, por cada usuario, su nombre y <b>con qué inicia sesión</b> (teléfono o correo), su rol, los estados que cubre, su <b>último ingreso</b> y sus tickets activos. Se puede filtrar por rol. La etiqueta <b>Nunca ingresó</b> señala a quien aún no ha entrado, y <b>Enlace enviado</b> a quien tiene un enlace de acceso vigente.</p>
 <figure class="media"><img src="capturas/d-usuario-editar.jpg" alt="Formulario de usuario"><figcaption>Alta y edición de un usuario.</figcaption></figure>
@@ -282,7 +341,7 @@
 <p>Edite el usuario y apague <b>Puede iniciar sesión</b>. El efecto es inmediato: pierde el acceso en todos sus equipos, se invalida «mantener la sesión iniciada» y deja de recibir notificaciones. Su nombre se conserva en los tickets que atendió.</p>
 <div class="regla"><b>Regla del sistema</b><p>Los usuarios no se eliminan, se desactivan, para conservar el historial. Un administrador no puede desactivarse ni cambiarse el rol a sí mismo.</p></div>
 
-<h2>4.13 Importar Excel</h2>
+<h2>4.14 Importar Excel</h2>
 <p>Carga el <b>Libro Consolidado Relación de Atenciones</b> que la empresa llevaba en Excel. El archivo debe tener las pestañas <b>Tablas</b> y <b>Base General</b>.</p>
 <figure><img src="capturas/importar.jpg" alt="Importación del Excel"><figcaption>Importación del Excel histórico.</figcaption></figure>
 <ol class="pasos">
@@ -307,9 +366,11 @@
 <tr><td><b>Corregido automáticamente</b></td><td>Ajustes que el sistema hace solo: espacios en seriales, nombres iguales escritos distinto, modelos normalizados.</td></tr>
 </table>
 <div class="aviso"><b>Atención</b><p>Si se corrige en el Excel una fila que ya se había cargado (la fecha, la constancia o el texto del trabajo), el sistema la verá como una atención nueva y quedará duplicada. Las correcciones de lo ya cargado deben hacerse en el sistema.</p></div>
-<p>Los tickets importados llevan la etiqueta «Histórico Excel» y no miden tiempos, porque el Excel solo trae fechas. Los técnicos importados quedan sin acceso hasta que se les cargue el teléfono y se les envíe el enlace (sección 4.12).</p>
+<p>Los tickets importados llevan la etiqueta «Histórico Excel» y no miden tiempos, porque el Excel solo trae fechas. Los técnicos importados quedan sin acceso hasta que se les cargue el teléfono y se les envíe el enlace (sección 4.13).</p>
 
-<h2>4.14 Auditoría</h2>
+<p>Al terminar una importación real, el sistema vuelve a evaluar los correos del banco que estaban por revisar: los que esperaban por un cajero recién cargado abren su ticket (sección 4.8).</p>
+
+<h2>4.15 Auditoría</h2>
 <figure><img src="capturas/auditoria.jpg" alt="Auditoría"><figcaption>Registro de auditoría.</figcaption></figure>
 <p>Registra quién hizo qué, cuándo y desde qué dirección de internet. Solo la consulta el administrador, y nadie puede modificarla ni borrarla desde el sistema.</p>
 <table>
@@ -319,11 +380,12 @@
 <tr><td><b>Catálogos</b> · <b>Cajeros</b> · <b>SLA</b></td><td>Elementos creados o modificados, y cambios en las metas.</td></tr>
 <tr><td><b>Importación</b></td><td>Cada simulación e importación del Excel, con sus cantidades.</td></tr>
 <tr><td><b>Descargas</b></td><td>Cada reporte descargado a Excel, con los filtros usados.</td></tr>
+<tr><td><b>Correos</b></td><td>Tickets abiertos desde un correo por revisar, correos descartados y reevaluaciones.</td></tr>
 </table>
 <p>Se puede buscar por usuario, descripción o IP, y filtrar por tipo y por fechas. Las etiquetas rojas <b>Bloqueo</b> y <b>Denegado</b> merecen atención: pueden indicar un intento de acceso indebido.</p>
 <div class="nota"><b>Nota</b><p>La auditoría nunca guarda contraseñas: de un cambio de contraseña solo anota que ocurrió. Lo que sucede dentro de cada ticket (estados, visitas, comentarios) no está aquí, sino en la actividad del propio ticket.</p></div>
 
-<h2>4.15 Notificaciones en el portal</h2>
+<h2>4.16 Notificaciones en el portal</h2>
 <figure><img src="capturas/campana.jpg" alt="Campana de notificaciones"><figcaption>Campana con los avisos recibidos.</figcaption></figure>
 <p>La <b>campana</b>, arriba en el menú, muestra un número rojo con los avisos sin leer. Al abrirla aparecen los últimos avisos; al tocar uno se abre el ticket y queda leído. <b>Marcar leídas</b> los limpia todos. Con la aplicación abierta, cada aviso nuevo suena y se muestra en una esquina.</p>
 <figure class="media"><img src="capturas/d-avisos-ajustes.jpg" alt="Ajustes de notificaciones"><figcaption>Ajustes de notificaciones (ícono de engranaje de la campana).</figcaption></figure>

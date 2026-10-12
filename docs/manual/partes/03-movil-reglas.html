@@ -171,6 +171,9 @@
 <h2>6.5 Notificaciones: quién recibe cada aviso</h2>
 <table>
 <thead><tr><th style="width:27%">Evento</th><th>Quién lo recibe</th></tr></thead>
+<tr><td><b>Ticket abierto por correo</b></td><td>Todos los operadores y administradores, salvo quienes eligieron «Ninguno».</td></tr>
+<tr><td><b>Nuevo correo sobre un ticket abierto</b></td><td>Los mismos, más el técnico asignado.</td></tr>
+<tr><td><b>Correo por revisar</b></td><td>Todos los operadores y administradores, salvo quienes eligieron «Ninguno».</td></tr>
 <tr><td><b>Ticket asignado</b></td><td>El técnico asignado.</td></tr>
 <tr><td><b>En camino / Llegó al sitio</b></td><td>Operadores y administradores, según su preferencia, y quienes siguen el ticket.</td></tr>
 <tr><td><b>Atención con pendiente</b></td><td>Operadores y administradores, según su preferencia, y seguidores.</td></tr>
@@ -206,4 +209,15 @@
 <li><b>Usuario de ingreso:</b> el teléfono para técnicos, el correo para los demás. Ambos son únicos.</li>
 <li><b>Contraseñas:</b> mínimo 10 caracteres, con letras y números. Cada quien crea la suya; el sistema las guarda cifradas de forma que nadie puede leerlas.</li>
 <li><b>Envíos repetidos:</b> si el teléfono reenvía una atención por un problema de conexión, el sistema la reconoce y no la duplica.</li>
+</ul>
+
+<h2>6.8 Tickets abiertos por correo</h2>
+<ul>
+<li>Solo abre tickets sin intervención el correo de un <b>banco registrado</b> cuya <b>firma digital</b> sea válida.</li>
+<li>El cajero se identifica por <b>número y serial</b>. Si no coinciden entre sí, el correo espera a una persona.</li>
+<li>Un cajero con un ticket sin cerrar <b>no recibe un segundo ticket</b>: el correo se agrega al que ya tiene.</li>
+<li>El reloj del ticket corre desde la <b>hora de envío del correo</b>; nunca desde una hora futura.</li>
+<li>La falla que no coincide con el catálogo entra como <b>«Por clasificar»</b>; se corrige editando el ticket.</li>
+<li>Cada correo se procesa <b>una sola vez</b>. Un correo por revisar solo cambia por decisión de una persona o al volver a evaluarlo.</li>
+<li>El ticket abierto por el sistema no tiene «abierto por»; el que abre una persona desde la bandeja lleva su nombre.</li>
 </ul>

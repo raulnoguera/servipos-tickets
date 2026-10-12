@@ -52,7 +52,7 @@ def titulos(cuerpo):
 def tablas_juntas(cuerpo):
     """Marca las tablas cortas para que no se partan entre dos páginas."""
     def marcar(m):
-        if m.group(0).count('<tr') > 16:
+        if m.group(0).count('<tr') > 17:
             return m.group(0)
         inicio = m.group(1)
         inicio = inicio.replace('class="', 'class="junta ', 1) if 'class="' in inicio else inicio.replace('<table', '<table class="junta"', 1)

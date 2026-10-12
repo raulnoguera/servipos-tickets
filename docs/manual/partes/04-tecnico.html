@@ -57,6 +57,16 @@
 </ul>
 
 
+<h2>7.8 Lectura del correo del banco</h2>
+<ul>
+<li>Una tarea del servidor revisa el buzón de reportes <b>cada dos minutos</b>.</li>
+<li>La conexión es de <b>solo lectura</b>: el correo queda como estaba y el personal sigue usando el buzón.</li>
+<li>De cada correo nuevo, el sistema <b>comprueba la firma digital</b> del remitente, extrae el cajero, el serial y la falla, y decide qué hacer (sección 4.8).</li>
+<li>Guarda la hora de la última lectura y, si falla, el motivo; la pantalla <b>Correos del banco</b> lo muestra.</li>
+<li>Si el servidor estuvo sin poder leer, al volver procesa lo recibido en los últimos tres días.</li>
+</ul>
+
+
 <h1><span class="cap">Capítulo 8</span>8. Tecnologías utilizadas</h1>
 
 <p class="entrada">El sistema está construido con tecnologías abiertas, de uso extendido y con soporte activo, lo que facilita su mantenimiento a largo plazo.</p>
@@ -72,8 +82,9 @@
 <tr><td><b>Gráficos</b></td><td>Recharts</td><td>Gráficos del Monitor y de los reportes.</td></tr>
 <tr><td><b>App instalable y sin señal</b></td><td>PWA · Service Worker · IndexedDB</td><td>Instalación en el teléfono, copia local y bandeja de envíos.</td></tr>
 <tr><td><b>Notificaciones</b></td><td>Web Push (VAPID)</td><td>Avisos al dispositivo sin pasar por tiendas de apps.</td></tr>
+<tr><td><b>Correo entrante</b></td><td>IMAP · verificación DKIM</td><td>Lectura del buzón de reportes y comprobación de la firma del banco.</td></tr>
 <tr><td><b>Excel</b></td><td>PhpSpreadsheet</td><td>Importación del histórico y descargas con formato.</td></tr>
-<tr><td><b>Pruebas</b></td><td>PHPUnit</td><td>96 pruebas automáticas que se ejecutan antes de cada publicación.</td></tr>
+<tr><td><b>Pruebas</b></td><td>PHPUnit</td><td>106 pruebas automáticas que se ejecutan antes de cada publicación.</td></tr>
 </table>
 
 <h2>8.2 Infraestructura</h2>
@@ -83,6 +94,7 @@
 <tr><td><b>Conexión</b></td><td>Siempre cifrada (HTTPS), con certificado válido. Las visitas por http se redirigen solas.</td></tr>
 <tr><td><b>Disposición</b></td><td>La aplicación está instalada fuera de la carpeta pública del sitio: desde internet solo son accesibles los archivos necesarios para mostrar las pantallas.</td></tr>
 <tr><td><b>Ambiente de pruebas</b></td><td>Existe un sitio aparte, con datos de demostración, donde se validan los cambios antes de pasarlos a producción.</td></tr>
+<tr><td><b>Tareas programadas</b></td><td>El hosting ejecuta cada minuto las tareas del sistema; hoy, la lectura del buzón de reportes.</td></tr>
 <tr><td><b>Código fuente</b></td><td>En un repositorio privado de GitHub, con el historial de cada cambio y avisos automáticos de vulnerabilidades en las librerías.</td></tr>
 <tr><td><b>Publicación</b></td><td>Automatizada: antes de publicar se ejecutan las pruebas y una revisión de vulnerabilidades; después, se comprueba que el sitio responda y que ningún archivo interno sea accesible.</td></tr>
 </table>
@@ -103,6 +115,7 @@
 <h2>9.1 Alcance y metodología</h2>
 <ul>
 <li><b>Primera revisión (30 de septiembre de 2026):</b> revisión interna del portal, la API y la aplicación móvil, complementada con una auditoría independiente del código.</li>
+<li><b>Revisión de la lectura de correo (12 de octubre de 2026):</b> al incorporar la apertura automática de tickets se revisó cómo se comprueba quién envía cada correo, y se adoptó la verificación de la firma digital del banco.</li>
 <li><b>Segunda revisión (8 de octubre de 2026):</b> auditoría con la metodología abierta <b>Cyber Neo</b>, que cubre las categorías del <b>OWASP Top 10</b> y del <b>CWE Top 25</b>, los catálogos de referencia de la industria para riesgos en aplicaciones.</li>
 </ul>
 <p>Se analizaron seis frentes: el código del servidor y de la interfaz, la autenticación y los permisos ruta por ruta, la configuración, el proceso de publicación, las librerías de terceros y la presencia de claves o contraseñas en el código.</p>
@@ -129,7 +142,11 @@
 <tr><td><b>Inyección en la base de datos</b></td><td>Todas las consultas usan parámetros; no se arma ninguna con texto del usuario.</td></tr>
 <tr><td><b>Interceptar la comunicación</b></td><td>Todo viaja cifrado por HTTPS, y el navegador queda instruido para usar siempre esa vía.</td></tr>
 <tr><td><b>Manipular los tiempos del SLA</b></td><td>Con señal vale la hora del servidor. Lo enviado sin señal se acepta con límites y queda marcado como «enviado tarde».</td></tr>
+<tr><td><b>Correos que suplantan al banco</b></td><td>El sistema comprueba la firma digital (DKIM) de cada correo contra la clave pública del banco. Sin una firma válida, el correo no abre tickets: espera a una persona.</td></tr>
 <tr><td><b>Archivos maliciosos</b></td><td>Solo se aceptan imágenes reales como constancia, y se vuelven a procesar. Los Excel descargados no pueden ejecutar fórmulas inyectadas.</td></tr>
+</table>
+<table>
+<thead><tr><th style="width:28%">Riesgo</th><th>Protección</th></tr></thead>
 <tr><td><b>Fuga de fotos o reportes</b></td><td>Las fotos están en un almacén privado. Las respuestas con datos no se guardan en cachés intermedias ni en el disco del navegador.</td></tr>
 <tr><td><b>Datos en un teléfono perdido</b></td><td>Al cambiar la contraseña o desactivar al usuario, el teléfono deja de recibir avisos y se borra lo guardado para uso sin señal.</td></tr>
 <tr><td><b>Acciones sin rastro</b></td><td>Registro de auditoría de accesos, bloqueos, accesos denegados, gestión de usuarios, catálogos, metas, importaciones y descargas.</td></tr>
@@ -201,6 +218,7 @@
 <li><b>Revisar los catálogos:</b> tipos de falla, repuestos, estatus finales, bancos y estados.</li>
 <li><b>Importar el Excel histórico</b> (Importar Excel), simulando primero.</li>
 <li><b>Completar los cajeros:</b> banco, dirección y modelo de los que falten.</li>
+<li><b>Comprobar la lectura del buzón:</b> en Correos del banco debe indicar que se leyó hace pocos minutos.</li>
 <li><b>Crear los operadores</b> del Call Center, con su correo.</li>
 <li><b>Cargar el teléfono de cada técnico</b> y los estados que cubre.</li>
 <li><b>Enviar el acceso</b> a cada usuario y confirmar que ingresó (columna «Último ingreso»).</li>
@@ -214,17 +232,19 @@
 <h2>10.3 Preguntas frecuentes</h2>
 <table>
 <thead><tr><th style="width:36%">Pregunta</th><th>Respuesta</th></tr></thead>
-<tr><td>Olvidé mi contraseña.</td><td>Pida al administrador un enlace de acceso nuevo (sección 4.12).</td></tr>
+<tr><td>Olvidé mi contraseña.</td><td>Pida al administrador un enlace de acceso nuevo (sección 4.13).</td></tr>
 <tr><td>Me dice «Demasiados intentos fallidos».</td><td>Espere 5 minutos y vuelva a intentar. Si no recuerda la contraseña, pida un enlace nuevo.</td></tr>
 <tr><td>El enlace de acceso dice que ya se usó o venció.</td><td>Sirve una sola vez y dura 48 horas. Pida otro.</td></tr>
 <tr><td>No me llegan las notificaciones.</td><td>Abra la campana → engranaje y compruebe que diga «Avisos activados». En iPhone, la app debe estar instalada en la pantalla de inicio. Revise también que el teléfono no tenga bloqueadas las notificaciones del navegador.</td></tr>
 <tr><td>Registré la atención y el ticket no se cerró.</td><td>Es lo esperado: queda «Por confirmar» hasta que un administrador lo confirme (sección 4.6).</td></tr>
 <tr><td>Hice un cambio sin señal y no aparece.</td><td>Queda en la bandeja del teléfono y se envía solo al volver la conexión. La franja superior indica cuántos envíos hay pendientes.</td></tr>
 <tr><td>Me equivoqué al registrar una atención.</td><td>No se puede editar. Deje un comentario en el ticket explicando el error; el administrador puede devolver el ticket para registrar una nueva atención.</td></tr>
+<tr><td>Llegó un correo del banco y no se abrió el ticket.</td><td>Búsquelo en <b>Correos del banco</b>, pestaña «Por revisar»: ahí está el motivo y cómo resolverlo (sección 4.8).</td></tr>
+<tr><td>La pantalla dice que no logra leer el buzón.</td><td>Avise al administrador; suele deberse a un cambio en la contraseña del buzón. Mientras tanto, registre los tickets a mano.</td></tr>
 <tr><td>Abrí un ticket por error.</td><td>Use <b>Anular</b>, indicando el motivo.</td></tr>
 <tr><td>No encuentro un cajero al crear el ticket.</td><td>Búsquelo por agencia o serial. Si no existe, el administrador debe crearlo en <b>Cajeros</b>.</td></tr>
 <tr><td>Un técnico dejó la empresa.</td><td>Reasigne sus tickets abiertos y desactívelo en <b>Usuarios y técnicos</b>.</td></tr>
-<tr><td>¿Puedo cargar el Excel de nuevo con filas nuevas?</td><td>Sí. Solo se agrega lo nuevo (sección 4.13).</td></tr>
+<tr><td>¿Puedo cargar el Excel de nuevo con filas nuevas?</td><td>Sí. Solo se agrega lo nuevo (sección 4.14).</td></tr>
 <tr><td>Veo una versión vieja de una pantalla.</td><td>Abra el menú y toque <b>Buscar actualización</b>, o recargue la página.</td></tr>
 <tr><td>¿Por qué un ticket histórico no muestra duración?</td><td>Porque el Excel solo traía fechas, sin horas.</td></tr>
 </table>
@@ -241,6 +261,8 @@
 <tr><td><b>Reincidencia</b></td><td>Nueva falla de un cajero dentro de los 30 días siguientes a otra.</td></tr>
 <tr><td><b>Seguir</b></td><td>Suscribirse a los avisos de un ticket.</td></tr>
 <tr><td><b>Enlace de acceso</b></td><td>Enlace de un solo uso con el que un usuario crea su contraseña.</td></tr>
+<tr><td><b>Por revisar</b></td><td>Correo del banco que el sistema no pudo resolver solo y espera una decisión.</td></tr>
+<tr><td><b>Firma digital (DKIM)</b></td><td>Prueba de que un correo salió realmente del dominio del banco y no fue alterado.</td></tr>
 <tr><td><b>Bandeja de envíos</b></td><td>Lo que el teléfono guarda mientras no hay señal, para enviarlo después.</td></tr>
 <tr><td><b>PWA</b></td><td>Aplicación web que se instala en el teléfono sin pasar por una tienda.</td></tr>
 <tr><td><b>Auditoría</b></td><td>Registro de quién hizo qué y cuándo en las funciones sensibles.</td></tr>

@@ -34,7 +34,7 @@ h3 { margin-bottom: -59pt; }
 ul, ol { margin: 0 0 8pt; padding-left: 16pt; }
 li { margin-bottom: 3pt; }
 li > ul, li > ol { margin-top: 3pt; }
-ol.pasos { list-style: none; padding-left: 0; counter-reset: paso; }
+ol.pasos { list-style: none; padding-left: 0; counter-reset: paso; break-inside: avoid; }
 ol.pasos > li { position: relative; padding-left: 24pt; margin-bottom: 6pt; counter-increment: paso; break-inside: avoid; }
 ol.pasos > li::before { content: counter(paso); position: absolute; left: 0; top: 0.5pt; width: 16pt; height: 16pt; border-radius: 50%; background: var(--blue); color: #fff; font-size: 8.4pt; font-weight: 700; text-align: center; line-height: 16pt; }
 
