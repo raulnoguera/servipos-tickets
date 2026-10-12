@@ -206,9 +206,9 @@ export function ActivityCard({ ticket }) {
                 {items.map((item) =>
                     item.type === 'comment' ? (
                         <li key={`c${item.id}`} className="flex gap-3">
-                            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-brand-500 text-[11px] font-bold text-white">{initials(item.user ?? '?')}</span>
+                            <span className="grid size-8 shrink-0 place-items-center rounded-full bg-brand-500 text-[11px] font-bold text-white">{initials(item.user ?? 'Sistema')}</span>
                             <div className="min-w-0 flex-1 rounded-xl rounded-tl-sm bg-brand-50/70 px-3.5 py-2.5">
-                                <p className="text-xs text-muted"><b className="text-ink">{item.user ?? 'Usuario'}</b> · {formatDateTime(item.at)}</p>
+                                <p className="text-xs text-muted"><b className="text-ink">{item.user ?? 'Sistema'}</b> · {formatDateTime(item.at)}</p>
                                 <p className="mt-1 text-sm whitespace-pre-line text-body">{item.body}</p>
                             </div>
                         </li>

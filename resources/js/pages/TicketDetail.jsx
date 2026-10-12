@@ -307,6 +307,7 @@ export default function TicketDetail() {
                         Abierto {formatDateTime(t.opened_at)}{t.opened_by && ` por ${t.opened_by}`}
                         {t.bank_reference && <> · Caso banco <b className="text-ink">{t.bank_reference}</b></>}
                         {t.source === 'import' && <> · <Badge>Histórico Excel</Badge></>}
+                        {t.source === 'email' && <> · <Badge tone="brand">Por correo del banco</Badge></>}
                     </p>
                     {t.confirmed_at && (
                         <p className="mt-0.5 text-sm text-muted">

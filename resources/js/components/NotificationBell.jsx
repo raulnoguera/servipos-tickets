@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Ban, Bell, CheckCheck, CheckCircle2, ClipboardList, MapPin, PackageX, Settings, UserCheck } from 'lucide-react';
+import { Ban, Bell, CheckCheck, CheckCircle2, ClipboardList, Mail, MapPin, PackageX, Settings, UserCheck } from 'lucide-react';
 import { api } from '../lib/api';
 import { playChime } from '../lib/sound';
 import NotificationSettings from './NotificationSettings';
@@ -13,6 +13,7 @@ const KIND = {
     pending: { icon: PackageX, className: 'bg-amber-50 text-amber-700' },
     closed: { icon: CheckCircle2, className: 'bg-emerald-50 text-emerald-600' },
     cancelled: { icon: Ban, className: 'bg-red-50 text-red-600' },
+    email: { icon: Mail, className: 'bg-brand-50 text-brand-600' },
 };
 
 const relative = new Intl.RelativeTimeFormat('es', { numeric: 'auto' });

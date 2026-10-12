@@ -14,6 +14,7 @@ const GROUPS = {
     sla: { label: 'SLA', tone: 'warn' },
     import: { label: 'Importación', tone: 'warn' },
     export: { label: 'Descargas', tone: 'ok' },
+    email: { label: 'Correos', tone: 'brand' },
 };
 
 /** Acciones que conviene resaltar: posibles intentos de abuso. */

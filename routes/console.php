@@ -6,12 +6,18 @@ use App\Models\User;
 use App\Services\AccessLinks;
 use App\Services\Export\ConsolidadoExporter;
 use App\Services\Import\ExcelHistoryImporter;
+use App\Services\Inbound\InboundMailProcessor;
+use App\Services\Inbound\IncomingMail;
+use App\Services\Inbound\Mailbox;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Minishlink\WebPush\VAPID;
+use Webklex\PHPIMAP\Message;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -117,3 +123,61 @@ Artisan::command('servipos:crear-admin
 
     return 0;
 })->purpose('Crea el administrador inicial y muestra su enlace de acceso de un solo uso');
+
+Artisan::command('servipos:leer-correo
+    {--archivo=* : Procesa archivos .eml en lugar del buzón (para probar con muestras)}
+    {--simular : Muestra qué haría con cada correo, sin guardar ni avisar}
+    {--probar : Solo prueba la conexión con el buzón}', function (Mailbox $mailbox, InboundMailProcessor $processor) {
+    $files = $this->option('archivo');
+    $dryRun = (bool) $this->option('simular');
+    if (! $files && ! $mailbox->configured()) {
+        $this->warn('La lectura del buzón no está configurada (INBOUND_MAIL_* en .env).');
+
+        return 0;
+    }
+
+    if ($this->option('probar')) {
+        try {
+            $this->info('Conexión correcta. Correos en la carpeta desde '.$mailbox->since()->format('d/m/Y H:i').': '.$mailbox->check());
+
+            return 0;
+        } catch (Throwable $e) {
+            $this->error('No se pudo leer el buzón: '.$e->getMessage());
+
+            return 1;
+        }
+    }
+
+    $mails = $files
+        ? collect($files)->map(fn (string $file) => IncomingMail::fromMessage(Message::fromFile($file), config('inbound.trusted_authserv')))
+        : $mailbox->pending();
+
+    $rows = [];
+    foreach ($mails as $mail) {
+        if ($dryRun) {
+            DB::beginTransaction();
+        }
+        $email = $processor->process($mail, notify: ! $dryRun)->load(['ticket', 'atm']);
+        $rows[] = [
+            $mail->sentAt->timezone(config('app.timezone'))->format('d/m H:i'),
+            mb_strimwidth((string) $mail->subject, 0, 44, '…'),
+            $email->status,
+            $email->ticket?->number ?? $email->atm?->atm_number ?? '—',
+            mb_strimwidth((string) $email->reason, 0, 70, '…'),
+        ];
+        if ($dryRun) {
+            DB::rollBack();
+        }
+    }
+
+    if ($rows) {
+        $this->table(['Enviado', 'Asunto', 'Resultado', 'Ticket / ATM', 'Motivo'], $rows);
+    }
+    $this->info(count($rows).' correo(s) '.($dryRun ? 'analizados (simulación, no se guardó nada).' : 'procesados.'));
+
+    return 0;
+})->purpose('Lee el buzón de reportes de los bancos y abre los tickets');
+
+// El buzón se revisa cada dos minutos; sin configuración, la tarea no hace nada.
+Schedule::command('servipos:leer-correo')->everyTwoMinutes()->withoutOverlapping(10)
+    ->when(fn () => app(Mailbox::class)->configured());

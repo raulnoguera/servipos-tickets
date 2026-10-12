@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ImportController;
+use App\Http\Controllers\Api\InboundEmailController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\PushSubscriptionController;
 use App\Http\Controllers\Api\ReportController;
@@ -71,6 +72,9 @@ Route::prefix('v1')->group(function () {
             Route::get('reports/detail', [ReportController::class, 'detail'])->middleware('throttle:heavy');
             Route::get('reports/parts', [ReportController::class, 'parts'])->middleware('throttle:heavy');
             Route::get('reports/consolidado', [ReportController::class, 'consolidado'])->middleware('throttle:heavy');
+            Route::get('inbound-emails', [InboundEmailController::class, 'index']);
+            Route::post('inbound-emails/{email}/ticket', [InboundEmailController::class, 'ticket']);
+            Route::post('inbound-emails/{email}/ignore', [InboundEmailController::class, 'ignore']);
         });
 
         Route::middleware('role:admin')->group(function () {

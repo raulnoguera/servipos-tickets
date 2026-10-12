@@ -1,7 +1,7 @@
 import { Component, Suspense, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
-    BarChart3, Building2, ClipboardList, Columns3, FileUp, History, KeyRound, LayoutDashboard, ListChecks, LogOut, Menu, PlusCircle, ShieldCheck, Users, Wrench, X,
+    BarChart3, Building2, ClipboardList, Columns3, FileUp, History, KeyRound, LayoutDashboard, ListChecks, LogOut, Mail, Menu, PlusCircle, ShieldCheck, Users, Wrench, X,
 } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { api } from '../lib/api';
@@ -19,6 +19,7 @@ const NAV = [
     { to: '/tickets/nuevo', label: 'Nuevo ticket', icon: PlusCircle, roles: ['admin', 'operator'] },
     { to: '/tickets', label: 'Tickets', icon: ClipboardList, roles: ['admin', 'operator'], end: true },
     { to: '/tablero', label: 'Tablero', icon: Columns3, roles: ['admin', 'operator'] },
+    { to: '/correos', label: 'Correos del banco', icon: Mail, roles: ['admin', 'operator'] },
     { to: '/mis-tickets', label: 'Mis tickets', icon: Wrench, roles: ['technician'] },
     { to: '/historial', label: 'Mi historial', icon: History, roles: ['technician'] },
     { to: '/reportes', label: 'Reportes', icon: BarChart3, roles: ['admin', 'operator'] },

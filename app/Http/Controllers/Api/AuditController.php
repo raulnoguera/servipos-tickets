@@ -13,7 +13,7 @@ class AuditController extends Controller
     public function __invoke(Request $request): JsonResponse
     {
         $filters = $request->validate([
-            'group' => ['nullable', 'string', 'in:auth,user,catalog,atm,sla,import,export'],
+            'group' => ['nullable', 'string', 'in:auth,user,catalog,atm,sla,import,export,email'],
             'user_id' => ['nullable', 'integer'],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date'],

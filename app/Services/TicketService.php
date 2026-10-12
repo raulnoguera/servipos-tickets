@@ -76,6 +76,37 @@ class TicketService
         });
     }
 
+    /**
+     * Abre un ticket a partir de un correo del banco. El reloj del SLA corre desde
+     * que el banco envió el reporte, no desde que el sistema lo leyó.
+     *
+     * @param  array{fault_type_id?: int|null, priority?: string|null, description?: string|null}  $data
+     * @param  User|null  $by  quien lo abrió desde la bandeja de correos; null si lo abrió el sistema
+     */
+    public function openFromEmail(Atm $atm, array $data, CarbonImmutable $sentAt, ?User $by = null): Ticket
+    {
+        return DB::transaction(function () use ($atm, $data, $sentAt, $by) {
+            $now = CarbonImmutable::now();
+            $openedAt = $sentAt->greaterThan($now) ? $now : $sentAt;
+
+            $ticket = Ticket::create([
+                'number' => $this->numbers->next($now->year),
+                'atm_id' => $atm->id,
+                'bank_id' => $atm->bank_id,
+                'fault_type_id' => $data['fault_type_id'] ?? null,
+                'description' => $data['description'] ?? null,
+                'status' => TicketStatus::Open,
+                'priority' => $data['priority'] ?? Priority::Medium->value,
+                'source' => 'email',
+                'opened_by' => $by?->id,
+                'opened_at' => $openedAt,
+            ]);
+            $this->log($ticket, $by, null, TicketStatus::Open, 'Ticket abierto por correo del banco', $openedAt);
+
+            return $ticket->refresh();
+        });
+    }
+
     public function assign(Ticket $ticket, User $technician, User $by): Ticket
     {
         if ($technician->role !== Role::Technician || ! $technician->active) {
@@ -382,10 +413,10 @@ class TicketService
         return $at ? CarbonImmutable::parse($at) : null;
     }
 
-    private function log(Ticket $ticket, User $by, ?TicketStatus $from, ?TicketStatus $to, ?string $note, ?CarbonImmutable $at = null): void
+    private function log(Ticket $ticket, ?User $by, ?TicketStatus $from, ?TicketStatus $to, ?string $note, ?CarbonImmutable $at = null): void
     {
         $ticket->events()->create([
-            'user_id' => $by->id,
+            'user_id' => $by?->id,
             'from_status' => $from?->value,
             'to_status' => $to?->value,
             'note' => $note,

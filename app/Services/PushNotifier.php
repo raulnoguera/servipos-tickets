@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\Role;
 use App\Models\AtmCondition;
+use App\Models\InboundEmail;
 use App\Models\PushSubscription;
 use App\Models\Ticket;
 use App\Models\TicketComment;
@@ -228,6 +229,63 @@ class PushNotifier
             'url' => "/tickets/{$ticket->id}#actividad",
             'tag' => $ticket->number.'-comentario',
         ]);
+    }
+
+    /** Ticket abierto por un correo del banco: nadie lo abrió, así que avisa a todo el Call Center. */
+    public function emailTicket(Ticket $ticket): int
+    {
+        $ticket->loadMissing(['atm', 'faultType']);
+
+        return $this->deliver($this->callCenter(), [
+            'kind' => 'email',
+            'ticket_id' => $ticket->id,
+            'title' => "{$ticket->number} · Nuevo ticket por correo",
+            'body' => "ATM {$ticket->atm->atm_number} ({$ticket->atm->agency_name}) · ".($ticket->faultType?->name ?? 'Sin falla indicada').'. Falta asignarle un técnico.',
+            'url' => "/tickets/{$ticket->id}",
+            'tag' => $ticket->number,
+        ]);
+    }
+
+    /** El banco volvió a escribir sobre un cajero que ya tiene un ticket abierto. */
+    public function emailFollowUp(Ticket $ticket, InboundEmail $email): int
+    {
+        $ticket->loadMissing('atm');
+        $technician = User::query()->where('active', true)->whereKey($ticket->assigned_to)->get();
+
+        return $this->deliver($this->callCenter()->merge($technician)->unique('id')->values(), [
+            'kind' => 'email',
+            'ticket_id' => $ticket->id,
+            'title' => "{$ticket->number} · Nuevo correo del banco",
+            'body' => 'ATM '.$ticket->atm->atm_number.' · '.mb_strimwidth((string) ($email->subject ?: $email->body), 0, 150, '…'),
+            'url' => "/tickets/{$ticket->id}#actividad",
+            'tag' => $ticket->number.'-correo',
+        ]);
+    }
+
+    /** Correo que el sistema no pudo resolver solo. */
+    public function emailNeedsReview(InboundEmail $email): int
+    {
+        return $this->deliver($this->callCenter(), [
+            'kind' => 'email',
+            'title' => 'Correo del banco por revisar',
+            'body' => mb_strimwidth(($email->subject ?: 'Sin asunto').' · '.$email->reason, 0, 180, '…'),
+            'url' => '/correos',
+            'tag' => 'correo-'.$email->id,
+        ]);
+    }
+
+    /**
+     * Administradores y operadores activos, salvo quienes pidieron no recibir avisos.
+     *
+     * @return Collection<int, User>
+     */
+    private function callCenter(): Collection
+    {
+        return User::query()
+            ->whereIn('role', [Role::Admin, Role::Operator])
+            ->where('active', true)
+            ->where('notify_scope', '!=', self::SCOPE_NONE)
+            ->get();
     }
 
     /**
