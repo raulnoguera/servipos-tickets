@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\TicketStatus;
 use App\Models\Atm;
+use App\Models\Bank;
 use App\Models\Part;
 use App\Models\Ticket;
 use App\Services\Export\ConsolidadoExporter;
@@ -35,6 +36,17 @@ class ExcelImportExportTest extends TestCase
     {
         @unlink($this->file);
         parent::tearDown();
+    }
+
+    public function test_bank_is_optional_and_atms_can_be_left_without_one(): void
+    {
+        $report = app(ExcelHistoryImporter::class)->import($this->file);
+
+        $this->assertFalse($report->hasErrors());
+        $this->assertSame(0, Bank::count());
+        $this->assertSame(2, Atm::whereNull('bank_id')->count());
+        $this->assertSame(2, $report->counts['Cajeros sin banco asignado (se puede indicar después)']);
+        $this->assertSame(Ticket::count(), Ticket::whereNull('bank_id')->count());
     }
 
     public function test_imports_catalogs_atms_and_groups_follow_up_visits_into_one_ticket(): void

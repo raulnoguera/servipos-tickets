@@ -18,12 +18,13 @@ class ImportController extends Controller
     {
         $data = $request->validate([
             'file' => ['required', 'file', 'mimes:xlsx', 'max:20480'],
-            'bank' => ['required', 'string', 'max:255'],
+            // Opcional: el Excel no indica el banco. Sin él, los cajeros quedan sin banco y se asigna después.
+            'bank' => ['nullable', 'string', 'max:255'],
             'simulate' => ['boolean'],
         ]);
 
         try {
-            $report = $importer->import($request->file('file')->getRealPath(), $data['bank'], $request->boolean('simulate'));
+            $report = $importer->import($request->file('file')->getRealPath(), $data['bank'] ?? null, $request->boolean('simulate'));
         } catch (ImportException $e) {
             throw ValidationException::withMessages(['file' => $e->getMessage()]);
         } catch (Throwable $e) {
@@ -34,7 +35,7 @@ class ImportController extends Controller
         $audit->record(
             'import.excel',
             ($request->boolean('simulate') ? 'Simulación de importación' : 'Importación').' del Excel histórico · '.$request->file('file')->getClientOriginalName(),
-            meta: ['banco' => $data['bank'], 'conteos' => $report->counts],
+            meta: ['banco' => $data['bank'] ?? 'sin indicar', 'conteos' => $report->counts],
         );
 
         return response()->json([

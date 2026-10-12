@@ -48,12 +48,12 @@ export default function Import() {
                             <span className="text-xs text-muted">{file ? `${Math.round(file.size / 1024)} KB` : 'Máximo 20 MB'}</span>
                         </label>
                         {err?.field?.('file') && <Alert>{err.field('file')}</Alert>}
-                        <Field label="Banco de estos cajeros" required hint="El Excel no indica el banco; se asigna a todos los cajeros del archivo." error={err?.field?.('bank')}>
+                        <Field label="Banco de estos cajeros (opcional)" hint="El Excel no indica el banco. Si lo escribe, se asigna a todos los cajeros del archivo; si lo deja vacío, quedan sin banco y puede indicarlo después en cada cajero." error={err?.field?.('bank')}>
                             {(id) => <Input id={id} value={bank} onChange={(e) => setBank(e.target.value)} placeholder="Ej. Banco Nacional de Crédito" />}
                         </Field>
                         <div className="grid gap-2 sm:grid-cols-2">
-                            <Button variant="secondary" icon={FlaskConical} disabled={!file || !bank} loading={run.isPending && run.variables} onClick={() => run.mutate(true)}>Simular</Button>
-                            <Button icon={Upload} disabled={!file || !bank || !report?.simulated || report.has_errors} loading={run.isPending && !run.variables} onClick={() => run.mutate(false)}>Importar</Button>
+                            <Button variant="secondary" icon={FlaskConical} disabled={!file} loading={run.isPending && run.variables} onClick={() => run.mutate(true)}>Simular</Button>
+                            <Button icon={Upload} disabled={!file || !report?.simulated || report.has_errors} loading={run.isPending && !run.variables} onClick={() => run.mutate(false)}>Importar</Button>
                         </div>
                         <p className="text-xs text-muted">Primero simule: valida el archivo y muestra qué se corregirá, sin guardar nada. La importación real solo se habilita después de una simulación sin errores y puede hacerse una sola vez.</p>
                     </div>

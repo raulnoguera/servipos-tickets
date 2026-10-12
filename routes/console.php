@@ -19,12 +19,12 @@ Artisan::command('inspire', function () {
 
 Artisan::command('servipos:importar-excel
     {archivo : Ruta del consolidado .xlsx}
-    {--banco= : Banco al que pertenecen los cajeros del archivo}
+    {--banco= : Banco al que pertenecen los cajeros del archivo (opcional)}
     {--simular : Valida y genera el reporte sin guardar nada}', function (ExcelHistoryImporter $importer) {
     $path = $this->argument('archivo');
-    $bank = $this->option('banco') ?: $this->ask('¿A qué banco pertenecen los cajeros de este archivo?');
-    if (! is_file($path) || ! $bank) {
-        $this->error(! is_file($path) ? "No existe el archivo: {$path}" : 'Debe indicar el banco.');
+    $bank = $this->option('banco') ?: null;
+    if (! is_file($path)) {
+        $this->error("No existe el archivo: {$path}");
 
         return 1;
     }

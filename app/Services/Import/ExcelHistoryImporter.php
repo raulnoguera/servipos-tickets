@@ -44,7 +44,8 @@ class ExcelHistoryImporter
 
     private ImportReport $report;
 
-    private Bank $bank;
+    /** Banco de los cajeros del archivo; null si no se indicó (el Excel no lo trae). */
+    private ?Bank $bank = null;
 
     /** @var array<string, State> */
     private array $states = [];
@@ -69,7 +70,7 @@ class ExcelHistoryImporter
 
     public function __construct(private TicketNumberGenerator $numbers) {}
 
-    public function import(string $path, string $bankName, bool $dryRun = false): ImportReport
+    public function import(string $path, ?string $bankName = null, bool $dryRun = false): ImportReport
     {
         $this->report = new ImportReport;
         $this->states = $this->faultTypes = $this->parts = $this->conditions = [];
@@ -97,7 +98,8 @@ class ExcelHistoryImporter
 
         DB::beginTransaction();
         try {
-            $this->bank = Bank::firstOrCreate(['name' => $bankName]);
+            $bankName = trim((string) $bankName);
+            $this->bank = $bankName !== '' ? Bank::firstOrCreate(['name' => $bankName]) : null;
             $this->loadCatalogs($tables);
             $this->loadAtms($tables);
             $this->loadVisits($base);
@@ -178,7 +180,7 @@ class ExcelHistoryImporter
             $this->atms[$number] = Atm::create([
                 'atm_number' => $number,
                 'serial' => $serial,
-                'bank_id' => $this->bank->id,
+                'bank_id' => $this->bank?->id,
                 'state_id' => $this->state($get('Estado'), $where)?->id,
                 'agency_code' => $agencyCode,
                 'agency_name' => Normalizer::text($get('Nombre de Agencia')),
@@ -190,6 +192,9 @@ class ExcelHistoryImporter
             $this->report->count('Cajeros importados');
         }
 
+        if (! $this->bank) {
+            $this->report->count('Cajeros sin banco asignado (se puede indicar después)', Atm::whereNull('bank_id')->count());
+        }
         $this->report->count('Cajeros sin modelo', Atm::whereNull('model')->count());
         $this->report->count('Cajeros sin dirección', Atm::whereNull('address')->count());
     }

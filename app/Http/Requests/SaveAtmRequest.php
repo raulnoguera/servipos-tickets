@@ -21,7 +21,7 @@ class SaveAtmRequest extends FormRequest
         return [
             'atm_number' => ['required', 'string', 'max:30', Rule::unique('atms')->ignore($this->route('atm'))],
             'serial' => ['nullable', 'string', 'max:60'],
-            'bank_id' => ['required', 'integer', 'exists:banks,id'],
+            'bank_id' => ['nullable', 'integer', 'exists:banks,id'],
             'state_id' => ['nullable', 'integer', 'exists:states,id'],
             'agency_code' => ['nullable', 'string', 'max:30'],
             'agency_name' => ['required', 'string', 'max:255'],

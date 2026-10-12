@@ -17,7 +17,7 @@ function AtmForm({ atm, onClose }) {
     const [form, setForm] = useState(() => (atm ? Object.fromEntries(Object.keys(EMPTY).map((k) => [k, atm[k] ?? ''])) : EMPTY));
     const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
     const save = useMutation({
-        mutationFn: () => api(atm ? `atms/${atm.id}` : 'atms', { method: atm ? 'PUT' : 'POST', body: { ...form, state_id: form.state_id || null } }),
+        mutationFn: () => api(atm ? `atms/${atm.id}` : 'atms', { method: atm ? 'PUT' : 'POST', body: { ...form, state_id: form.state_id || null, bank_id: form.bank_id || null } }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['atms'] });
             toast(atm ? 'Cajero actualizado' : 'Cajero creado');
@@ -46,10 +46,10 @@ function AtmForm({ atm, onClose }) {
             <div className="grid gap-4 sm:grid-cols-2">
                 {text('atm_number', 'N° de ATM', { required: true, className: 'uppercase tabular' })}
                 {text('serial', 'Serial del equipo')}
-                <Field label="Banco" required error={err?.field?.('bank_id')}>
+                <Field label="Banco" error={err?.field?.('bank_id')}>
                     {(id) => (
                         <Select id={id} value={form.bank_id} onChange={set('bank_id')}>
-                            <option value="">Seleccione…</option>
+                            <option value="">Sin banco</option>
                             {catalogs?.banks.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
                         </Select>
                     )}
