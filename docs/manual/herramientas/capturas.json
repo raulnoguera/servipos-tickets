@@ -1,0 +1,404 @@
+{
+ "base": "http://localhost:8000",
+ "out": "capturas/png",
+ "sessions": [
+  {
+   "email": null,
+   "shots": [
+    {
+     "name": "login",
+     "path": "/login",
+     "wait": 2500,
+     "w": 1440,
+     "h": 900
+    },
+    {
+     "name": "m-login",
+     "path": "/login",
+     "wait": 2500,
+     "w": 390,
+     "h": 844,
+     "mobile": true
+    },
+    {
+     "name": "m-acceso",
+     "path": "/acceso#ManualDeUsuario2ManualDeUsuario2ManualDeUsuario2",
+     "wait": 3500,
+     "w": 390,
+     "h": 844,
+     "mobile": true
+    }
+   ]
+  },
+  {
+   "email": "admin.demo@servipos.test",
+   "shots": [
+    {
+     "name": "monitor",
+     "path": "/",
+     "wait": 4800,
+     "w": 1440,
+     "h": 1000
+    },
+    {
+     "name": "campana",
+     "path": "/",
+     "wait": 3500,
+     "w": 1440,
+     "h": 900,
+     "js": "const setVal=(el,v)=>{const d=Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:el.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype,'value');d.set.call(el,v);el.dispatchEvent(new Event(el.tagName==='SELECT'?'change':'input',{bubbles:true}));};const wait=(ms)=>new Promise(r=>setTimeout(r,ms));const btn=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.trim()===t);const btnHas=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.includes(t));document.querySelector('aside button[aria-label^=\"Notificaciones\"]').click();",
+     "after": 1500
+    },
+    {
+     "name": "avisos-ajustes",
+     "path": "/",
+     "wait": 3500,
+     "w": 1440,
+     "h": 900,
+     "js": "const setVal=(el,v)=>{const d=Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:el.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype,'value');d.set.call(el,v);el.dispatchEvent(new Event(el.tagName==='SELECT'?'change':'input',{bubbles:true}));};const wait=(ms)=>new Promise(r=>setTimeout(r,ms));const btn=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.trim()===t);const btnHas=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.includes(t));document.querySelector('aside button[aria-label^=\"Notificaciones\"]').click();await wait(900);document.querySelector('button[aria-label=\"Ajustes de notificaciones\"]').click();",
+     "after": 1800
+    },
+    {
+     "name": "cambiar-clave",
+     "path": "/",
+     "wait": 3500,
+     "w": 1440,
+     "h": 900,
+     "js": "const setVal=(el,v)=>{const d=Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:el.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype,'value');d.set.call(el,v);el.dispatchEvent(new Event(el.tagName==='SELECT'?'change':'input',{bubbles:true}));};const wait=(ms)=>new Promise(r=>setTimeout(r,ms));const btn=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.trim()===t);const btnHas=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.includes(t));document.querySelector('aside button[aria-label=\"Cambiar mi contraseña\"]').click();",
+     "after": 1500
+    },
+    {
+     "name": "nuevo-buscar",
+     "path": "/tickets/nuevo",
+     "wait": 3000,
+     "w": 1440,
+     "h": 900,
+     "js": "const setVal=(el,v)=>{const d=Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:el.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype,'value');d.set.call(el,v);el.dispatchEvent(new Event(el.tagName==='SELECT'?'change':'input',{bubbles:true}));};const wait=(ms)=>new Promise(r=>setTimeout(r,ms));const btn=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.trim()===t);const btnHas=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.includes(t));const i=document.querySelector('input[role=combobox]');i.focus();setVal(i,'A1918');",
+     "after": 2500
+    },
+    {
+     "name": "nuevo-formulario",
+     "path": "/tickets/nuevo",
+     "wait": 3000,
+     "w": 1440,
+     "h": 1000,
+     "js": "const setVal=(el,v)=>{const d=Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:el.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype,'value');d.set.call(el,v);el.dispatchEvent(new Event(el.tagName==='SELECT'?'change':'input',{bubbles:true}));};const wait=(ms)=>new Promise(r=>setTimeout(r,ms));const btn=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.trim()===t);const btnHas=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.includes(t));const i=document.querySelector('input[role=combobox]');i.focus();setVal(i,'A1918071');await wait(1800);document.querySelector('[role=option]').click();await wait(1200);const s=[...document.querySelectorAll('select')];setVal(s[0],s[0].options[2].value);const t=document.querySelector('textarea');setVal(t,'El banco reporta que el cajero no dispensa efectivo desde la mañana. Caso prioritario.');const c=[...document.querySelectorAll('input')].find(x=>x.maxLength===60);setVal(c,'INC508812');",
+     "after": 1500
+    },
+    {
+     "name": "tickets",
+     "path": "/tickets",
+     "wait": 3800,
+     "w": 1440,
+     "h": 900
+    },
+    {
+     "name": "ticket-acciones",
+     "path": "/tickets/148",
+     "wait": 4000,
+     "w": 1440,
+     "h": 1000
+    },
+    {
+     "name": "ticket-asignar",
+     "path": "/tickets/148",
+     "wait": 4000,
+     "w": 1440,
+     "h": 900,
+     "js": "const setVal=(el,v)=>{const d=Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:el.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype,'value');d.set.call(el,v);el.dispatchEvent(new Event(el.tagName==='SELECT'?'change':'input',{bubbles:true}));};const wait=(ms)=>new Promise(r=>setTimeout(r,ms));const btn=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.trim()===t);const btnHas=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.includes(t));btn('Reasignar').click();",
+     "after": 1500
+    },
+    {
+     "name": "ticket-editar",
+     "path": "/tickets/148",
+     "wait": 4000,
+     "w": 1440,
+     "h": 900,
+     "js": "const setVal=(el,v)=>{const d=Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:el.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype,'value');d.set.call(el,v);el.dispatchEvent(new Event(el.tagName==='SELECT'?'change':'input',{bubbles:true}));};const wait=(ms)=>new Promise(r=>setTimeout(r,ms));const btn=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.trim()===t);const btnHas=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.includes(t));btn('Editar').click();",
+     "after": 1500
+    },
+    {
+     "name": "ticket-anular",
+     "path": "/tickets/148",
+     "wait": 4000,
+     "w": 1440,
+     "h": 900,
+     "js": "const setVal=(el,v)=>{const d=Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:el.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype,'value');d.set.call(el,v);el.dispatchEvent(new Event(el.tagName==='SELECT'?'change':'input',{bubbles:true}));};const wait=(ms)=>new Promise(r=>setTimeout(r,ms));const btn=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.trim()===t);const btnHas=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.includes(t));btn('Anular').click();",
+     "after": 1500
+    },
+    {
+     "name": "ticket-detalle",
+     "path": "/tickets/129",
+     "wait": 4000,
+     "w": 1440,
+     "h": 1500
+    },
+    {
+     "name": "ticket-confirmar",
+     "path": "/tickets/193",
+     "wait": 4000,
+     "w": 1440,
+     "h": 900
+    },
+    {
+     "name": "ticket-confirmar-dialogo",
+     "path": "/tickets/193",
+     "wait": 4000,
+     "w": 1440,
+     "h": 900,
+     "js": "const setVal=(el,v)=>{const d=Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:el.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype,'value');d.set.call(el,v);el.dispatchEvent(new Event(el.tagName==='SELECT'?'change':'input',{bubbles:true}));};const wait=(ms)=>new Promise(r=>setTimeout(r,ms));const btn=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.trim()===t);const btnHas=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.includes(t));btn('Confirmar cierre').click();",
+     "after": 1500
+    },
+    {
+     "name": "ticket-devolver",
+     "path": "/tickets/193",
+     "wait": 4000,
+     "w": 1440,
+     "h": 900,
+     "js": "const setVal=(el,v)=>{const d=Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:el.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype,'value');d.set.call(el,v);el.dispatchEvent(new Event(el.tagName==='SELECT'?'change':'input',{bubbles:true}));};const wait=(ms)=>new Promise(r=>setTimeout(r,ms));const btn=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.trim()===t);const btnHas=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.includes(t));btn('Devolver al técnico').click();",
+     "after": 1500
+    },
+    {
+     "name": "tablero",
+     "path": "/tablero",
+     "wait": 4200,
+     "w": 1440,
+     "h": 900
+    },
+    {
+     "name": "reportes-resumen",
+     "path": "/reportes?x=1&desde=2026-07-01&hasta=2026-09-30",
+     "wait": 5200,
+     "w": 1440,
+     "h": 1250
+    },
+    {
+     "name": "reportes-cajeros",
+     "path": "/reportes?tab=cajeros&desde=2026-07-01&hasta=2026-09-30",
+     "wait": 5000,
+     "w": 1440,
+     "h": 900
+    },
+    {
+     "name": "reportes-tecnicos",
+     "path": "/reportes?tab=tecnicos&desde=2026-07-01&hasta=2026-09-30",
+     "wait": 5000,
+     "w": 1440,
+     "h": 900
+    },
+    {
+     "name": "reportes-repuestos",
+     "path": "/reportes?tab=repuestos&desde=2026-07-01&hasta=2026-09-30",
+     "wait": 5000,
+     "w": 1440,
+     "h": 1000
+    },
+    {
+     "name": "reportes-fallas",
+     "path": "/reportes?tab=fallas&desde=2026-07-01&hasta=2026-09-30",
+     "wait": 5000,
+     "w": 1440,
+     "h": 900
+    },
+    {
+     "name": "reportes-consolidado",
+     "path": "/reportes?tab=consolidado&desde=2026-07-01&hasta=2026-09-30",
+     "wait": 4000,
+     "w": 1440,
+     "h": 900
+    },
+    {
+     "name": "reportes-detalle",
+     "path": "/reportes/detalle?tipo=visits&volver=tecnicos&tecnico=18&desde=2026-07-01&hasta=2026-09-30",
+     "wait": 4500,
+     "w": 1440,
+     "h": 900
+    },
+    {
+     "name": "cajeros",
+     "path": "/cajeros",
+     "wait": 3800,
+     "w": 1440,
+     "h": 900
+    },
+    {
+     "name": "cajero-editar",
+     "path": "/cajeros",
+     "wait": 3800,
+     "w": 1440,
+     "h": 900,
+     "js": "const setVal=(el,v)=>{const d=Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:el.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype,'value');d.set.call(el,v);el.dispatchEvent(new Event(el.tagName==='SELECT'?'change':'input',{bubbles:true}));};const wait=(ms)=>new Promise(r=>setTimeout(r,ms));const btn=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.trim()===t);const btnHas=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.includes(t));btnHas('Editar').click();",
+     "after": 1500
+    },
+    {
+     "name": "cajero-hoja",
+     "path": "/cajeros/113",
+     "wait": 4200,
+     "w": 1440,
+     "h": 1000
+    },
+    {
+     "name": "catalogos",
+     "path": "/catalogos",
+     "wait": 3500,
+     "w": 1440,
+     "h": 900
+    },
+    {
+     "name": "catalogos-estatus",
+     "path": "/catalogos",
+     "wait": 3500,
+     "w": 1440,
+     "h": 900,
+     "js": "const setVal=(el,v)=>{const d=Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:el.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype,'value');d.set.call(el,v);el.dispatchEvent(new Event(el.tagName==='SELECT'?'change':'input',{bubbles:true}));};const wait=(ms)=>new Promise(r=>setTimeout(r,ms));const btn=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.trim()===t);const btnHas=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.includes(t));const quieto=()=>document.querySelectorAll('*').forEach(e=>{e.style.transition='none'});quieto();btnHas('Estatus final').click();await wait(400);quieto();",
+     "after": 1500
+    },
+    {
+     "name": "catalogos-sla",
+     "path": "/catalogos",
+     "wait": 3500,
+     "w": 1440,
+     "h": 900,
+     "js": "const setVal=(el,v)=>{const d=Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:el.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype,'value');d.set.call(el,v);el.dispatchEvent(new Event(el.tagName==='SELECT'?'change':'input',{bubbles:true}));};const wait=(ms)=>new Promise(r=>setTimeout(r,ms));const btn=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.trim()===t);const btnHas=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.includes(t));const quieto=()=>document.querySelectorAll('*').forEach(e=>{e.style.transition='none'});quieto();btn('SLA').click();await wait(400);quieto();",
+     "after": 1500
+    },
+    {
+     "name": "usuarios",
+     "path": "/usuarios",
+     "wait": 3800,
+     "w": 1440,
+     "h": 900
+    },
+    {
+     "name": "usuario-editar",
+     "path": "/usuarios",
+     "wait": 3800,
+     "w": 1440,
+     "h": 900,
+     "js": "const setVal=(el,v)=>{const d=Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:el.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype,'value');d.set.call(el,v);el.dispatchEvent(new Event(el.tagName==='SELECT'?'change':'input',{bubbles:true}));};const wait=(ms)=>new Promise(r=>setTimeout(r,ms));const btn=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.trim()===t);const btnHas=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.includes(t));const row=[...document.querySelectorAll('tr')].find(r=>r.textContent.includes('Jesus Ramos'));btnHas('Editar',row).click();",
+     "after": 1500
+    },
+    {
+     "name": "usuario-acceso",
+     "path": "/usuarios",
+     "wait": 3800,
+     "w": 1440,
+     "h": 900,
+     "js": "const setVal=(el,v)=>{const d=Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:el.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype,'value');d.set.call(el,v);el.dispatchEvent(new Event(el.tagName==='SELECT'?'change':'input',{bubbles:true}));};const wait=(ms)=>new Promise(r=>setTimeout(r,ms));const btn=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.trim()===t);const btnHas=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.includes(t));const row=[...document.querySelectorAll('tr')].find(r=>r.textContent.includes('Fernando Lastra'));btnHas('Enviar acceso',row).click();",
+     "after": 1500
+    },
+    {
+     "name": "importar",
+     "path": "/importar",
+     "wait": 3200,
+     "w": 1440,
+     "h": 900
+    },
+    {
+     "name": "auditoria",
+     "path": "/auditoria",
+     "wait": 3800,
+     "w": 1440,
+     "h": 900
+    }
+   ]
+  },
+  {
+   "email": "operador@servipos.test",
+   "shots": [
+    {
+     "name": "operador-ticket",
+     "path": "/tickets/193",
+     "wait": 4000,
+     "w": 1440,
+     "h": 900
+    }
+   ]
+  },
+  {
+   "email": "tecnico@servipos.test",
+   "shots": [
+    {
+     "name": "m-inicio",
+     "path": "/mis-tickets",
+     "wait": 4200,
+     "w": 390,
+     "h": 1180,
+     "mobile": true
+    },
+    {
+     "name": "m-ticket",
+     "path": "/tickets/148",
+     "wait": 4200,
+     "w": 390,
+     "h": 844,
+     "mobile": true
+    },
+    {
+     "name": "m-atencion",
+     "path": "/tickets/194?atender=1",
+     "wait": 4200,
+     "w": 390,
+     "h": 844,
+     "mobile": true
+    },
+    {
+     "name": "m-atencion-completa",
+     "path": "/tickets/194?atender=1",
+     "wait": 4200,
+     "w": 390,
+     "h": 1900,
+     "mobile": true,
+     "js": "const setVal=(el,v)=>{const d=Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:el.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype,'value');d.set.call(el,v);el.dispatchEvent(new Event(el.tagName==='SELECT'?'change':'input',{bubbles:true}));};const wait=(ms)=>new Promise(r=>setTimeout(r,ms));const btn=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.trim()===t);const btnHas=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.includes(t));btn('Sí').click();",
+     "after": 1500
+    },
+    {
+     "name": "m-repuestos",
+     "path": "/tickets/194?atender=1",
+     "wait": 4200,
+     "w": 390,
+     "h": 844,
+     "mobile": true,
+     "js": "const setVal=(el,v)=>{const d=Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:el.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype,'value');d.set.call(el,v);el.dispatchEvent(new Event(el.tagName==='SELECT'?'change':'input',{bubbles:true}));};const wait=(ms)=>new Promise(r=>setTimeout(r,ms));const btn=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.trim()===t);const btnHas=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.includes(t));btn('Sí').click();await wait(800);document.querySelector('button[aria-label=\"Repuesto 1\"]').click();await wait(800);setVal(document.querySelector('input[aria-label=\"Buscar repuesto\"]'),'co');",
+     "after": 2000
+    },
+    {
+     "name": "m-por-confirmar",
+     "path": "/tickets/193",
+     "wait": 4200,
+     "w": 390,
+     "h": 844,
+     "mobile": true
+    },
+    {
+     "name": "m-historial",
+     "path": "/historial",
+     "wait": 4200,
+     "w": 390,
+     "h": 844,
+     "mobile": true
+    },
+    {
+     "name": "m-campana",
+     "path": "/mis-tickets",
+     "wait": 3600,
+     "w": 390,
+     "h": 844,
+     "mobile": true,
+     "js": "const setVal=(el,v)=>{const d=Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:el.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype,'value');d.set.call(el,v);el.dispatchEvent(new Event(el.tagName==='SELECT'?'change':'input',{bubbles:true}));};const wait=(ms)=>new Promise(r=>setTimeout(r,ms));const btn=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.trim()===t);const btnHas=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.includes(t));[...document.querySelectorAll('button[aria-label^=\"Notificaciones\"]')].find(b=>b.offsetParent!==null).click();",
+     "after": 1500
+    },
+    {
+     "name": "m-menu",
+     "path": "/mis-tickets",
+     "wait": 3600,
+     "w": 390,
+     "h": 844,
+     "mobile": true,
+     "js": "const setVal=(el,v)=>{const d=Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:el.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype,'value');d.set.call(el,v);el.dispatchEvent(new Event(el.tagName==='SELECT'?'change':'input',{bubbles:true}));};const wait=(ms)=>new Promise(r=>setTimeout(r,ms));const btn=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.trim()===t);const btnHas=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.includes(t));document.querySelector('button[aria-label=\"Abrir menú\"]').click();",
+     "after": 1500
+    }
+   ]
+  }
+ ]
+}

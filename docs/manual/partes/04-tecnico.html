@@ -1,0 +1,246 @@
+<h1><span class="cap">Capítulo 7</span>7. Lógica de la aplicación</h1>
+
+<p class="entrada">Este capítulo explica, sin entrar en programación, cómo está construido el sistema y por qué se comporta como se comporta: una sola aplicación para todos los dispositivos, que trabaja sin señal y se actualiza sola.</p>
+
+<h2>7.1 Arquitectura general</h2>
+<div class="cajas">
+<div><b>1 · Dispositivos</b>Computadoras del Call Center y teléfonos de los técnicos. Usan la misma aplicación desde el navegador, o instalada como app.</div>
+<div><b>2 · Servidor</b>Recibe cada operación, comprueba quién la hace y si le está permitida, aplica las reglas del negocio y responde.</div>
+<div><b>3 · Datos</b>Una base de datos con tickets, cajeros, visitas, usuarios y catálogos; y un almacén privado con las fotos de las constancias.</div>
+</div>
+<p>El servidor es el único que decide. La aplicación en el dispositivo solo muestra pantallas y envía solicitudes; aunque alguien la manipulara, no podría saltarse un permiso ni una regla, porque todo se valida de nuevo en el servidor.</p>
+
+<h2>7.2 Una aplicación web que se instala (PWA)</h2>
+<p>La aplicación móvil no es una app tradicional de tienda. Es una <b>aplicación web progresiva</b>: se abre desde el navegador y se puede instalar en el teléfono, donde se comporta como cualquier otra app (ícono propio, pantalla completa, notificaciones).</p>
+<table>
+<tr><th style="width:32%">Ventaja</th><th>Qué significa en la práctica</th></tr>
+<tr><td><b>Sin tiendas de aplicaciones</b></td><td>No depende de la aprobación de App Store ni de Google Play, ni de cuentas de desarrollador.</td></tr>
+<tr><td><b>Un solo sistema</b></td><td>Computadora, iPhone y Android usan exactamente la misma versión. No hay tres aplicaciones que mantener.</td></tr>
+<tr><td><b>Actualización inmediata</b></td><td>Al publicarse una mejora, llega a todos sin que nadie instale nada.</td></tr>
+<tr><td><b>Liviana</b></td><td>Ocupa muy poco espacio en el teléfono.</td></tr>
+</table>
+
+<h2>7.3 Funcionamiento sin señal</h2>
+<p>Al abrirse con conexión, la aplicación guarda en el teléfono una copia de sus pantallas, de los tickets del técnico y de los catálogos. Con eso puede abrir y mostrar esa información aunque no haya señal.</p>
+<p>Lo que el técnico hace sin conexión (cambios de estado, atenciones, fotos) se guarda en una <b>bandeja de envíos</b> dentro del teléfono. La aplicación revisa esa bandeja cada 30 segundos, al recuperar la señal y al volver a primer plano, y envía lo pendiente en el mismo orden en que se hizo.</p>
+<ul>
+<li>Cada atención lleva un identificador único: si un envío se repite por un corte de conexión, el servidor lo reconoce y no la duplica.</li>
+<li>La bandeja es de cada usuario: si otra persona inicia sesión en el mismo teléfono, no ve ni envía lo de la anterior.</li>
+<li>Al cerrar sesión, o cuando la sesión termina en el servidor, se borran los datos guardados para consulta sin señal.</li>
+</ul>
+
+<h2>7.4 Notificaciones</h2>
+<p>Los avisos usan el servicio de notificaciones del propio navegador del dispositivo (el de Google en Chrome y Android, el de Apple en iPhone). Por eso llegan aunque la aplicación esté cerrada.</p>
+<ul>
+<li>Cada dispositivo se registra una vez, cuando el usuario toca «Activar en este dispositivo».</li>
+<li>El servidor envía el aviso después de responder a quien hizo la acción, para no hacerlo esperar.</li>
+<li>Si la aplicación está abierta y a la vista, el aviso se muestra dentro de ella con sonido; si no, como notificación del sistema.</li>
+<li>Los avisos se guardan además en la campana, así no se pierden si el dispositivo estaba apagado.</li>
+</ul>
+
+<h2>7.5 Sesiones</h2>
+<ul>
+<li>Al iniciar sesión, el navegador recibe una credencial temporal protegida, que no puede ser leída por programas de la página.</li>
+<li>La sesión dura 8 horas sin actividad; con «Mantener la sesión iniciada», el dispositivo se recuerda 30 días.</li>
+<li>Cambiar la contraseña, o desactivar al usuario, cierra las sesiones abiertas en los demás equipos.</li>
+<li>El sistema solo acepta operaciones que provengan de su propia dirección.</li>
+</ul>
+
+<h2>7.6 Actualización automática</h2>
+<p>Cada versión publicada lleva un identificador con su fecha y hora. La aplicación compara el suyo con el del servidor al abrirse, cada 15 minutos, al volver a primer plano y al recuperar la señal. Si difieren, descarga la versión nueva en segundo plano y la activa al cambiar de pantalla. El menú muestra la versión instalada.</p>
+
+<h2>7.7 Fotos y archivos</h2>
+<ul>
+<li><b>Fotos de constancia:</b> se reducen en el teléfono antes de enviarse (lado mayor de 1600 píxeles) para que suban rápido con poca señal. El servidor comprueba que sean imágenes reales y las guarda en un almacén privado: solo las ve quien puede ver el ticket.</li>
+<li><b>Excel descargados:</b> se generan en el momento, con el logo y los filtros aplicados. Los textos se escriben como texto, de modo que un dato malicioso no pueda ejecutarse como fórmula al abrir el archivo.</li>
+<li><b>Excel importado:</b> solo lo carga un administrador; se valida completo antes de guardar, y si algo falla no se guarda nada.</li>
+</ul>
+
+
+<h1><span class="cap">Capítulo 8</span>8. Tecnologías utilizadas</h1>
+
+<p class="entrada">El sistema está construido con tecnologías abiertas, de uso extendido y con soporte activo, lo que facilita su mantenimiento a largo plazo.</p>
+
+<h2>8.1 Componentes</h2>
+<table>
+<thead><tr><th style="width:23%">Componente</th><th style="width:27%">Tecnología</th><th>Función</th></tr></thead>
+<tr><td><b>Servidor</b></td><td>PHP 8.3 · Laravel 13</td><td>Reglas del negocio, permisos, cálculo del SLA, reportes y seguridad.</td></tr>
+<tr><td><b>Autenticación</b></td><td>Laravel Sanctum</td><td>Sesiones seguras para el portal y la app.</td></tr>
+<tr><td><b>Base de datos</b></td><td>MySQL 8</td><td>Tickets, cajeros, visitas, usuarios, catálogos y auditoría.</td></tr>
+<tr><td><b>Interfaz</b></td><td>React 19 · Tailwind CSS 4</td><td>Las pantallas del portal y de la app.</td></tr>
+<tr><td><b>Empaquetado</b></td><td>Vite 8</td><td>Prepara la interfaz para que cargue rápido.</td></tr>
+<tr><td><b>Gráficos</b></td><td>Recharts</td><td>Gráficos del Monitor y de los reportes.</td></tr>
+<tr><td><b>App instalable y sin señal</b></td><td>PWA · Service Worker · IndexedDB</td><td>Instalación en el teléfono, copia local y bandeja de envíos.</td></tr>
+<tr><td><b>Notificaciones</b></td><td>Web Push (VAPID)</td><td>Avisos al dispositivo sin pasar por tiendas de apps.</td></tr>
+<tr><td><b>Excel</b></td><td>PhpSpreadsheet</td><td>Importación del histórico y descargas con formato.</td></tr>
+<tr><td><b>Pruebas</b></td><td>PHPUnit</td><td>96 pruebas automáticas que se ejecutan antes de cada publicación.</td></tr>
+</table>
+
+<h2>8.2 Infraestructura</h2>
+<table>
+<tr><th style="width:26%">Elemento</th><th>Detalle</th></tr>
+<tr><td><b>Alojamiento</b></td><td>El hosting de ServiPos (SiteGround), en el subdominio <code>intra.servipos2019.com</code>. La página web de la empresa sigue funcionando por separado en el dominio principal.</td></tr>
+<tr><td><b>Conexión</b></td><td>Siempre cifrada (HTTPS), con certificado válido. Las visitas por http se redirigen solas.</td></tr>
+<tr><td><b>Disposición</b></td><td>La aplicación está instalada fuera de la carpeta pública del sitio: desde internet solo son accesibles los archivos necesarios para mostrar las pantallas.</td></tr>
+<tr><td><b>Ambiente de pruebas</b></td><td>Existe un sitio aparte, con datos de demostración, donde se validan los cambios antes de pasarlos a producción.</td></tr>
+<tr><td><b>Código fuente</b></td><td>En un repositorio privado de GitHub, con el historial de cada cambio y avisos automáticos de vulnerabilidades en las librerías.</td></tr>
+<tr><td><b>Publicación</b></td><td>Automatizada: antes de publicar se ejecutan las pruebas y una revisión de vulnerabilidades; después, se comprueba que el sitio responda y que ningún archivo interno sea accesible.</td></tr>
+</table>
+
+<h2>8.3 Requisitos para los usuarios</h2>
+<table>
+<tr><th style="width:26%">Dispositivo</th><th>Requisito</th></tr>
+<tr><td><b>Computadora</b></td><td>Google Chrome o Microsoft Edge actualizados, y conexión a internet.</td></tr>
+<tr><td><b>Android</b></td><td>Google Chrome actualizado. Se recomienda instalar la aplicación.</td></tr>
+<tr><td><b>iPhone</b></td><td>Safari, con iOS 16.4 o superior para recibir notificaciones. La aplicación debe instalarse en la pantalla de inicio.</td></tr>
+</table>
+
+
+<h1><span class="cap">Capítulo 9</span>9. Reporte de ciberseguridad</h1>
+
+<p class="entrada">El sistema pasó por dos revisiones de seguridad antes de salir a producción. Este capítulo resume qué se revisó, qué se encontró, qué se corrigió y qué queda como recomendación.</p>
+
+<h2>9.1 Alcance y metodología</h2>
+<ul>
+<li><b>Primera revisión (30 de septiembre de 2026):</b> revisión interna del portal, la API y la aplicación móvil, complementada con una auditoría independiente del código.</li>
+<li><b>Segunda revisión (8 de octubre de 2026):</b> auditoría con la metodología abierta <b>Cyber Neo</b>, que cubre las categorías del <b>OWASP Top 10</b> y del <b>CWE Top 25</b>, los catálogos de referencia de la industria para riesgos en aplicaciones.</li>
+</ul>
+<p>Se analizaron seis frentes: el código del servidor y de la interfaz, la autenticación y los permisos ruta por ruta, la configuración, el proceso de publicación, las librerías de terceros y la presencia de claves o contraseñas en el código.</p>
+
+<h2>9.2 Resultado</h2>
+<table class="estrecha" style="min-width:74%">
+<tr><th>Severidad</th><th class="c">Hallazgos</th><th>Estado actual</th></tr>
+<tr><td><b style="color:#A32020">Crítica</b></td><td class="c">0</td><td>—</td></tr>
+<tr><td><b style="color:#9A3412">Alta</b></td><td class="c">0</td><td>—</td></tr>
+<tr><td><b style="color:#8A5A00">Media</b></td><td class="c">6</td><td>5 corregidos · 1 pendiente por decisión</td></tr>
+<tr><td><b>Baja</b></td><td class="c">13</td><td>Corregidos (3 de ellos de forma parcial)</td></tr>
+<tr><td>Informativa</td><td class="c">1</td><td>Atendida en lo relevante</td></tr>
+</table>
+<div class="consejo"><b>Conclusión</b><p>No se encontró ninguna forma de entrar sin credenciales, de ver datos de otro usuario, de inyectar instrucciones en la base de datos ni de ejecutar código en el servidor. Los hallazgos se referían a endurecer sesiones, tiempos del SLA, trazabilidad y la forma de publicar; y quedaron corregidos, con una prueba automática para cada caso.</p></div>
+
+<h2>9.3 Medidas de protección implementadas</h2>
+<table>
+<thead><tr><th style="width:28%">Riesgo</th><th>Protección</th></tr></thead>
+<tr><td><b>Adivinar contraseñas</b></td><td>Bloqueo de 5 minutos tras 5 intentos fallidos desde una conexión, y bloqueo adicional de la cuenta tras 30 intentos desde cualquier origen. El mensaje de error no revela si el usuario existe.</td></tr>
+<tr><td><b>Contraseñas débiles o conocidas por terceros</b></td><td>Mínimo 10 caracteres con letras y números. Cada usuario crea la suya con un enlace de un solo uso; el administrador nunca la conoce. Se guardan cifradas de forma irreversible.</td></tr>
+<tr><td><b>Acceso de un empleado dado de baja</b></td><td>Al desactivarlo pierde el acceso al instante en todos sus equipos y deja de recibir notificaciones.</td></tr>
+<tr><td><b>Ver o modificar lo ajeno</b></td><td>Permisos por rol comprobados en el servidor en cada operación. El técnico solo accede a sus tickets.</td></tr>
+<tr><td><b>Inyección de código en las páginas</b></td><td>El navegador solo ejecuta programas del propio sitio (política de seguridad de contenido). El sistema no puede mostrarse dentro de otra página.</td></tr>
+<tr><td><b>Inyección en la base de datos</b></td><td>Todas las consultas usan parámetros; no se arma ninguna con texto del usuario.</td></tr>
+<tr><td><b>Interceptar la comunicación</b></td><td>Todo viaja cifrado por HTTPS, y el navegador queda instruido para usar siempre esa vía.</td></tr>
+<tr><td><b>Manipular los tiempos del SLA</b></td><td>Con señal vale la hora del servidor. Lo enviado sin señal se acepta con límites y queda marcado como «enviado tarde».</td></tr>
+<tr><td><b>Archivos maliciosos</b></td><td>Solo se aceptan imágenes reales como constancia, y se vuelven a procesar. Los Excel descargados no pueden ejecutar fórmulas inyectadas.</td></tr>
+<tr><td><b>Fuga de fotos o reportes</b></td><td>Las fotos están en un almacén privado. Las respuestas con datos no se guardan en cachés intermedias ni en el disco del navegador.</td></tr>
+<tr><td><b>Datos en un teléfono perdido</b></td><td>Al cambiar la contraseña o desactivar al usuario, el teléfono deja de recibir avisos y se borra lo guardado para uso sin señal.</td></tr>
+<tr><td><b>Acciones sin rastro</b></td><td>Registro de auditoría de accesos, bloqueos, accesos denegados, gestión de usuarios, catálogos, metas, importaciones y descargas.</td></tr>
+<tr><td><b>Sobrecarga intencional</b></td><td>Límite de solicitudes por usuario, más estricto en reportes e importación; rangos de fechas y tamaños de página acotados.</td></tr>
+<tr><td><b>Exposición de archivos internos</b></td><td>La aplicación vive fuera de la carpeta pública. Tras cada publicación se comprueba automáticamente que nada interno sea accesible.</td></tr>
+<tr><td><b>Librerías vulnerables</b></td><td>0 vulnerabilidades conocidas a la fecha. La publicación se detiene si aparece alguna, y GitHub avisa de las nuevas.</td></tr>
+</table>
+
+<h2>9.4 Hallazgos de la auditoría y su estado</h2>
+<table>
+<thead><tr><th style="width:9%">N.º</th><th style="width:11%">Nivel</th><th>Hallazgo</th><th style="width:25%">Estado</th></tr></thead>
+<tr><td>1</td><td>Medio</td><td>Los tiempos del SLA se podían declarar con una hora anterior dentro de cierto margen.</td><td>Corregido</td></tr>
+<tr><td>2</td><td>Medio</td><td>No hay verificación en dos pasos para administradores y operadores.</td><td><b>Pendiente por decisión de ServiPos</b></td></tr>
+<tr><td>3</td><td>Medio</td><td>Cerrar sesión sin señal dejaba la sesión viva en el servidor.</td><td>Corregido</td></tr>
+<tr><td>4</td><td>Medio</td><td>Todo el proyecto residía dentro de la carpeta pública del hosting.</td><td>Corregido en producción</td></tr>
+<tr><td>5</td><td>Medio</td><td>Las acciones administrativas no dejaban rastro.</td><td>Corregido (Auditoría)</td></tr>
+<tr><td>6</td><td>Medio</td><td>Los datos de demostración se podían generar en producción.</td><td>Corregido</td></tr>
+<tr><td>7</td><td>Bajo</td><td>Los datos guardados en el teléfono sobrevivían al fin de la sesión.</td><td>Corregido</td></tr>
+<tr><td>8</td><td>Bajo</td><td>Un técnico reasignado seguía recibiendo avisos del ticket.</td><td>Corregido</td></tr>
+<tr><td>9</td><td>Bajo</td><td>El bloqueo de acceso dependía solo de la dirección de origen.</td><td>Corregido</td></tr>
+<tr><td>10</td><td>Bajo</td><td>Las descargas de Excel se marcaban como almacenables en caché.</td><td>Corregido</td></tr>
+<tr><td>11</td><td>Bajo</td><td>Algunos mensajes de error mostraban detalles internos.</td><td>Corregido</td></tr>
+<tr><td>12</td><td>Bajo</td><td>La contraseña inicial del administrador quedaba en un archivo; no existía cambio de contraseña propio.</td><td>Corregido</td></tr>
+<tr><td>13</td><td>Bajo</td><td>El paquete de publicación incluía archivos innecesarios.</td><td>Corregido parcialmente</td></tr>
+<tr><td>14</td><td>Bajo</td><td>Un archivo de diagnóstico y datos del hosting de pruebas estaban en el repositorio.</td><td>Corregido</td></tr>
+<tr><td>15</td><td>Bajo</td><td>Dos envíos simultáneos de una atención podían duplicarla.</td><td>Corregido</td></tr>
+<tr><td>16</td><td>Bajo</td><td>Filtros sin validar provocaban errores; el Monitor no tenía límite de uso.</td><td>Corregido parcialmente</td></tr>
+<tr><td>17</td><td>Bajo</td><td>Datos de contacto visibles para más personas de las necesarias.</td><td>Corregido</td></tr>
+<tr><td>18</td><td>Bajo</td><td>La política de contenido admitía estilos en línea y no reporta infracciones.</td><td>Corregido parcialmente</td></tr>
+<tr><td>19</td><td>Bajo</td><td>Tres avisos en herramientas de desarrollo y dos librerías sin uso.</td><td>Corregido</td></tr>
+<tr><td>20</td><td>Inform.</td><td>Ajustes menores: sesión recordada por defecto, indexación en buscadores, textos de ayuda.</td><td>Atendido</td></tr>
+</table>
+<p class="pie-capitulo">«Corregido parcialmente» significa que se aplicó la parte de mayor valor y queda un refinamiento sin impacto práctico: el paquete conserva los archivos fuente por decisión del cliente; los reportes muy amplios aún cargan sus datos en memoria, dentro del límite de 2 años; y la política de contenido no envía reportes de infracciones.</p>
+
+<h2>9.5 Verificación en producción</h2>
+<p>El 11 de octubre de 2026, tras instalar el sistema en el hosting de ServiPos, se repitió la verificación sobre el sitio real:</p>
+<ul>
+<li>Ningún archivo interno (configuración, código, registros) es accesible desde internet.</li>
+<li>Las protecciones del navegador llegan completas en cada respuesta.</li>
+<li>Las credenciales de sesión viajan solo por conexión cifrada y no son legibles por programas de la página.</li>
+<li>El sitio rechaza solicitudes dirigidas a un nombre de dominio que no sea el suyo.</li>
+<li>La base de datos se instaló limpia, sin usuarios ni datos de demostración, y con claves propias, distintas a las del ambiente de pruebas.</li>
+</ul>
+
+<h2>9.6 Recomendaciones para ServiPos</h2>
+<table>
+<tr><th style="width:30%">Recomendación</th><th>Por qué</th></tr>
+<tr><td><b>Activar las copias de seguridad</b> del hosting</td><td>La base de datos y las fotos de las constancias solo existen en el servidor. Es la medida más importante.</td></tr>
+<tr><td><b>Evaluar la verificación en dos pasos</b> para administradores</td><td>Es el único hallazgo de nivel medio que queda abierto. Un administrador puede crear usuarios y descargar toda la información.</td></tr>
+<tr><td><b>Revisar la Auditoría</b> periódicamente</td><td>Las etiquetas «Bloqueo» y «Denegado» son la primera señal de un intento de abuso.</td></tr>
+<tr><td><b>Dar de baja</b> a quien deja la empresa el mismo día</td><td>Basta con desactivar al usuario; el efecto es inmediato.</td></tr>
+<tr><td><b>No compartir usuarios</b></td><td>Cada persona debe tener el suyo: de eso dependen la trazabilidad y los indicadores por técnico.</td></tr>
+<tr><td><b>Mantener las metas de SLA</b> al día</td><td>Los valores iniciales son de ejemplo y deben reflejar lo acordado con cada banco.</td></tr>
+<tr><td><b>Mantenimiento periódico</b></td><td>Aplicar las actualizaciones de seguridad de las librerías cada uno o dos meses.</td></tr>
+</table>
+
+
+<h1><span class="cap">Capítulo 10</span>10. Operación y soporte</h1>
+
+<h2>10.1 Puesta en marcha: lista de verificación</h2>
+<ol class="pasos">
+<li><b>Ajustar las metas de SLA</b> a lo acordado con los bancos (Catálogos → SLA).</li>
+<li><b>Revisar los catálogos:</b> tipos de falla, repuestos, estatus finales, bancos y estados.</li>
+<li><b>Importar el Excel histórico</b> (Importar Excel), simulando primero.</li>
+<li><b>Completar los cajeros:</b> banco, dirección y modelo de los que falten.</li>
+<li><b>Crear los operadores</b> del Call Center, con su correo.</li>
+<li><b>Cargar el teléfono de cada técnico</b> y los estados que cubre.</li>
+<li><b>Enviar el acceso</b> a cada usuario y confirmar que ingresó (columna «Último ingreso»).</li>
+<li><b>Instalar la aplicación</b> en el teléfono de cada técnico y activar las notificaciones.</li>
+<li><b>Activar las copias de seguridad</b> en el panel del hosting.</li>
+</ol>
+
+<h2>10.2 Respaldo de la información</h2>
+<p>La información vive en dos lugares del servidor, y ambos deben respaldarse: la <b>base de datos</b> (tickets, cajeros, usuarios, auditoría) y la carpeta de <b>fotos de constancias</b>. El panel del hosting (Site Tools → Security → Backups) permite programar copias diarias automáticas y restaurarlas. El código fuente está respaldado aparte, en GitHub.</p>
+
+<h2>10.3 Preguntas frecuentes</h2>
+<table>
+<thead><tr><th style="width:36%">Pregunta</th><th>Respuesta</th></tr></thead>
+<tr><td>Olvidé mi contraseña.</td><td>Pida al administrador un enlace de acceso nuevo (sección 4.12).</td></tr>
+<tr><td>Me dice «Demasiados intentos fallidos».</td><td>Espere 5 minutos y vuelva a intentar. Si no recuerda la contraseña, pida un enlace nuevo.</td></tr>
+<tr><td>El enlace de acceso dice que ya se usó o venció.</td><td>Sirve una sola vez y dura 48 horas. Pida otro.</td></tr>
+<tr><td>No me llegan las notificaciones.</td><td>Abra la campana → engranaje y compruebe que diga «Avisos activados». En iPhone, la app debe estar instalada en la pantalla de inicio. Revise también que el teléfono no tenga bloqueadas las notificaciones del navegador.</td></tr>
+<tr><td>Registré la atención y el ticket no se cerró.</td><td>Es lo esperado: queda «Por confirmar» hasta que un administrador lo confirme (sección 4.6).</td></tr>
+<tr><td>Hice un cambio sin señal y no aparece.</td><td>Queda en la bandeja del teléfono y se envía solo al volver la conexión. La franja superior indica cuántos envíos hay pendientes.</td></tr>
+<tr><td>Me equivoqué al registrar una atención.</td><td>No se puede editar. Deje un comentario en el ticket explicando el error; el administrador puede devolver el ticket para registrar una nueva atención.</td></tr>
+<tr><td>Abrí un ticket por error.</td><td>Use <b>Anular</b>, indicando el motivo.</td></tr>
+<tr><td>No encuentro un cajero al crear el ticket.</td><td>Búsquelo por agencia o serial. Si no existe, el administrador debe crearlo en <b>Cajeros</b>.</td></tr>
+<tr><td>Un técnico dejó la empresa.</td><td>Reasigne sus tickets abiertos y desactívelo en <b>Usuarios y técnicos</b>.</td></tr>
+<tr><td>¿Puedo cargar el Excel de nuevo con filas nuevas?</td><td>Sí. Solo se agrega lo nuevo (sección 4.13).</td></tr>
+<tr><td>Veo una versión vieja de una pantalla.</td><td>Abra el menú y toque <b>Buscar actualización</b>, o recargue la página.</td></tr>
+<tr><td>¿Por qué un ticket histórico no muestra duración?</td><td>Porque el Excel solo traía fechas, sin horas.</td></tr>
+</table>
+
+<h2>10.4 Glosario</h2>
+<table>
+<tr><th style="width:24%">Término</th><th>Significado</th></tr>
+<tr><td><b>ATM</b></td><td>Cajero automático.</td></tr>
+<tr><td><b>Ticket</b></td><td>Registro de una falla de un cajero, con todo su seguimiento.</td></tr>
+<tr><td><b>Atención o visita</b></td><td>Cada vez que un técnico va al cajero y registra lo que hizo.</td></tr>
+<tr><td><b>Constancia</b></td><td>Planilla de servicio que firma el banco al terminar la visita.</td></tr>
+<tr><td><b>Estatus final</b></td><td>Cómo quedó el cajero después de la atención.</td></tr>
+<tr><td><b>SLA</b></td><td>Acuerdo de nivel de servicio: las metas de tiempo de llegada y de resolución.</td></tr>
+<tr><td><b>Reincidencia</b></td><td>Nueva falla de un cajero dentro de los 30 días siguientes a otra.</td></tr>
+<tr><td><b>Seguir</b></td><td>Suscribirse a los avisos de un ticket.</td></tr>
+<tr><td><b>Enlace de acceso</b></td><td>Enlace de un solo uso con el que un usuario crea su contraseña.</td></tr>
+<tr><td><b>Bandeja de envíos</b></td><td>Lo que el teléfono guarda mientras no hay señal, para enviarlo después.</td></tr>
+<tr><td><b>PWA</b></td><td>Aplicación web que se instala en el teléfono sin pasar por una tienda.</td></tr>
+<tr><td><b>Auditoría</b></td><td>Registro de quién hizo qué y cuándo en las funciones sensibles.</td></tr>
+<tr><td><b>HTTPS</b></td><td>Conexión cifrada entre el dispositivo y el servidor.</td></tr>
+</table>
+
+<h2>10.5 Soporte</h2>
+<p>Para dudas de uso, consulte primero este manual y al administrador del sistema en ServiPos. Para fallas del sistema, nuevas funciones o cambios, el desarrollo y el mantenimiento están a cargo de <b>GT Consulting</b>.</p>
+<p>Al reportar una falla, indique: qué estaba haciendo, el número del ticket si aplica, el mensaje que apareció, la versión que muestra el menú y, si es posible, una captura de pantalla.</p>

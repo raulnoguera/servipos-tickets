@@ -1,0 +1,209 @@
+<h1><span class="cap">Capítulo 5</span>5. Aplicación móvil del técnico</h1>
+
+<p class="entrada">El técnico usa el mismo sistema desde su teléfono, con pantallas pensadas para trabajar en la calle: pocos toques, botones grandes y funcionamiento sin señal.</p>
+
+<p>Para empezar: instale la aplicación (sección 3.5), abra el enlace de acceso que le envió el administrador y cree su contraseña (sección 3.2). Después entra con su <b>número de teléfono</b> y esa contraseña.</p>
+
+<h2>5.1 Mis tickets</h2>
+<div class="lado">
+<figure><img src="capturas/m-inicio.jpg" alt="Pantalla Mis tickets"><figcaption>Pantalla inicial del técnico.</figcaption></figure>
+<div>
+<p>Es la pantalla inicial. Muestra solo los tickets que el técnico tiene asignados y que no están cerrados, en tres grupos:</p>
+<table>
+<tr><th style="width:38%">Grupo</th><th>Contenido</th></tr>
+<tr><td><b>Por atender</b></td><td>Asignados, en tránsito o en sitio. Primero los que ya están en sitio.</td></tr>
+<tr><td><b>Pendientes</b></td><td>Los que quedaron por repuesto o por validación.</td></tr>
+<tr><td><b>Por confirmar cierre</b></td><td>Los que ya atendió y esperan la confirmación del administrador.</td></tr>
+</table>
+<p>Cada tarjeta muestra el número del ticket, su estado, la agencia, el ATM y su estado del país, la falla y el tiempo transcurrido. Debajo tiene dos botones:</p>
+<ul>
+<li><b>Cómo llegar:</b> abre el mapa con la ubicación del cajero.</li>
+<li><b>El siguiente paso:</b> «Voy en camino», «Llegué al sitio» o «Registrar atención», según el estado.</li>
+</ul>
+<p>La lista se actualiza sola cada 30 segundos. Al final está el acceso a <b>Mi historial</b>.</p>
+</div>
+</div>
+<div class="nota"><b>Nota</b><p>El recuadro «Instale la app para recibir avisos» aparece mientras la aplicación no esté instalada o no tenga las notificaciones activadas. Siga sus indicaciones y desaparece.</p></div>
+
+<h2>5.2 Avanzar el estado</h2>
+<div class="lado">
+<figure><img src="capturas/m-ticket.jpg" alt="Detalle de un ticket en el teléfono"><figcaption>Ticket asignado, visto por el técnico.</figcaption></figure>
+<div>
+<p>Al tocar una tarjeta se abre el ticket, con la falla reportada, los datos del cajero, las atenciones anteriores y la actividad.</p>
+<ol class="pasos">
+<li>Al salir hacia el cajero, toque <b>Voy en camino</b>. El ticket pasa a «En tránsito» y el Call Center recibe el aviso.</li>
+<li>Al llegar, toque <b>Llegué al sitio</b>. El ticket pasa a «En sitio» y se registra la hora de llegada, con la que se mide el SLA de llegada.</li>
+<li>Al terminar, toque <b>Registrar atención</b>.</li>
+</ol>
+<div class="regla"><b>Regla del sistema</b><p>La hora de cada paso es la del servidor en el momento en que usted toca el botón. No se puede indicar una hora anterior. Si no marcó «Voy en camino», puede tocar directamente «Llegué al sitio».</p></div>
+<p>También puede <b>comentar</b> el ticket y usar <b>Seguir</b>, igual que en el portal.</p>
+</div>
+</div>
+
+<h2>5.3 Registrar la atención</h2>
+<p>Es el paso más importante: deja constancia de lo que se hizo y define cómo queda el ticket.</p>
+<div class="moviles tres">
+<figure><img src="capturas/m-atencion.jpg" alt="Formulario de atención"><figcaption>Formulario de atención.</figcaption></figure>
+<figure><img src="capturas/m-atencion-completa.jpg" alt="Formulario completo"><figcaption>El formulario completo.</figcaption></figure>
+<figure><img src="capturas/m-repuestos.jpg" alt="Buscador de repuestos"><figcaption>Buscador de repuestos.</figcaption></figure>
+</div>
+<table>
+<thead><tr><th style="width:27%">Campo</th><th class="c" style="width:13%">Obligatorio</th><th>Descripción</th></tr></thead>
+<tr><td><b>N° de constancia</b></td><td class="no">No</td><td>El número impreso en la planilla de servicio.</td></tr>
+<tr><td><b>Falla atendida</b></td><td class="no">No</td><td>Viene con la falla reportada; cámbiela si la falla real fue otra.</td></tr>
+<tr><td><b>Foto de la planilla firmada</b></td><td class="no">No</td><td>Abre la cámara del teléfono. La foto se reduce automáticamente para que suba rápido. En una computadora permite elegir un archivo.</td></tr>
+<tr><td><b>Trabajo realizado</b></td><td class="si">Sí</td><td>Diagnóstico y lo que se hizo en sitio.</td></tr>
+<tr><td><b>¿Hubo cambio de repuesto?</b></td><td class="si">Sí</td><td><b>Sí</b> o <b>No</b>. Si responde Sí, debe indicar cuál y cuántos.</td></tr>
+<tr><td><b>Repuestos</b></td><td class="c">Si hubo cambio</td><td>Toque <b>Elegir repuesto</b> y escriba parte del nombre para buscarlo. Ajuste la cantidad con − y +. Con <b>Agregar otro repuesto</b> puede indicar varios.</td></tr>
+<tr><td><b>¿Cómo queda el cajero?</b></td><td class="si">Sí</td><td>El estatus final. Bajo cada opción se indica a qué estado pasará el ticket.</td></tr>
+</table>
+<p>Al tocar <b>Registrar atención</b> se guarda la visita y el Call Center recibe el aviso. Según el estatus final:</p>
+<ul>
+<li><b>Operativo:</b> el ticket pasa a «Por confirmar» y el reloj se detiene.</li>
+<li><b>Operativo / Pendiente por Repuesto:</b> queda en «Pend. repuesto». Cuando llegue la pieza, se registra una nueva atención en el mismo ticket.</li>
+<li><b>Fuera de Servicio:</b> queda en «Pend. validación».</li>
+</ul>
+<div class="aviso"><b>Atención</b><p>Una atención registrada no se puede editar ni borrar desde la aplicación. Revise los datos antes de enviarla.</p></div>
+
+<h2>5.4 Cierre por confirmar</h2>
+<div class="lado">
+<figure><img src="capturas/m-por-confirmar.jpg" alt="Ticket por confirmar en el teléfono"><figcaption>Ticket en espera de confirmación.</figcaption></figure>
+<div>
+<p>Cuando informa que el cajero quedó operativo, el ticket no se cierra todavía: un administrador revisa la atención y da la confirmación final.</p>
+<ul>
+<li>Mientras tanto, el ticket aparece en el grupo <b>Por confirmar cierre</b>, sin botones de acción.</li>
+<li>Al confirmarse, usted recibe el aviso <b>«Cierre confirmado»</b> y el ticket pasa a su historial.</li>
+<li>Si el administrador lo devuelve, recibe el aviso <b>«Cierre devuelto»</b> con el motivo, y el ticket vuelve a <b>Por atender</b>.</li>
+</ul>
+<p>El tiempo que tarde la confirmación no cuenta en contra suya: el tiempo de resolución se mide hasta la hora en que usted registró la atención.</p>
+</div>
+</div>
+
+<h2>5.5 Trabajar sin señal</h2>
+<p>La aplicación sigue funcionando donde no hay cobertura.</p>
+<ol class="pasos">
+<li><b>Sin señal</b>, puede abrir los tickets que ya había visto, tocar «Voy en camino» y «Llegué al sitio», y registrar la atención completa, con foto.</li>
+<li>Lo que haga queda <b>guardado en el teléfono</b>. Una franja superior indica cuántos envíos están pendientes, y la tarjeta del ticket muestra «por enviar».</li>
+<li>Al <b>volver la señal</b>, la aplicación envía todo sola y avisa: «Se enviaron N cambios guardados sin señal».</li>
+</ol>
+<div class="regla"><b>Regla del sistema</b><p>Lo guardado sin señal conserva la hora en que usted realmente lo hizo. En el ticket queda una nota amarilla, visible para el Call Center, con la demora entre lo ocurrido y su llegada al servidor (por ejemplo: «Enviado 1 h 35 min después»).</p></div>
+<div class="consejo"><b>Recomendación</b><p>Abra «Mis tickets» con señal antes de salir hacia zonas sin cobertura: así sus tickets y los catálogos quedan guardados en el teléfono. No cierre sesión con envíos pendientes: se perderían, y la aplicación se lo advierte antes.</p></div>
+<p>Si un envío guardado es rechazado al llegar (por ejemplo, porque el ticket fue anulado mientras tanto), aparece marcado en rojo con el motivo, y puede <b>Reintentar</b> o <b>Descartar</b>.</p>
+
+<h2>5.6 Mi historial</h2>
+<div class="lado">
+<figure><img src="capturas/m-historial.jpg" alt="Mi historial"><figcaption>Historial de atenciones del técnico.</figcaption></figure>
+<div>
+<p><b>Mi historial</b> reúne todos los tickets que el técnico atendió, aunque ya estén cerrados o hayan sido reasignados a otra persona.</p>
+<ul>
+<li><b>Resumen del mes:</b> atenciones, tickets concluidos y repuestos usados.</li>
+<li><b>Buscador:</b> por N° de ticket, ATM o agencia.</li>
+<li><b>Filtros:</b> Todos, Concluidos y Pendientes.</li>
+</ul>
+<p>Los tickets del historial que ya no tiene asignados son solo de consulta: puede verlos, pero no registrar cambios en ellos.</p>
+</div>
+</div>
+
+<h2>5.7 Notificaciones y menú</h2>
+<div class="moviles">
+<figure><img src="capturas/m-campana.jpg" alt="Notificaciones en el teléfono"><figcaption>Campana de avisos.</figcaption></figure>
+<figure><img src="capturas/m-menu.jpg" alt="Menú del técnico"><figcaption>Menú del técnico.</figcaption></figure>
+</div>
+<p>El técnico recibe un aviso cuando le <b>asignan un ticket</b>, cuando se lo <b>anulan</b>, cuando alguien <b>comenta</b> uno de sus tickets y cuando el administrador <b>confirma o devuelve</b> un cierre. Con las notificaciones activadas, llegan al teléfono con sonido aunque la aplicación esté cerrada; al tocar el aviso se abre el ticket.</p>
+<p>Para activarlas: toque la campana, luego el engranaje y <b>Activar en este dispositivo</b>. En iPhone es necesario haber instalado antes la aplicación en la pantalla de inicio.</p>
+<p>El <b>menú</b> (tres rayas, arriba a la derecha) tiene <b>Mis tickets</b>, <b>Mi historial</b>, la versión con <b>Buscar actualización</b>, y los íconos para cambiar la contraseña y cerrar sesión.</p>
+
+
+<h1><span class="cap">Capítulo 6</span>6. Lógica de negocio</h1>
+
+<p class="entrada">Este capítulo reúne las reglas que el sistema aplica siempre, sin importar quién lo use ni desde dónde. Son las que garantizan que la información sea confiable.</p>
+
+<h2>6.1 Ciclo de vida: cambios de estado permitidos</h2>
+<table>
+<thead><tr><th style="width:23%">Desde</th><th>Puede pasar a</th><th style="width:30%">Mediante</th></tr></thead>
+<tr><td><span class="et e-abierto">Abierto</span></td><td>Asignado · Anulado</td><td>Asignar técnico · Anular</td></tr>
+<tr><td><span class="et e-asignado">Asignado</span></td><td>En tránsito · En sitio · Asignado (otro técnico) · Anulado · el resultado de una atención</td><td>Botones del técnico · Reasignar · Anular · Registrar atención</td></tr>
+<tr><td><span class="et e-transito">En tránsito</span></td><td>En sitio · Asignado (otro técnico) · Anulado · el resultado de una atención</td><td>Ídem</td></tr>
+<tr><td><span class="et e-sitio">En sitio</span></td><td>Por confirmar · Pend. repuesto · Pend. validación</td><td>Registrar atención</td></tr>
+<tr><td><span class="et e-repuesto">Pend. repuesto</span> <span class="et e-validacion">Pend. validación</span></td><td>Asignado · En tránsito · En sitio · Por confirmar · Anulado</td><td>Reasignar · botones del técnico · nueva atención · Anular</td></tr>
+<tr><td><span class="et e-confirmar">Por confirmar</span></td><td>Concluido · Asignado · Anulado</td><td>Confirmar cierre · Devolver al técnico · Anular</td></tr>
+<tr><td><span class="et e-concluido">Concluido</span> <span class="et e-anulado">Anulado</span></td><td>Ninguno</td><td>Son estados finales</td></tr>
+</table>
+<ul>
+<li>Un ticket <b>Abierto</b> no admite atenciones: primero hay que asignarle un técnico.</li>
+<li>Un ticket pendiente se retoma con una <b>nueva atención</b> en el mismo ticket. No se abre otro.</li>
+<li>Todo cambio de estado queda en la actividad del ticket, con autor, fecha y hora.</li>
+</ul>
+
+<h2>6.2 Tiempos y SLA</h2>
+<table>
+<tr><th style="width:30%">Regla</th><th>Detalle</th></tr>
+<tr><td><b>Inicio del reloj</b></td><td>La apertura del ticket. Las dos metas (llegada y resolución) se cuentan desde ese momento.</td></tr>
+<tr><td><b>Fin de «llegada»</b></td><td>Cuando el técnico marca «Llegué al sitio». Si registra la atención sin haberlo marcado, se toma la hora de la atención.</td></tr>
+<tr><td><b>Fin de «resolución»</b></td><td>Cuando el técnico registra la atención con el cajero operativo. No espera a la confirmación del administrador.</td></tr>
+<tr><td><b>El reloj no se detiene</b></td><td>Corre de forma continua: noches, fines de semana y mientras se espera un repuesto o una validación.</td></tr>
+<tr><td><b>Hora del servidor</b></td><td>Con señal, la hora de cada paso es la del servidor. El teléfono no puede declarar una hora anterior.</td></tr>
+<tr><td><b>Hora sin señal</b></td><td>Solo en los envíos guardados sin señal se acepta la hora del teléfono, con límites: no puede ser futura, ni anterior a la apertura ni al paso previo, ni de hace más de 24 horas. El ticket muestra además cuándo llegó realmente.</td></tr>
+<tr><td><b>Por vencer</b></td><td>Se alerta al consumirse el 80 % de la meta.</td></tr>
+<tr><td><b>Duración exacta</b></td><td>Los tiempos se guardan con precisión de milisegundos.</td></tr>
+<tr><td><b>Cambio de prioridad</b></td><td>Las metas siguen a la prioridad vigente del ticket.</td></tr>
+<tr><td><b>Histórico del Excel</b></td><td>Los tickets importados no tienen horas: no miden duración ni SLA.</td></tr>
+</table>
+
+<h2>6.3 Confirmación del cierre</h2>
+<ul>
+<li>El estatus final «Operativo» lleva el ticket a <b>Por confirmar</b>, nunca directamente a Concluido.</li>
+<li>Solo un <b>administrador</b> confirma o devuelve. El sistema guarda quién confirmó y cuándo.</li>
+<li>Devolver exige un motivo, que llega al técnico y queda en la actividad. El ticket vuelve a «Asignado» y el reloj continúa desde la apertura.</li>
+<li>Mientras espera confirmación, el ticket no admite nuevas atenciones ni reasignación.</li>
+<li>En los reportes, un ticket cuenta como concluido solo después de la confirmación; antes figura entre los pendientes. Su tiempo de resolución es siempre el del técnico.</li>
+</ul>
+
+<h2>6.4 Acceso a los tickets y seguimiento</h2>
+<ul>
+<li>El <b>técnico</b> ve los tickets que tiene asignados y los que atendió alguna vez. Solo puede trabajar los que tiene asignados en ese momento.</li>
+<li>Los <b>operadores y administradores</b> ven todos los tickets.</li>
+<li><b>Seguir</b> un ticket hace que lleguen sus avisos. Quien comenta pasa a seguirlo. Siempre se puede dejar de seguir.</li>
+<li>Un técnico reasignado antes de atender el ticket deja de verlo y de recibir sus avisos.</li>
+<li>Un técnico no ve los teléfonos de sus compañeros; el Call Center sí, para asignar y contactar.</li>
+</ul>
+
+<h2>6.5 Notificaciones: quién recibe cada aviso</h2>
+<table>
+<thead><tr><th style="width:27%">Evento</th><th>Quién lo recibe</th></tr></thead>
+<tr><td><b>Ticket asignado</b></td><td>El técnico asignado.</td></tr>
+<tr><td><b>En camino / Llegó al sitio</b></td><td>Operadores y administradores, según su preferencia, y quienes siguen el ticket.</td></tr>
+<tr><td><b>Atención con pendiente</b></td><td>Operadores y administradores, según su preferencia, y seguidores.</td></tr>
+<tr><td><b>Cierre por confirmar</b></td><td><b>Todos los administradores</b>, sin importar su preferencia, más los operadores según la suya.</td></tr>
+<tr><td><b>Cierre confirmado</b></td><td>Operadores y administradores, según su preferencia, y el técnico.</td></tr>
+<tr><td><b>Cierre devuelto</b></td><td>El técnico asignado, con el motivo.</td></tr>
+<tr><td><b>Comentario nuevo</b></td><td>El técnico asignado, quien abrió el ticket y los seguidores.</td></tr>
+<tr><td><b>Ticket anulado</b></td><td>El técnico asignado, con el motivo.</td></tr>
+</table>
+<ul>
+<li>Quien realiza la acción no recibe su propio aviso.</li>
+<li>La preferencia de cada operador o administrador es <b>Todos</b>, <b>Solo los que yo abrí</b> o <b>Ninguno</b>.</li>
+<li>Todo aviso queda en la campana. La notificación en el dispositivo requiere haberla activado en ese equipo.</li>
+<li>Un usuario desactivado no recibe avisos.</li>
+</ul>
+
+<h2>6.6 Cómo se calculan los indicadores</h2>
+<table>
+<thead><tr><th style="width:30%">Indicador</th><th>Definición</th></tr></thead>
+<tr><td><b>Tiempo de llegada</b></td><td>De la apertura a la llegada al sitio.</td></tr>
+<tr><td><b>Tiempo de resolución</b></td><td>De la apertura al momento en que el técnico dejó el cajero operativo.</td></tr>
+<tr><td><b>Resuelto en 1.ª visita</b></td><td>Ticket concluido con una sola atención registrada.</td></tr>
+<tr><td><b>Reincidencia</b></td><td>Ticket de un cajero que tuvo otro ticket en los 30 días anteriores.</td></tr>
+<tr><td><b>SLA cumplido</b></td><td>La etapa terminó dentro de la meta de su prioridad.</td></tr>
+<tr><td><b>Pendientes</b></td><td>Tickets que no están concluidos ni anulados.</td></tr>
+<tr><td><b>Consumo de repuestos</b></td><td>Suma de las cantidades indicadas en las atenciones del período.</td></tr>
+</table>
+
+<h2>6.7 Numeración, catálogos y usuarios</h2>
+<ul>
+<li><b>Numeración:</b> TK-año-consecutivo, reiniciando el consecutivo cada año. El sistema garantiza que no haya números repetidos aunque dos operadores creen tickets a la vez.</li>
+<li><b>Catálogos y usuarios:</b> no se eliminan, se desactivan, para no alterar el historial.</li>
+<li><b>Usuario de ingreso:</b> el teléfono para técnicos, el correo para los demás. Ambos son únicos.</li>
+<li><b>Contraseñas:</b> mínimo 10 caracteres, con letras y números. Cada quien crea la suya; el sistema las guarda cifradas de forma que nadie puede leerlas.</li>
+<li><b>Envíos repetidos:</b> si el teléfono reenvía una atención por un problema de conexión, el sistema la reconoce y no la duplica.</li>
+</ul>

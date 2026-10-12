@@ -1,0 +1,336 @@
+<h1><span class="cap">Capítulo 4</span>4. Portal web</h1>
+
+<p class="entrada">El portal es la herramienta de trabajo del Call Center y de la administración. Este capítulo recorre cada opción del menú en el orden en que aparece, con sus campos, sus botones y los pasos de las tareas más comunes.</p>
+
+<h2>4.1 La pantalla y el menú</h2>
+<p>La pantalla tiene siempre dos zonas: a la izquierda, el <b>menú</b> azul; a la derecha, el contenido de la opción elegida. En pantallas angostas el menú se oculta y se abre con el botón de tres rayas.</p>
+<table>
+<thead><tr><th style="width:24%">Opción del menú</th><th>Para qué sirve</th><th class="c" style="width:13%">Admin.</th><th class="c" style="width:13%">Operador</th></tr></thead>
+<tr><td><b>Monitor</b></td><td>Resumen en vivo de la operación.</td><td class="si">Sí</td><td class="si">Sí</td></tr>
+<tr><td><b>Nuevo ticket</b></td><td>Registrar la falla que reporta el banco.</td><td class="si">Sí</td><td class="si">Sí</td></tr>
+<tr><td><b>Tickets</b></td><td>Lista de todos los tickets, con búsqueda y filtros.</td><td class="si">Sí</td><td class="si">Sí</td></tr>
+<tr><td><b>Tablero</b></td><td>Los tickets en curso, en columnas por estado.</td><td class="si">Sí</td><td class="si">Sí</td></tr>
+<tr><td><b>Reportes</b></td><td>Indicadores, detalle y descargas a Excel.</td><td class="si">Sí</td><td class="si">Sí</td></tr>
+<tr><td><b>Cajeros</b></td><td>Maestro de cajeros y hoja de vida de cada uno.</td><td class="si">Sí</td><td class="si">Consulta</td></tr>
+<tr><td><b>Catálogos</b></td><td>Listas de fallas, repuestos, estatus, bancos, estados y metas de SLA.</td><td class="si">Sí</td><td class="no">—</td></tr>
+<tr><td><b>Usuarios y técnicos</b></td><td>Altas, cambios, accesos y bajas de usuarios.</td><td class="si">Sí</td><td class="no">—</td></tr>
+<tr><td><b>Importar Excel</b></td><td>Cargar el Libro Consolidado.</td><td class="si">Sí</td><td class="no">—</td></tr>
+<tr><td><b>Auditoría</b></td><td>Registro de acciones sensibles.</td><td class="si">Sí</td><td class="no">—</td></tr>
+</table>
+<p>En la parte superior del menú está la <b>campana</b> de notificaciones (sección 4.15). En la parte inferior, la versión instalada con el botón <b>Buscar actualización</b>, y la tarjeta con su nombre y rol, con los íconos para <b>cambiar la contraseña</b> y <b>cerrar sesión</b>.</p>
+
+<h2>4.2 Monitor</h2>
+<p>Es la pantalla inicial. Responde de un vistazo qué está pasando y qué requiere atención. Se actualiza sola cada 30 segundos.</p>
+<figure><img src="capturas/monitor.jpg" alt="Monitor de atenciones"><figcaption>Monitor de atenciones ATM.</figcaption></figure>
+<table>
+<tr><th style="width:30%">Elemento</th><th>Qué muestra</th></tr>
+<tr><td><b>Hoy / Semana / Mes</b></td><td>Período al que se refieren «Concluidos», «Tiempo promedio», los repuestos y las fallas. Los contadores de tickets abiertos son siempre los del momento.</td></tr>
+<tr><td><b>Tickets activos</b></td><td>Tickets abiertos, asignados, en tránsito o en sitio. Debajo: cuántos están sin asignar y cuántos en campo.</td></tr>
+<tr><td><b>Pend. por repuesto</b></td><td>Tickets que esperan una pieza para culminar.</td></tr>
+<tr><td><b>Pend. por validación</b></td><td>Tickets en revisión técnica, de red o de un tercero.</td></tr>
+<tr><td><b>Concluidos</b></td><td>Tickets concluidos en el período. Debajo: cuántos se abrieron en ese mismo período.</td></tr>
+<tr><td><b>Tiempo promedio</b></td><td>Promedio desde la apertura hasta el cierre, de los concluidos en el período.</td></tr>
+<tr><td><b>Franja verde azulada</b></td><td>Cuántos tickets atendidos esperan la confirmación del cierre. Aparece solo si hay alguno.</td></tr>
+<tr><td><b>Franja roja</b></td><td>Tickets en curso con el SLA vencido.</td></tr>
+<tr><td><b>Franja amarilla</b></td><td>Tickets por vencer (más del 80 % del tiempo consumido).</td></tr>
+<tr><td><b>Tickets abiertos y concluidos</b></td><td>Gráfico de los últimos 30 días: cuántos se abrieron y cuántos se concluyeron cada día.</td></tr>
+<tr><td><b>Carga por técnico</b></td><td>Por cada técnico: tickets activos, pendientes y concluidos en el período.</td></tr>
+<tr><td><b>Repuestos más utilizados</b></td><td>Unidades usadas en el período, con acceso al reporte.</td></tr>
+<tr><td><b>Fallas reportadas</b></td><td>Tickets abiertos en el período, por tipo de falla.</td></tr>
+</table>
+<p>Cada tarjeta y cada franja es un acceso directo: al hacer clic se abre la lista de tickets correspondiente. El botón <b>Nuevo ticket</b> lleva al formulario de registro.</p>
+
+<h2>4.3 Nuevo ticket</h2>
+<p>Aquí el operador registra la falla que reporta el banco. El formulario tiene dos pasos: elegir el cajero y describir la falla.</p>
+<figure><img src="capturas/nuevo-buscar.jpg" alt="Búsqueda de cajeros al crear un ticket"><figcaption>Paso 1: el cajero se busca mientras se escribe.</figcaption></figure>
+<h3>Paso 1 · Cajero</h3>
+<p>Escriba en el buscador el <b>N° de ATM</b>, el nombre de la <b>agencia</b> o el <b>serial</b>. Aparecen las coincidencias mientras escribe. Si deja el campo vacío y toca <b>Buscar</b>, se abre la lista completa de cajeros para elegir. Los cajeros que ya tienen un ticket sin cerrar muestran la etiqueta amarilla «abierto».</p>
+<p>Al elegir un cajero, sus datos (serial, código de agencia, estado, marca y modelo, tipo, banco y dirección) aparecen a la derecha, con el enlace <b>Ver en el mapa</b>.</p>
+<div class="aviso"><b>Atención</b><p>Si el cajero ya tiene tickets sin cerrar, el formulario lo avisa con un enlace para revisarlos. Hágalo antes de abrir otro, para no duplicar el caso.</p></div>
+<figure><img src="capturas/nuevo-formulario.jpg" alt="Formulario de nuevo ticket"><figcaption>Paso 2: datos de la falla, con el cajero ya elegido.</figcaption></figure>
+<h3>Paso 2 · Falla reportada</h3>
+<table>
+<thead><tr><th style="width:25%">Campo</th><th class="c" style="width:13%">Obligatorio</th><th>Descripción</th></tr></thead>
+<tr><td><b>Tipo de falla</b></td><td class="si">Sí</td><td>Motivo del reporte, de la lista de <b>Catálogos → Tipos de falla</b>.</td></tr>
+<tr><td><b>Prioridad</b></td><td class="no">No</td><td>Crítica, Alta, Media o Baja. Por defecto, Media. Define las metas de SLA del ticket.</td></tr>
+<tr><td><b>N° de caso del banco</b></td><td class="no">No</td><td>Número de caso o incidente del banco, si el correo lo trae. Sirve luego para buscar el ticket.</td></tr>
+<tr><td><b>Detalle del reporte</b></td><td class="no">No</td><td>Texto libre. Se recomienda copiar lo que indica el correo del banco.</td></tr>
+<tr><td><b>Asignar a técnico</b></td><td class="no">No</td><td>Técnico responsable. La lista muestra primero los que cubren el estado del cajero. Puede dejarse «Sin asignar por ahora».</td></tr>
+</table>
+<p>Al tocar <b>Crear ticket</b> el sistema asigna el número, registra la hora de apertura (desde ahí corre el reloj del SLA) y abre el ticket. Si eligió un técnico, este recibe el aviso de inmediato.</p>
+
+<h2>4.4 Tickets</h2>
+<p>Es la bandeja de trabajo: todos los tickets, con pestañas, búsqueda y filtros. Se actualiza sola cada 30 segundos.</p>
+<figure><img src="capturas/tickets.jpg" alt="Lista de tickets"><figcaption>Bandeja de tickets.</figcaption></figure>
+<h3>Pestañas</h3>
+<table>
+<tr><th style="width:24%">Pestaña</th><th>Qué lista</th></tr>
+<tr><td><b>Sin cerrar</b></td><td>Todo lo que no está concluido ni anulado. Es la vista inicial.</td></tr>
+<tr><td><b>En curso</b></td><td>Abiertos, asignados, en tránsito y en sitio.</td></tr>
+<tr><td><b>Pend. repuesto</b> · <b>Pend. validación</b></td><td>Los que quedaron pendientes después de una atención.</td></tr>
+<tr><td><b>Por confirmar</b></td><td>Atendidos por el técnico, en espera de la confirmación del administrador.</td></tr>
+<tr><td><b>Concluidos</b> · <b>Anulados</b></td><td>Los ya cerrados.</td></tr>
+<tr><td><b>SLA vencido</b> · <b>Por vencer</b></td><td>Tickets sin cerrar que superaron una meta, o que ya consumieron el 80 % de ella.</td></tr>
+<tr><td><b>Todos</b></td><td>Sin filtro de estado.</td></tr>
+</table>
+<h3>Búsqueda y filtros</h3>
+<ul>
+<li><b>Buscador:</b> por N° de ticket, N° de ATM, nombre de agencia o caso del banco.</li>
+<li><b>Técnico, banco y prioridad:</b> tres listas para acotar el resultado.</li>
+</ul>
+<h3>Columnas</h3>
+<p>Cada fila muestra el número y la fecha de apertura (con la etiqueta de prioridad si es Alta o Crítica), el ATM, la agencia y su estado, la falla, el técnico, el estado del ticket y el semáforo del SLA. Al hacer clic en una fila se abre el detalle. Para llevar la información a Excel, el botón <b>Exportar Excel</b> lleva a Reportes.</p>
+
+<h2>4.5 Detalle del ticket</h2>
+<p>Reúne toda la historia del caso. Es la misma pantalla para todos los roles; cambian los botones disponibles.</p>
+<figure><img src="capturas/ticket-acciones.jpg" alt="Detalle de un ticket asignado"><figcaption>Ticket asignado, con los botones de acción.</figcaption></figure>
+
+<h3>Encabezado</h3>
+<ul>
+<li><b>Número, estado, prioridad y semáforo del SLA.</b></li>
+<li><b>Línea de apertura:</b> fecha, hora, quién lo abrió y el caso del banco. En tickets concluidos, también quién confirmó el cierre y cuándo.</li>
+<li><b>Seguir:</b> al seguir un ticket recibirá los avisos de cada novedad. El número indica cuántas personas lo siguen.</li>
+<li><b>Editar:</b> cambiar prioridad, tipo de falla, caso del banco o detalle (operador y administrador).</li>
+<li><b>Tiempo:</b> «Tiempo transcurrido» mientras está en curso; «Tiempo hasta la atención» cuando espera confirmación; «Tiempo total del ciclo» cuando concluyó.</li>
+</ul>
+
+<h3>Botones de acción</h3>
+<table>
+<tr><th style="width:24%">Botón</th><th>Qué hace</th><th style="width:22%">Quién</th></tr>
+<tr><td><b>Registrar atención</b></td><td>Abre el formulario de la visita en sitio (el mismo de la app, sección 5.3). Útil cuando el técnico informa por teléfono.</td><td>Todos, en sus tickets</td></tr>
+<tr><td><b>Asignar técnico / Reasignar</b></td><td>Elige o cambia el técnico responsable.</td><td>Operador, administrador</td></tr>
+<tr><td><b>WhatsApp</b></td><td>Abre un chat con el técnico, con el resumen del ticket ya escrito. Aparece si el técnico tiene teléfono.</td><td>Operador, administrador</td></tr>
+<tr><td><b>Anular</b></td><td>Cancela el ticket, con un motivo obligatorio.</td><td>Operador, administrador</td></tr>
+<tr><td><b>Voy en camino</b> · <b>Llegué al sitio</b></td><td>Avanzan el estado. Solo los ve el técnico (sección 5.2).</td><td>Técnico asignado</td></tr>
+</table>
+
+<h3>Asignar o reasignar</h3>
+<figure class="media"><img src="capturas/ticket-asignar.jpg" alt="Diálogo de asignación"><figcaption>Elección del técnico.</figcaption></figure>
+<p>Elija el técnico en la lista y confirme. El técnico nuevo recibe el aviso. Si el ticket ya tenía otro técnico y este no llegó a registrar ninguna atención, deja de verlo y de recibir sus avisos; si ya lo había atendido, lo conserva en su historial solo para consulta.</p>
+<div class="regla"><b>Regla del sistema</b><p>Solo se puede asignar a técnicos activos. Un ticket concluido, anulado o «por confirmar» no se puede reasignar.</p></div>
+
+<h3>Editar</h3>
+<figure class="media"><img src="capturas/ticket-editar.jpg" alt="Diálogo de edición"><figcaption>Edición de los datos del ticket.</figcaption></figure>
+<p>Permite corregir la <b>prioridad</b>, el <b>tipo de falla</b>, el <b>N° de caso del banco</b> y el <b>detalle</b>. Cada cambio queda anotado en la actividad del ticket, con el valor anterior y el nuevo.</p>
+<div class="aviso"><b>Atención</b><p>Cambiar la prioridad cambia las metas de SLA del ticket, y el semáforo se recalcula con las nuevas.</p></div>
+
+<h3>Anular</h3>
+<figure class="media"><img src="capturas/ticket-anular.jpg" alt="Diálogo de anulación"><figcaption>La anulación exige un motivo.</figcaption></figure>
+<p>Use <b>Anular</b> para reportes duplicados o cuando el banco cancela la solicitud. El motivo es obligatorio, queda en el historial y se le notifica al técnico asignado.</p>
+<div class="aviso"><b>Atención</b><p>La anulación no se puede deshacer. Un ticket anulado no admite más cambios.</p></div>
+
+<h3>El resto de la pantalla</h3>
+<figure><img src="capturas/ticket-detalle.jpg" alt="Detalle completo de un ticket concluido"><figcaption>Ticket concluido con dos atenciones, actividad y SLA.</figcaption></figure>
+<table>
+<tr><th style="width:24%">Sección</th><th>Contenido</th></tr>
+<tr><td><b>Falla reportada</b></td><td>Tipo de falla y detalle registrado al abrir el ticket.</td></tr>
+<tr><td><b>Atenciones en sitio</b></td><td>Una tarjeta por cada visita, numerada: fecha y hora, estatus final, técnico, N° de constancia, falla atendida, trabajo realizado y repuestos con su cantidad. Si hay foto de la constancia, se abre al tocarla. Una visita enviada tarde por falta de señal lo indica con una nota amarilla.</td></tr>
+<tr><td><b>Actividad</b></td><td>Caja para escribir un comentario y, debajo, la línea de tiempo: comentarios, cambios de estado y ediciones, con fecha, hora y autor. Se puede filtrar por <b>Todo</b>, <b>Comentarios</b> o <b>Cambios</b>.</td></tr>
+<tr><td><b>SLA</b></td><td>Dos barras: <b>Llegada al sitio</b> y <b>Resolución</b>, cada una con su meta, el tiempo consumido y el semáforo.</td></tr>
+<tr><td><b>Cajero</b></td><td>Datos del ATM, enlace a su <b>Hoja de vida</b> y botón <b>Cómo llegar</b>, que abre el mapa.</td></tr>
+<tr><td><b>Técnico</b></td><td>Nombre, teléfono y fecha de asignación.</td></tr>
+</table>
+<p><b>Comentarios.</b> Sirven para dejar novedades y coordinar: repuesto en camino, respuesta del banco, etc. Al publicar uno se avisa al técnico, a quien abrió el ticket y a quienes lo siguen. Quien comenta pasa a seguir el ticket.</p>
+
+<h2>4.6 Confirmación del cierre</h2>
+<p>El técnico no cierra el ticket: informa que el cajero quedó operativo, y un <b>administrador</b> da la última confirmación.</p>
+<figure><img src="capturas/ticket-confirmar.jpg" alt="Ticket por confirmar visto por el administrador"><figcaption>Ticket «Por confirmar» visto por un administrador.</figcaption></figure>
+<ol class="pasos">
+<li>Cuando el técnico registra la atención con estatus <b>Operativo</b>, el ticket pasa a <span class="et e-confirmar">Por confirmar</span> y los administradores reciben el aviso. El reloj del ticket se detiene en ese momento.</li>
+<li>El administrador abre el ticket (desde el aviso, la franja del Monitor o la pestaña <b>Por confirmar</b>) y revisa la atención, los repuestos y la constancia.</li>
+<li>Elige una de dos acciones: <b>Confirmar cierre</b> o <b>Devolver al técnico</b>.</li>
+</ol>
+<figure class="media"><img src="capturas/ticket-confirmar-dialogo.jpg" alt="Diálogo de confirmación del cierre"><figcaption>Última confirmación, con el resumen de la atención.</figcaption></figure>
+<p><b>Confirmar cierre</b> muestra un resumen (técnico, estatus final y constancia) y permite agregar una observación. Con <b>Sí, cerrar ticket</b> el ticket queda <span class="et e-concluido">Concluido</span>, se registra quién confirmó y cuándo, y se avisa al Call Center y al técnico.</p>
+<figure class="media"><img src="capturas/ticket-devolver.jpg" alt="Diálogo para devolver el ticket"><figcaption>Devolución al técnico, con motivo obligatorio.</figcaption></figure>
+<p><b>Devolver al técnico</b> se usa cuando el cierre no se da por bueno: el banco reporta que el cajero sigue fallando, falta la foto de la constancia, etc. El ticket vuelve a <span class="et e-asignado">Asignado</span> y el técnico recibe el aviso con el motivo.</p>
+<div class="regla"><b>Regla del sistema</b><p>El tiempo de resolución y el SLA se miden hasta la hora en que el técnico terminó, no hasta la confirmación: la demora del administrador en confirmar no perjudica el indicador. Si el ticket se devuelve, el reloj continúa desde la apertura original. Mientras un ticket espera confirmación no se puede registrar otra atención ni reasignarlo.</p></div>
+<p>Los operadores y los técnicos ven estos tickets con una nota que indica que falta la confirmación del administrador, sin los botones.</p>
+<figure><img src="capturas/operador-ticket.jpg" alt="Ticket por confirmar visto por un operador"><figcaption>El mismo ticket visto por un operador.</figcaption></figure>
+
+<h2>4.7 Tablero</h2>
+<p>Muestra los tickets en curso como tarjetas, en una columna por estado. Es la vista más cómoda para dirigir la operación del día. Se actualiza sola cada 30 segundos.</p>
+<figure><img src="capturas/tablero.jpg" alt="Tablero de tickets"><figcaption>Tablero por estado.</figcaption></figure>
+<ul>
+<li><b>Columnas:</b> Abierto, Asignado, En tránsito, En sitio, Pend. repuesto, Pend. validación, Por confirmar y Concluido (los concluidos de hoy). Si no caben, la pantalla se desplaza hacia la derecha.</li>
+<li><b>Orden:</b> dentro de cada columna, primero los de mayor prioridad y los más antiguos.</li>
+<li><b>Tarjeta:</b> número, prioridad, agencia, ATM y estado, falla, técnico, tiempo transcurrido y semáforo.</li>
+<li><b>Borde rojo:</b> el ticket tiene el SLA vencido.</li>
+<li><b>Filtros:</b> por técnico, por prioridad y el interruptor <b>Solo SLA vencido</b>.</li>
+</ul>
+<p>Al hacer clic en una tarjeta se abre el ticket. El estado se cambia desde el ticket, no arrastrando la tarjeta.</p>
+
+<h2>4.8 Reportes</h2>
+<p>Los reportes se calculan con lo que registran los operadores y los técnicos; no hay que preparar nada. Tienen seis pestañas, que comparten los mismos filtros.</p>
+<h3>Filtros</h3>
+<ul>
+<li><b>Período:</b> los atajos <b>Este mes</b>, <b>Mes anterior</b>, <b>Últimos 30 días</b> y <b>Este año</b>, o las fechas <b>Desde</b> y <b>Hasta</b>. El rango máximo es de 2 años.</li>
+<li><b>Banco, Estado y Técnico:</b> para acotar los resultados.</li>
+</ul>
+<div class="nota"><b>Nota</b><p>Los tickets importados del Excel histórico no tienen horas, solo fechas. Por eso cuentan en las cantidades, pero no en los promedios de tiempo ni en el SLA.</p></div>
+
+<h3>Resumen</h3>
+<figure><img src="capturas/reportes-resumen.jpg" alt="Resumen de reportes"><figcaption>Pestaña Resumen, con los indicadores del período.</figcaption></figure>
+<table>
+<thead><tr><th style="width:32%">Indicador</th><th>Cómo se calcula</th></tr></thead>
+<tr><td><b>Tickets abiertos en el período</b></td><td>Tickets cuya fecha de apertura cae en el período. Debajo: concluidos en el período y pendientes a hoy.</td></tr>
+<tr><td><b>Tiempo promedio de resolución</b></td><td>Promedio desde la apertura hasta el cierre, de los tickets concluidos en el período.</td></tr>
+<tr><td><b>Tiempo promedio de llegada</b></td><td>Promedio desde la apertura hasta la llegada del técnico al sitio.</td></tr>
+<tr><td><b>Resueltos en la 1.ª visita</b></td><td>Porcentaje de los concluidos que se resolvieron con una sola visita.</td></tr>
+<tr><td><b>SLA de resolución cumplido</b></td><td>Porcentaje de tickets resueltos dentro de su meta. Debajo, el de llegada.</td></tr>
+<tr><td><b>Tickets con SLA vencido</b></td><td>Tickets que superaron la meta de llegada o la de resolución.</td></tr>
+<tr><td><b>Reincidencia</b></td><td>Porcentaje de tickets de cajeros que ya habían tenido otra falla en los 30 días anteriores.</td></tr>
+<tr><td><b>Pendientes hoy</b></td><td>Tickets sin cerrar en este momento, sin importar el período.</td></tr>
+</table>
+<p>Debajo hay cuatro gráficos: <b>Abiertos y concluidos por semana</b>, <b>Antigüedad de los pendientes</b> (menos de 4 h, de 4 a 24 h, de 1 a 3 días, más de 3 días), <b>Por estado actual</b> y <b>Por prioridad</b>.</p>
+<p>Cada tarjeta tiene el enlace <b>Ver detalle</b>, que abre la lista exacta de tickets que componen esa cifra.</p>
+
+<h3>Cajeros</h3>
+<figure><img src="capturas/reportes-cajeros.jpg" alt="Reporte por cajero"><figcaption>Cajeros con fallas en el período.</figcaption></figure>
+<p>Lista los cajeros que tuvieron fallas, ordenados por cantidad de tickets: tickets, <b>reincidencias</b> (tickets adicionales al primero), abiertos, repuestos usados, falla más frecuente y tiempo promedio de resolución. Tiene su propio buscador. Al tocar un cajero se abre su hoja de vida.</p>
+
+<h3>Técnicos</h3>
+<figure><img src="capturas/reportes-tecnicos.jpg" alt="Reporte por técnico"><figcaption>Desempeño por técnico.</figcaption></figure>
+<p>Por cada técnico: tickets asignados, concluidos, pendientes hoy, visitas, repuestos, tiempo promedio de llegada y de resolución, porcentaje resuelto en la primera visita y porcentaje de SLA cumplido. Al tocar un técnico se abre el detalle de sus atenciones.</p>
+
+<h3>Repuestos</h3>
+<figure><img src="capturas/reportes-repuestos.jpg" alt="Reporte de repuestos"><figcaption>Consumo de repuestos.</figcaption></figure>
+<p>Cuatro totales (unidades utilizadas, tipos de repuesto, visitas con cambio y cajeros atendidos), la tabla de <b>consumo por repuesto</b> y la <b>tendencia mensual</b> de los cinco más usados en los últimos seis meses. Al tocar un repuesto se ven las atenciones donde se usó. Es la base para planificar compras.</p>
+
+<h3>Fallas</h3>
+<figure><img src="capturas/reportes-fallas.jpg" alt="Reporte por tipo de falla"><figcaption>Tickets por tipo de falla.</figcaption></figure>
+<p>Por cada tipo de falla: tickets, concluidos con su porcentaje, pendientes, cajeros afectados y tiempo promedio. A la derecha, el gráfico de frecuencia.</p>
+
+<h3>Consolidado Excel</h3>
+<figure><img src="capturas/reportes-consolidado.jpg" alt="Exportación del consolidado"><figcaption>Descarga del Libro Consolidado.</figcaption></figure>
+<p>Genera el <b>Libro Consolidado Relación de Atenciones</b> con las mismas columnas que la empresa ya usaba: una fila por visita, más el N° de ticket. Usa las fechas y el banco de los filtros.</p>
+
+<h3>Detalle y descarga</h3>
+<figure><img src="capturas/reportes-detalle.jpg" alt="Detalle de una cifra del reporte"><figcaption>Detalle de las atenciones de un técnico.</figcaption></figure>
+<p>Toda cifra de los reportes se puede abrir para ver los tickets o las atenciones que la forman. En el detalle hay un filtro instantáneo y el botón <b>Descargar Excel</b>. Cada tabla de los reportes tiene además su propio botón <b>Excel</b>.</p>
+<p>Los archivos se descargan con la imagen de ServiPos: logo, título, filtros aplicados, quién lo generó y cuándo, y el total de registros. Cada descarga queda en la auditoría.</p>
+
+<h2>4.9 Cajeros</h2>
+<p>Es el maestro de cajeros automáticos. Los operadores lo consultan; solo el administrador crea o modifica.</p>
+<figure><img src="capturas/cajeros.jpg" alt="Maestro de cajeros"><figcaption>Maestro de cajeros.</figcaption></figure>
+<p>La lista muestra N° de ATM, serial, agencia con su código y tipo, estado, modelo, banco y cuántos tickets abiertos tiene. Se busca por N° de ATM, serial, agencia o código, y se filtra por estado. Al tocar el número se abre la hoja de vida.</p>
+<figure class="media"><img src="capturas/cajero-editar.jpg" alt="Formulario de cajero"><figcaption>Alta y edición de un cajero.</figcaption></figure>
+<table>
+<thead><tr><th style="width:26%">Campo</th><th class="c" style="width:13%">Obligatorio</th><th>Descripción</th></tr></thead>
+<tr><td><b>N° de ATM</b></td><td class="si">Sí</td><td>Identificador del cajero. No se puede repetir.</td></tr>
+<tr><td><b>Serial del equipo</b></td><td class="no">No</td><td>Serial del fabricante.</td></tr>
+<tr><td><b>Banco</b></td><td class="no">No</td><td>Banco dueño del cajero. Puede quedar «Sin banco».</td></tr>
+<tr><td><b>Estado</b></td><td class="no">No</td><td>Estado del país. Se usa para sugerir técnicos y para filtrar reportes.</td></tr>
+<tr><td><b>Código de agencia</b></td><td class="no">No</td><td>Código que el banco da a la agencia.</td></tr>
+<tr><td><b>Nombre de agencia</b></td><td class="si">Sí</td><td>Nombre con el que se conoce la ubicación.</td></tr>
+<tr><td><b>Tipo de sitio</b></td><td class="no">No</td><td>Agencia, Dirección general o Remoto.</td></tr>
+<tr><td><b>Marca</b> · <b>Modelo</b></td><td class="no">No</td><td>Por ejemplo, DIEBOLD · OPTEVA 562.</td></tr>
+<tr><td><b>Dirección / ubicación</b></td><td class="no">No</td><td>Se usa en el botón «Cómo llegar» y en el mensaje de WhatsApp al técnico.</td></tr>
+<tr><td><b>Activo</b></td><td class="no">No</td><td>Un cajero inactivo deja de ofrecerse al crear tickets y no admite tickets nuevos, pero conserva su historial y sigue apareciendo en los reportes.</td></tr>
+</table>
+<h3>Hoja de vida del cajero</h3>
+<figure><img src="capturas/cajero-hoja.jpg" alt="Hoja de vida de un cajero"><figcaption>Hoja de vida de un cajero.</figcaption></figure>
+<p>Reúne todo el historial de un ATM: tickets totales, abiertos ahora, tickets de los últimos 90 días, visitas, repuestos usados y tiempo promedio de resolución; los gráficos de <b>fallas reportadas</b> y <b>repuestos cambiados</b>; y el <b>historial de tickets</b> con falla, prioridad, técnico, repuestos, estado y duración. Los botones <b>Mapa</b> y <b>Nuevo ticket</b> están arriba a la derecha. Sirve para detectar cajeros con fallas repetidas.</p>
+
+<h2>4.10 Catálogos</h2>
+<p>Son las listas que alimentan los formularios. Solo el administrador las modifica.</p>
+<figure><img src="capturas/catalogos.jpg" alt="Catálogos"><figcaption>Catálogo de tipos de falla.</figcaption></figure>
+<table>
+<tr><th style="width:24%">Catálogo</th><th>Uso</th></tr>
+<tr><td><b>Tipos de falla</b></td><td>Motivos de visita: dispensación, impresora, comunicación, lectora, etc.</td></tr>
+<tr><td><b>Repuestos</b></td><td>Piezas que el técnico puede indicar en una atención. Se guardan en MAYÚSCULAS para evitar duplicados.</td></tr>
+<tr><td><b>Estatus final</b></td><td>Cómo queda el cajero tras la atención, y a qué estado lleva el ticket.</td></tr>
+<tr><td><b>Bancos</b></td><td>Clientes bancarios.</td></tr>
+<tr><td><b>Estados</b></td><td>Estados y regiones de cobertura.</td></tr>
+<tr><td><b>SLA</b></td><td>Metas de tiempo por prioridad (sección 4.11).</td></tr>
+</table>
+<p>En cualquiera de ellos: escriba el nombre y toque <b>Agregar</b> para crear un elemento; use el <b>lápiz</b> para cambiarle el nombre; y el <b>interruptor</b> para activarlo o desactivarlo. Los <b>Estados</b> no tienen interruptor: solo se agregan o se renombran.</p>
+<div class="regla"><b>Regla del sistema</b><p>Los elementos no se eliminan, se desactivan. Uno inactivo deja de ofrecerse en los formularios nuevos, pero los tickets y reportes anteriores lo conservan. No se admiten dos elementos con el mismo nombre.</p></div>
+<figure><img src="capturas/catalogos-estatus.jpg" alt="Catálogo de estatus final"><figcaption>Estatus final: cada uno indica a qué estado lleva el ticket.</figcaption></figure>
+<p>En <b>Estatus final</b>, además del nombre, se elige el estado al que pasa el ticket: Concluido, Pendiente por repuesto o Pendiente por validación. Los de tipo «Concluido» llevan primero el ticket a «Por confirmar» (sección 4.6).</p>
+
+<h2>4.11 Metas de SLA</h2>
+<figure><img src="capturas/catalogos-sla.jpg" alt="Metas de SLA"><figcaption>Metas de llegada y de resolución por prioridad.</figcaption></figure>
+<p>En <b>Catálogos → SLA</b> se definen, en horas, la meta de <b>llegada al sitio</b> y la de <b>resolución</b> para cada prioridad. Admite decimales (1,5 es una hora y media). Si se deja una casilla vacía, esa meta no se mide. Toque <b>Guardar metas</b> para aplicar.</p>
+<div class="aviso"><b>Atención</b><p>El cambio aplica de inmediato a todos los tickets, también a los ya abiertos, y queda en la auditoría. Los valores con los que se entrega el sistema son de ejemplo.</p></div>
+
+<h2>4.12 Usuarios y técnicos</h2>
+<figure><img src="capturas/usuarios.jpg" alt="Usuarios y técnicos"><figcaption>Lista de usuarios, con su último ingreso.</figcaption></figure>
+<p>La lista muestra, por cada usuario, su nombre y <b>con qué inicia sesión</b> (teléfono o correo), su rol, los estados que cubre, su <b>último ingreso</b> y sus tickets activos. Se puede filtrar por rol. La etiqueta <b>Nunca ingresó</b> señala a quien aún no ha entrado, y <b>Enlace enviado</b> a quien tiene un enlace de acceso vigente.</p>
+<figure class="media"><img src="capturas/usuario-editar.jpg" alt="Formulario de usuario"><figcaption>Alta y edición de un usuario.</figcaption></figure>
+<table>
+<thead><tr><th style="width:26%">Campo</th><th>Descripción</th></tr></thead>
+<tr><td><b>Nombre completo</b></td><td>Obligatorio.</td></tr>
+<tr><td><b>Rol</b></td><td>Administrador, Operador Call Center o Técnico de Campo. Obligatorio.</td></tr>
+<tr><td><b>Teléfono</b></td><td><b>Obligatorio para técnicos:</b> es su usuario para ingresar y el número al que se le escribe por WhatsApp. No puede repetirse entre usuarios.</td></tr>
+<tr><td><b>Correo</b></td><td><b>Obligatorio para administradores y operadores:</b> es su usuario. Opcional para técnicos.</td></tr>
+<tr><td><b>Contraseña</b></td><td>Opcional. Lo recomendado es dejarla vacía y usar <b>Enviar acceso</b>, para que el usuario cree la suya.</td></tr>
+<tr><td><b>Estados que cubre</b></td><td>Solo para técnicos. Con ellos el sistema sugiere a quién asignar cada ticket.</td></tr>
+<tr><td><b>Puede iniciar sesión</b></td><td>Al apagarlo, el usuario queda desactivado.</td></tr>
+</table>
+<h3>Dar acceso a un usuario</h3>
+<figure class="media"><img src="capturas/usuario-acceso.jpg" alt="Diálogo para enviar acceso"><figcaption>«Enviar acceso» genera un enlace de un solo uso.</figcaption></figure>
+<ol class="pasos">
+<li>Verifique que el usuario tenga cargado su teléfono (técnicos) o su correo.</li>
+<li>En su fila, toque <b>Enviar acceso</b> y luego <b>Generar enlace</b>.</li>
+<li>Toque <b>Enviar por WhatsApp</b>: se abre el chat con ese número y el mensaje ya escrito. También puede usar <b>Copiar mensaje</b> y enviarlo por otro medio.</li>
+<li>El usuario abre el enlace, crea su contraseña y entra (sección 3.2).</li>
+</ol>
+<p>El mismo botón sirve cuando alguien olvida su contraseña. Generar un enlace nuevo anula el anterior.</p>
+<div class="aviso"><b>Atención</b><p>El enlace permite crear la contraseña de esa cuenta: envíelo solo a su dueño. Vence a las 48 horas y se usa una sola vez.</p></div>
+<h3>Dar de baja a un usuario</h3>
+<p>Edite el usuario y apague <b>Puede iniciar sesión</b>. El efecto es inmediato: pierde el acceso en todos sus equipos, se invalida «mantener la sesión iniciada» y deja de recibir notificaciones. Su nombre se conserva en los tickets que atendió.</p>
+<div class="regla"><b>Regla del sistema</b><p>Los usuarios no se eliminan, se desactivan, para conservar el historial. Un administrador no puede desactivarse ni cambiarse el rol a sí mismo.</p></div>
+
+<h2>4.13 Importar Excel</h2>
+<p>Carga el <b>Libro Consolidado Relación de Atenciones</b> que la empresa llevaba en Excel. El archivo debe tener las pestañas <b>Tablas</b> y <b>Base General</b>.</p>
+<figure><img src="capturas/importar.jpg" alt="Importación del Excel"><figcaption>Importación del Excel histórico.</figcaption></figure>
+<ol class="pasos">
+<li>Toque el recuadro y elija el archivo <b>.xlsx</b> (máximo 20 MB).</li>
+<li>Opcionalmente, escriba el <b>banco</b> al que pertenecen los cajeros del archivo. El Excel no lo indica: si lo escribe, se asigna a todos los cajeros nuevos; si lo deja vacío, quedan sin banco.</li>
+<li>Toque <b>Simular</b>. El sistema revisa el archivo y muestra a la derecha qué se agregaría y qué observaciones encontró, <b>sin guardar nada</b>.</li>
+<li>Lea el reporte. Si no hay errores, se habilita <b>Importar</b>; tóquelo para guardar.</li>
+</ol>
+<h3>Qué se carga</h3>
+<table>
+<tr><th style="width:30%">De la pestaña…</th><th>Se crean…</th></tr>
+<tr><td><b>Tablas</b></td><td>Cajeros, estados, tipos de falla, repuestos, estatus finales y técnicos (solo su nombre).</td></tr>
+<tr><td><b>Base General</b></td><td>Un ticket por cada falla atendida, sus visitas (fecha, técnico, constancia, trabajo, estatus final) y los repuestos usados.</td></tr>
+</table>
+<div class="regla"><b>Regla del sistema</b><p>El archivo se puede cargar las veces que haga falta: cada carga agrega <b>solo lo nuevo</b> y no modifica lo que ya existe.</p>
+<p>Un cajero ya existe si coincide su número. Una atención ya existe si coinciden <b>cajero, fecha y N° de constancia</b> (sin constancia: cajero, fecha y trabajo realizado). Una visita de seguimiento se suma al ticket que ese cajero tenía pendiente.</p></div>
+<h3>Cómo leer el reporte</h3>
+<table>
+<tr><th style="width:24%">Grupo</th><th>Significado</th></tr>
+<tr><td><b>Errores</b></td><td>Filas que no se pueden cargar: el cajero no existe en la lista o la fecha no es válida. Mientras haya errores no se puede importar; corrija el Excel y simule de nuevo.</td></tr>
+<tr><td><b>Avisos para revisar</b></td><td>Se cargan, pero conviene mirarlos: constancia repetida, fecha muy distinta al resto, atención sin técnico o sin estatus final, repuesto sin cantidad.</td></tr>
+<tr><td><b>Corregido automáticamente</b></td><td>Ajustes que el sistema hace solo: espacios en seriales, nombres iguales escritos distinto, modelos normalizados.</td></tr>
+</table>
+<div class="aviso"><b>Atención</b><p>Si se corrige en el Excel una fila que ya se había cargado (la fecha, la constancia o el texto del trabajo), el sistema la verá como una atención nueva y quedará duplicada. Las correcciones de lo ya cargado deben hacerse en el sistema.</p></div>
+<p>Los tickets importados llevan la etiqueta «Histórico Excel» y no miden tiempos, porque el Excel solo trae fechas. Los técnicos importados quedan sin acceso hasta que se les cargue el teléfono y se les envíe el enlace (sección 4.12).</p>
+
+<h2>4.14 Auditoría</h2>
+<figure><img src="capturas/auditoria.jpg" alt="Auditoría"><figcaption>Registro de auditoría.</figcaption></figure>
+<p>Registra quién hizo qué, cuándo y desde qué dirección de internet. Solo la consulta el administrador, y nadie puede modificarla ni borrarla desde el sistema.</p>
+<table>
+<tr><th style="width:24%">Tipo</th><th>Qué registra</th></tr>
+<tr><td><b>Accesos</b></td><td>Inicios y cierres de sesión, cuentas bloqueadas por intentos fallidos y accesos denegados.</td></tr>
+<tr><td><b>Usuarios</b></td><td>Altas, cambios (con el valor anterior y el nuevo), enlaces de acceso generados y usados, cambios de contraseña.</td></tr>
+<tr><td><b>Catálogos</b> · <b>Cajeros</b> · <b>SLA</b></td><td>Elementos creados o modificados, y cambios en las metas.</td></tr>
+<tr><td><b>Importación</b></td><td>Cada simulación e importación del Excel, con sus cantidades.</td></tr>
+<tr><td><b>Descargas</b></td><td>Cada reporte descargado a Excel, con los filtros usados.</td></tr>
+</table>
+<p>Se puede buscar por usuario, descripción o IP, y filtrar por tipo y por fechas. Las etiquetas rojas <b>Bloqueo</b> y <b>Denegado</b> merecen atención: pueden indicar un intento de acceso indebido.</p>
+<div class="nota"><b>Nota</b><p>La auditoría nunca guarda contraseñas: de un cambio de contraseña solo anota que ocurrió. Lo que sucede dentro de cada ticket (estados, visitas, comentarios) no está aquí, sino en la actividad del propio ticket.</p></div>
+
+<h2>4.15 Notificaciones en el portal</h2>
+<figure><img src="capturas/campana.jpg" alt="Campana de notificaciones"><figcaption>Campana con los avisos recibidos.</figcaption></figure>
+<p>La <b>campana</b>, arriba en el menú, muestra un número rojo con los avisos sin leer. Al abrirla aparecen los últimos avisos; al tocar uno se abre el ticket y queda leído. <b>Marcar leídas</b> los limpia todos. Con la aplicación abierta, cada aviso nuevo suena y se muestra en una esquina.</p>
+<figure class="media"><img src="capturas/avisos-ajustes.jpg" alt="Ajustes de notificaciones"><figcaption>Ajustes de notificaciones (ícono de engranaje de la campana).</figcaption></figure>
+<table>
+<tr><th style="width:30%">Ajuste</th><th>Para qué sirve</th></tr>
+<tr><td><b>En este dispositivo</b></td><td><b>Activar en este dispositivo</b> permite que los avisos lleguen aunque el sistema esté cerrado. Hay que hacerlo una vez en cada computadora o teléfono. <b>Enviar prueba</b> comprueba que funcionan; <b>Desactivar aquí</b> los detiene en ese equipo.</td></tr>
+<tr><td><b>Sonido con la app abierta</b></td><td>Activa o silencia el sonido de los avisos mientras el sistema está en pantalla.</td></tr>
+<tr><td><b>¿De qué tickets quiere avisos?</b></td><td><b>Todos los tickets</b>, <b>Solo los que yo abrí</b> (útil con varios operadores por turno) o <b>Ninguno</b>. No aplica a técnicos.</td></tr>
+</table>
+<div class="nota"><b>Nota</b><p>En la figura el navegador de ejemplo no admite notificaciones, por eso muestra una advertencia en lugar del botón. En Chrome o Edge aparece <b>Activar en este dispositivo</b>. Los avisos de cierres por confirmar llegan siempre a los administradores, aunque hayan elegido «Ninguno».</p></div>

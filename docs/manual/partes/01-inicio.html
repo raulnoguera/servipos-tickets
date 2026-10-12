@@ -1,0 +1,254 @@
+<section class="indice">
+<h1 style="break-before:auto">Contenido</h1>
+<!--INDICE-->
+</section>
+
+<h1><span class="cap">Antes de empezar</span>Sobre este manual</h1>
+
+<p class="entrada">Este manual explica cómo usar el Sistema de Monitoreo de Tickets ATM de ServiPos 2019, C.A.: el portal web que usan el Call Center y la administración, y la aplicación móvil que usan los técnicos de campo.</p>
+
+<h2>A quién va dirigido</h2>
+<table>
+<tr><th style="width:26%">Si usted es…</th><th>Lea sobre todo…</th></tr>
+<tr><td><span class="et r-tec">Técnico de campo</span></td><td>Los capítulos 2 (conceptos), 3 (acceso) y 5 (aplicación móvil).</td></tr>
+<tr><td><span class="et r-oper">Operador del Call Center</span></td><td>Los capítulos 2, 3 y 4, en especial Monitor, Nuevo ticket, Tickets, Tablero y Reportes.</td></tr>
+<tr><td><span class="et r-admin">Administrador</span></td><td>Todo el manual. Las secciones de Catálogos, Usuarios, Importación, Auditoría y la confirmación del cierre son exclusivas de su rol.</td></tr>
+<tr><td>Gerencia o responsable técnico</td><td>Los capítulos 6 (reglas del negocio), 7 (cómo funciona por dentro), 8 (tecnologías) y 9 (ciberseguridad).</td></tr>
+</table>
+
+<h2>Cómo está organizado</h2>
+<ul>
+<li><b>Capítulos 1 a 3:</b> qué es el sistema, los conceptos que se repiten en todas las pantallas y cómo entrar.</li>
+<li><b>Capítulos 4 y 5:</b> recorrido pantalla por pantalla, con cada opción del menú, cada campo y los pasos para las tareas habituales.</li>
+<li><b>Capítulos 6 a 9:</b> las reglas que el sistema aplica, cómo está construido, con qué tecnologías y qué se revisó en materia de seguridad.</li>
+<li><b>Capítulo 10:</b> operación diaria, respaldo, preguntas frecuentes y glosario.</li>
+</ul>
+
+<h2>Convenciones</h2>
+<p>Los nombres de botones, menús y campos aparecen en <b>negrita</b>, tal como se ven en pantalla. Los recuadros de color tienen este significado:</p>
+<div class="nota"><b>Nota</b><p>Información adicional que ayuda a entender una pantalla.</p></div>
+<div class="regla"><b>Regla del sistema</b><p>Algo que el sistema hace siempre de la misma manera y que conviene conocer.</p></div>
+<div class="aviso"><b>Atención</b><p>Una acción que no se puede deshacer o que tiene consecuencias para otros usuarios.</p></div>
+<div class="consejo"><b>Recomendación</b><p>Una buena práctica sugerida.</p></div>
+
+<p>Las pantallas de este manual se tomaron de un ambiente de pruebas: los tickets, nombres y números que aparecen son datos de demostración y no corresponden a la operación real.</p>
+
+<h2>Ficha del documento</h2>
+<table class="ficha">
+<tr><th>Documento</th><td>Manual de usuario · Sistema de Monitoreo de Tickets ATM</td></tr>
+<tr><th>Cliente</th><td>ServiPos 2019, C.A.</td></tr>
+<tr><th>Desarrollado por</th><td>GT Consulting</td></tr>
+<tr><th>Versión del manual</th><td>1.0 · octubre de 2026</td></tr>
+<tr><th>Versión del sistema descrita</th><td><!--VERSION--></td></tr>
+<tr><th>Dirección de producción</th><td>https://intra.servipos2019.com</td></tr>
+</table>
+
+
+<h1><span class="cap">Capítulo 1</span>1. Introducción</h1>
+
+<p class="entrada">ServiPos Tickets es el sistema con el que ServiPos registra, asigna, atiende y mide cada falla reportada por los bancos en sus cajeros automáticos (ATM), desde el aviso inicial hasta el cierre confirmado.</p>
+
+<h2>1.1 Qué resuelve</h2>
+<table>
+<tr><th style="width:50%">Antes</th><th>Con el sistema</th></tr>
+<tr><td>Los reportes de los bancos llegaban por correo y se seguían por llamadas y WhatsApp.</td><td>Cada falla es un ticket con número propio, responsable, estado e historial.</td></tr>
+<tr><td>El «Libro Consolidado» en Excel se armaba a mano.</td><td>El consolidado y los demás reportes se descargan en Excel en segundos.</td></tr>
+<tr><td>No se medían los tiempos de llegada ni de resolución.</td><td>El sistema calcula los tiempos y el cumplimiento de las metas (SLA) automáticamente.</td></tr>
+<tr><td>Las constancias de servicio quedaban en papel.</td><td>El técnico adjunta la foto de la constancia al ticket desde su teléfono.</td></tr>
+<tr><td>Saber «por dónde va» un técnico requería llamarlo.</td><td>El Call Center recibe un aviso en cada avance y lo ve en pantalla.</td></tr>
+</table>
+
+<h2>1.2 Las tres piezas del sistema</h2>
+<div class="cajas">
+<div><b>Portal web</b>Para el Call Center y la administración. Registrar, asignar y seguir tickets; tablero, reportes, catálogos y usuarios. Se usa desde el navegador de una computadora.</div>
+<div><b>Aplicación móvil</b>Para los técnicos de campo. Ver sus tickets, avisar que van en camino y que llegaron, y registrar la atención con foto y repuestos. Funciona en iPhone y Android, incluso sin señal.</div>
+<div><b>Reportes y SLA</b>Para la gerencia y la relación con los bancos. Indicadores por cajero, técnico, repuesto y falla, con detalle y descarga a Excel.</div>
+</div>
+<p>Las tres piezas son en realidad una sola aplicación, que muestra a cada persona lo que le corresponde según su rol. Todos trabajan sobre la misma información, en tiempo real.</p>
+
+<h2>1.3 Dirección de acceso</h2>
+<p>El sistema se usa desde un navegador de internet, en esta dirección:</p>
+<p style="text-align:center;font-size:13pt;font-weight:700;color:#00194C;margin:8pt 0 10pt">https://intra.servipos2019.com</p>
+<p>Es la misma dirección para la computadora y para el teléfono. En el teléfono se puede instalar como una aplicación, con su propio ícono (sección 3.5). No se descarga desde las tiendas de aplicaciones.</p>
+<div class="nota"><b>Nota</b><p>Se recomienda usar Google Chrome o Microsoft Edge en la computadora, Chrome en Android y Safari en iPhone. La conexión siempre es cifrada (https).</p></div>
+
+
+<h1><span class="cap">Capítulo 2</span>2. Conceptos básicos</h1>
+
+<p class="entrada">Antes de recorrer las pantallas conviene conocer cinco conceptos que aparecen en todo el sistema: los roles, el ticket, sus estados, la prioridad con sus metas de tiempo y el estatus final del cajero.</p>
+
+<h2>2.1 Roles de usuario</h2>
+<p>Cada usuario tiene un rol, y el rol define qué ve y qué puede hacer. Existen tres:</p>
+<table>
+<tr><th style="width:24%">Rol</th><th>Quién lo usa</th><th>Qué hace</th></tr>
+<tr><td><span class="et r-admin">Administrador</span></td><td>Responsables del servicio y de la configuración.</td><td>Todo lo que hace el operador y, además: da la <b>última confirmación del cierre</b> de cada ticket, y administra cajeros, catálogos, metas de SLA, usuarios, la importación del Excel y la auditoría.</td></tr>
+<tr><td><span class="et r-oper">Operador Call Center</span></td><td>Quienes reciben los reportes de los bancos.</td><td>Abre tickets, los asigna a los técnicos, les da seguimiento, los edita o anula, comenta, consulta cajeros y reportes.</td></tr>
+<tr><td><span class="et r-tec">Técnico de Campo</span></td><td>Quienes atienden los cajeros en sitio.</td><td>Ve solo sus tickets, avisa que va en camino y que llegó, registra la atención (constancia, trabajo, repuestos, foto) y consulta su historial.</td></tr>
+</table>
+
+<h3>Qué puede hacer cada rol</h3>
+<table>
+<thead><tr><th>Función</th><th class="c" style="width:15%">Administrador</th><th class="c" style="width:15%">Operador</th><th class="c" style="width:15%">Técnico</th></tr></thead>
+<tr><td>Ver el Monitor y el Tablero</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
+<tr><td>Abrir un ticket nuevo</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
+<tr><td>Asignar o reasignar un técnico</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
+<tr><td>Editar prioridad, falla, detalle o caso del banco</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
+<tr><td>Anular un ticket</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
+<tr><td>Ver tickets</td><td class="si">Todos</td><td class="si">Todos</td><td class="si">Los suyos</td></tr>
+<tr><td>Marcar «Voy en camino» y «Llegué al sitio»</td><td class="si">Sí</td><td class="si">Sí</td><td class="si">En los suyos</td></tr>
+<tr><td>Registrar la atención en sitio</td><td class="si">Sí</td><td class="si">Sí</td><td class="si">En los suyos</td></tr>
+<tr><td><b>Confirmar el cierre</b> o devolver el ticket al técnico</td><td class="si">Sí</td><td class="no">—</td><td class="no">—</td></tr>
+<tr><td>Comentar y seguir un ticket</td><td class="si">Sí</td><td class="si">Sí</td><td class="si">En los suyos</td></tr>
+<tr><td>Ver reportes y descargarlos en Excel</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
+<tr><td>Consultar cajeros y su hoja de vida</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
+<tr><td>Crear y editar cajeros</td><td class="si">Sí</td><td class="no">—</td><td class="no">—</td></tr>
+<tr><td>Administrar catálogos y metas de SLA</td><td class="si">Sí</td><td class="no">—</td><td class="no">—</td></tr>
+<tr><td>Administrar usuarios y enviar accesos</td><td class="si">Sí</td><td class="no">—</td><td class="no">—</td></tr>
+<tr><td>Importar el Excel histórico</td><td class="si">Sí</td><td class="no">—</td><td class="no">—</td></tr>
+<tr><td>Consultar la auditoría</td><td class="si">Sí</td><td class="no">—</td><td class="no">—</td></tr>
+<tr><td>Cambiar su propia contraseña</td><td class="si">Sí</td><td class="si">Sí</td><td class="si">Sí</td></tr>
+</table>
+<div class="regla"><b>Regla del sistema</b><p>Los permisos se comprueban en el servidor en cada operación. Que una opción no aparezca en el menú no es la única protección: aunque alguien intente la operación por otra vía, el sistema la rechaza y deja el intento registrado en la auditoría.</p></div>
+
+<h2>2.2 El ticket</h2>
+<p>Un ticket representa <b>una falla de un cajero</b>, desde que se reporta hasta que se resuelve. Reúne en un solo lugar el cajero, la falla, la prioridad, el técnico responsable, las visitas realizadas, los repuestos usados, la foto de la constancia, los comentarios y el historial de todo lo ocurrido.</p>
+<p>Cada ticket recibe un número único con este formato:</p>
+<p style="text-align:center;font-family:'Urbanist';font-size:18pt;font-weight:800;color:#00194C;margin:4pt 0 2pt">TK-2026-00193</p>
+<p style="text-align:center;font-size:8.6pt;color:#5F6E8F">TK · año en que se abrió · número consecutivo de ese año</p>
+<p>El número lo asigna el sistema al crear el ticket, en orden, y no se repite ni se puede modificar.</p>
+
+<h2>2.3 Estados del ticket</h2>
+<p>El estado indica en qué punto del recorrido está el ticket. Siempre aparece como una etiqueta de color con su nombre.</p>
+<div class="ciclo">
+<div class="paso"><b>1 · Abierto</b>El Call Center registra la falla.<i>Operador</i></div><span class="fl">›</span>
+<div class="paso"><b>2 · Asignado</b>Se elige el técnico, que recibe el aviso.<i>Operador</i></div><span class="fl">›</span>
+<div class="paso"><b>3 · En tránsito</b>«Voy en camino».<i>Técnico</i></div><span class="fl">›</span>
+<div class="paso"><b>4 · En sitio</b>«Llegué al sitio».<i>Técnico</i></div><span class="fl">›</span>
+<div class="paso"><b>5 · Atención</b>Registra constancia, trabajo y repuestos.<i>Técnico</i></div>
+</div>
+<p style="font-weight:700;color:#00194C;margin-top:8pt">Al registrar la atención, el estatus final que elige el técnico define cómo queda el ticket:</p>
+<div class="resultados">
+<div style="background:#DDF5F1"><b style="color:#0E5E55">Por confirmar → Concluido</b>El cajero quedó operativo. El administrador da la última confirmación y el ticket concluye.</div>
+<div style="background:#FFF1D6"><b style="color:#8A5A00">Pendiente por repuesto</b>Falta una pieza. Se resuelve con una nueva visita.</div>
+<div style="background:#FFE9D9"><b style="color:#9A3412">Pendiente por validación</b>Requiere revisión técnica, de comunicaciones o de un tercero.</div>
+</div>
+
+<table>
+<thead><tr><th style="width:23%">Estado</th><th>Qué significa</th><th style="width:25%">Cómo se llega</th></tr></thead>
+<tr><td><span class="et e-abierto">Abierto</span></td><td>La falla está registrada pero aún no tiene técnico.</td><td>Al crear el ticket sin asignar.</td></tr>
+<tr><td><span class="et e-asignado">Asignado</span></td><td>Tiene un técnico responsable, que todavía no ha salido.</td><td>Al asignar o reasignar.</td></tr>
+<tr><td><span class="et e-transito">En tránsito</span></td><td>El técnico va hacia el cajero.</td><td>Botón «Voy en camino».</td></tr>
+<tr><td><span class="et e-sitio">En sitio</span></td><td>El técnico llegó. Aquí se detiene el reloj de «llegada».</td><td>Botón «Llegué al sitio».</td></tr>
+<tr><td><span class="et e-repuesto">Pend. repuesto</span></td><td>Se atendió, pero falta una pieza para dejarlo operativo. El reloj sigue corriendo.</td><td>Atención con ese estatus final.</td></tr>
+<tr><td><span class="et e-validacion">Pend. validación</span></td><td>Se atendió, pero depende de una revisión o de un tercero. El reloj sigue corriendo.</td><td>Atención con ese estatus final.</td></tr>
+<tr><td><span class="et e-confirmar">Por confirmar</span></td><td>El técnico informó que el cajero quedó operativo. El reloj se detiene; falta la confirmación del administrador.</td><td>Atención con estatus «Operativo».</td></tr>
+<tr><td><span class="et e-concluido">Concluido</span></td><td>El administrador confirmó el cierre. El ticket ya no admite cambios.</td><td>Botón «Confirmar cierre».</td></tr>
+<tr><td><span class="et e-anulado">Anulado</span></td><td>Se canceló (reporte duplicado, el banco desistió, etc.), con el motivo anotado.</td><td>Botón «Anular».</td></tr>
+</table>
+
+<h2>2.4 Prioridad y metas de tiempo (SLA)</h2>
+<p>Cada ticket tiene una prioridad: <b>Crítica, Alta, Media o Baja</b>. La prioridad determina dos metas de tiempo, contadas siempre desde la apertura del ticket:</p>
+<ul>
+<li><b>Llegada al sitio:</b> tiempo máximo hasta que el técnico marca «Llegué al sitio».</li>
+<li><b>Resolución:</b> tiempo máximo hasta que el cajero queda operativo.</li>
+</ul>
+<table class="estrecha" style="min-width:70%">
+<tr><th>Prioridad</th><th class="c">Meta de llegada</th><th class="c">Meta de resolución</th></tr>
+<tr><td>Crítica</td><td class="c">2 horas</td><td class="c">4 horas</td></tr>
+<tr><td>Alta</td><td class="c">4 horas</td><td class="c">8 horas</td></tr>
+<tr><td>Media</td><td class="c">8 horas</td><td class="c">24 horas</td></tr>
+<tr><td>Baja</td><td class="c">24 horas</td><td class="c">48 horas</td></tr>
+</table>
+<div class="aviso"><b>Atención</b><p>Estos son los valores iniciales de ejemplo con los que se entrega el sistema. El administrador debe ajustarlos a lo acordado con cada banco en <b>Catálogos → SLA</b> (sección 4.11).</p></div>
+<p>Con esas metas, cada ticket muestra un semáforo para la llegada y otro para la resolución:</p>
+<table class="estrecha" style="min-width:70%">
+<tr><th>Semáforo</th><th>Significado</th></tr>
+<tr><td><b style="color:#0B5F8A">En tiempo</b></td><td>Ha transcurrido menos del 80 % de la meta.</td></tr>
+<tr><td><b style="color:#8A5A00">Por vencer</b></td><td>Ha transcurrido el 80 % o más de la meta y aún no se cumple.</td></tr>
+<tr><td><b style="color:#A32020">Vencido</b></td><td>Se superó la meta.</td></tr>
+<tr><td><b style="color:#136C34">Cumplido</b></td><td>La etapa terminó dentro de la meta.</td></tr>
+</table>
+<div class="regla"><b>Regla del sistema</b><p>El reloj corre de forma continua desde la apertura: no se detiene de noche, en fines de semana ni mientras el ticket espera un repuesto. Solo se detiene cuando el técnico registra que el cajero quedó operativo, o cuando el ticket se anula.</p></div>
+
+<h2>2.5 Estatus final del cajero</h2>
+<p>Al registrar una atención, el técnico indica cómo quedó el cajero. Esa respuesta decide el estado del ticket:</p>
+<table>
+<tr><th>Estatus final</th><th>El ticket pasa a…</th></tr>
+<tr><td>Operativo</td><td><span class="et e-confirmar">Por confirmar</span> y, tras la confirmación del administrador, <span class="et e-concluido">Concluido</span></td></tr>
+<tr><td>Operativo / Pendiente por Repuesto</td><td><span class="et e-repuesto">Pend. repuesto</span></td></tr>
+<tr><td>Fuera de Servicio</td><td><span class="et e-validacion">Pend. validación</span></td></tr>
+<tr><td>Fuera de Servicio / Pendiente por 3ero</td><td><span class="et e-validacion">Pend. validación</span></td></tr>
+</table>
+<p>La lista se puede ampliar o ajustar en <b>Catálogos → Estatus final</b> (sección 4.10).</p>
+
+<h2>2.6 Notificaciones</h2>
+<p>El sistema avisa a cada persona cuando ocurre algo que le concierne: al técnico cuando le asignan un ticket, al Call Center cuando el técnico avanza, al administrador cuando hay un cierre por confirmar. Los avisos llegan de dos formas:</p>
+<ul>
+<li><b>En la campana</b> del portal o de la app, con un contador de avisos sin leer.</li>
+<li><b>Como notificación del teléfono o de la computadora</b>, con sonido, aunque la aplicación esté cerrada. Cada persona debe activarlas una vez en cada dispositivo.</li>
+</ul>
+<p>La tabla completa de quién recibe cada aviso está en la sección 6.5.</p>
+
+
+<h1><span class="cap">Capítulo 3</span>3. Acceso al sistema</h1>
+
+<p class="entrada">Todos los usuarios entran por la misma dirección. El sistema reconoce a cada uno y lo lleva a su pantalla: el Monitor para administradores y operadores, «Mis tickets» para los técnicos.</p>
+
+<h2>3.1 Iniciar sesión</h2>
+<figure><img src="capturas/login.jpg" alt="Pantalla de inicio de sesión"><figcaption>Pantalla de inicio de sesión.</figcaption></figure>
+<table>
+<tr><th style="width:26%">Campo</th><th>Qué escribir</th></tr>
+<tr><td><b>Correo o teléfono</b></td><td>Su usuario. Los <b>administradores y operadores</b> entran con su correo. Los <b>técnicos</b> entran con su número de teléfono, escrito como prefieran: <code>0414-1234567</code>, <code>0414 123 4567</code> o <code>+58 414 1234567</code>.</td></tr>
+<tr><td><b>Contraseña</b></td><td>La que usted mismo creó con el enlace de acceso (sección 3.2).</td></tr>
+<tr><td><b>Mantener la sesión iniciada</b></td><td>Si lo marca, el dispositivo lo recuerda durante 30 días. Márquelo solo en equipos de uso personal; viene desmarcado.</td></tr>
+</table>
+<div class="regla"><b>Regla del sistema</b><p>Tras 5 intentos fallidos seguidos, ese usuario queda bloqueado durante 5 minutos desde ese dispositivo. El mensaje de error es siempre el mismo («Usuario o contraseña incorrectos») para no revelar si el usuario existe. Sin actividad, la sesión se cierra sola a las 8 horas.</p></div>
+
+<h2>3.2 Primer ingreso: el enlace de acceso</h2>
+<div class="lado">
+<figure><img src="capturas/m-acceso.jpg" alt="Página del enlace de acceso"><figcaption>Página que abre el enlace de acceso.</figcaption></figure>
+<div>
+<p>Nadie recibe una contraseña ya hecha. El administrador envía a cada usuario un <b>enlace de acceso</b>, normalmente por WhatsApp, y el usuario crea su propia contraseña:</p>
+<ol class="pasos">
+<li>Abra el enlace que recibió. Verá su nombre y el usuario con el que ingresará.</li>
+<li>Escriba su contraseña en <b>Nueva contraseña</b> y repítala. Debe tener <b>al menos 10 caracteres, con letras y números</b>.</li>
+<li>Toque <b>Crear contraseña y entrar</b>. Queda dentro del sistema.</li>
+</ol>
+<div class="regla"><b>Regla del sistema</b><p>El enlace sirve <b>una sola vez</b> y vence a las <b>48 horas</b>. Si venció o ya se usó, pida uno nuevo al administrador. Solo usted conoce su contraseña: el administrador no la ve en ningún momento.</p></div>
+</div>
+</div>
+
+<h2>3.3 Cambiar la contraseña</h2>
+<figure class="media"><img src="capturas/cambiar-clave.jpg" alt="Diálogo para cambiar la contraseña"><figcaption>«Cambiar mi contraseña», desde el ícono de llave del menú.</figcaption></figure>
+<ol class="pasos">
+<li>En el menú, junto a su nombre, toque el <b>ícono de llave</b>.</li>
+<li>Escriba su <b>contraseña actual</b>, la nueva y su repetición.</li>
+<li>Toque <b>Guardar</b>.</li>
+</ol>
+<p>Al cambiarla se cierra su sesión en los demás equipos donde la tuviera abierta; en el equipo donde la cambió sigue abierta.</p>
+<h3>Si olvidó su contraseña</h3>
+<p>Pida al administrador un <b>enlace de acceso nuevo</b>. Es el mismo procedimiento del primer ingreso: lo abre, crea una contraseña nueva y entra. No existe recuperación por correo.</p>
+
+<h2>3.4 Cerrar sesión</h2>
+<p>En el menú, junto a su nombre, toque el <b>ícono de salida</b>. Hágalo siempre al terminar si el equipo es compartido.</p>
+<p>Si un técnico cierra sesión teniendo envíos guardados sin señal, el sistema le advierte que se perderán y le pide confirmar. Si cierra sesión sin conexión, el cierre se completa en el servidor apenas el teléfono recupere la señal.</p>
+
+<h2>3.5 Instalar la aplicación en el teléfono</h2>
+<p>El sistema se puede instalar en el teléfono como una aplicación, con su ícono en la pantalla de inicio. Es necesario hacerlo para recibir notificaciones en iPhone, y recomendable en Android.</p>
+<table>
+<tr><th style="width:50%">Android (Chrome)</th><th>iPhone (Safari)</th></tr>
+<tr><td><ol style="margin:0;padding-left:14pt"><li>Abra la dirección del sistema en Chrome.</li><li>Toque el menú de tres puntos.</li><li>Elija <b>Instalar aplicación</b> o <b>Agregar a pantalla principal</b>.</li><li>Abra ServiPos desde el ícono e inicie sesión.</li></ol></td>
+<td><ol style="margin:0;padding-left:14pt"><li>Abra la dirección del sistema en Safari.</li><li>Toque el botón <b>Compartir</b>.</li><li>Elija <b>Agregar a pantalla de inicio</b>.</li><li>Abra ServiPos desde el ícono nuevo e inicie sesión.</li></ol></td></tr>
+</table>
+<p>Después de instalarla, active las notificaciones cuando la aplicación se lo ofrezca (sección 5.7).</p>
+
+<h2>3.6 Actualizaciones de la aplicación</h2>
+<div class="lado">
+<figure><img src="capturas/m-menu.jpg" alt="Menú con la versión instalada"><figcaption>Versión instalada y botón «Buscar actualización».</figcaption></figure>
+<div>
+<p>No hay que instalar actualizaciones a mano. La aplicación revisa sola si hay una versión nueva: al abrirse, cada 15 minutos, al volver a ella y al recuperar la señal.</p>
+<p>Cuando la encuentra, muestra el aviso <b>«Hay una nueva versión de la aplicación»</b> y la instala <b>al cambiar de pantalla</b>, para no interrumpir un formulario a medio llenar. Si toca el aviso, se instala de inmediato.</p>
+<p>También puede buscarla usted: abra el menú y toque <b>Buscar actualización</b>, debajo de la versión instalada. Si no hay ninguna, responde «Ya tiene la última versión».</p>
+<div class="nota"><b>Nota</b><p>Actualizar no borra nada: los envíos pendientes guardados sin señal se conservan.</p></div>
+</div>
+</div>
