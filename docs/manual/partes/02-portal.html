@@ -105,17 +105,17 @@
 </table>
 
 <h3>Asignar o reasignar</h3>
-<figure class="media"><img src="capturas/ticket-asignar.jpg" alt="Diálogo de asignación"><figcaption>Elección del técnico.</figcaption></figure>
+<figure class="media"><img src="capturas/d-ticket-asignar.jpg" alt="Diálogo de asignación"><figcaption>Elección del técnico.</figcaption></figure>
 <p>Elija el técnico en la lista y confirme. El técnico nuevo recibe el aviso. Si el ticket ya tenía otro técnico y este no llegó a registrar ninguna atención, deja de verlo y de recibir sus avisos; si ya lo había atendido, lo conserva en su historial solo para consulta.</p>
 <div class="regla"><b>Regla del sistema</b><p>Solo se puede asignar a técnicos activos. Un ticket concluido, anulado o «por confirmar» no se puede reasignar.</p></div>
 
 <h3>Editar</h3>
-<figure class="media"><img src="capturas/ticket-editar.jpg" alt="Diálogo de edición"><figcaption>Edición de los datos del ticket.</figcaption></figure>
+<figure class="media"><img src="capturas/d-ticket-editar.jpg" alt="Diálogo de edición"><figcaption>Edición de los datos del ticket.</figcaption></figure>
 <p>Permite corregir la <b>prioridad</b>, el <b>tipo de falla</b>, el <b>N° de caso del banco</b> y el <b>detalle</b>. Cada cambio queda anotado en la actividad del ticket, con el valor anterior y el nuevo.</p>
 <div class="aviso"><b>Atención</b><p>Cambiar la prioridad cambia las metas de SLA del ticket, y el semáforo se recalcula con las nuevas.</p></div>
 
 <h3>Anular</h3>
-<figure class="media"><img src="capturas/ticket-anular.jpg" alt="Diálogo de anulación"><figcaption>La anulación exige un motivo.</figcaption></figure>
+<figure class="media"><img src="capturas/d-ticket-anular.jpg" alt="Diálogo de anulación"><figcaption>La anulación exige un motivo.</figcaption></figure>
 <p>Use <b>Anular</b> para reportes duplicados o cuando el banco cancela la solicitud. El motivo es obligatorio, queda en el historial y se le notifica al técnico asignado.</p>
 <div class="aviso"><b>Atención</b><p>La anulación no se puede deshacer. Un ticket anulado no admite más cambios.</p></div>
 
@@ -140,9 +140,9 @@
 <li>El administrador abre el ticket (desde el aviso, la franja del Monitor o la pestaña <b>Por confirmar</b>) y revisa la atención, los repuestos y la constancia.</li>
 <li>Elige una de dos acciones: <b>Confirmar cierre</b> o <b>Devolver al técnico</b>.</li>
 </ol>
-<figure class="media"><img src="capturas/ticket-confirmar-dialogo.jpg" alt="Diálogo de confirmación del cierre"><figcaption>Última confirmación, con el resumen de la atención.</figcaption></figure>
+<figure class="media"><img src="capturas/d-ticket-confirmar-dialogo.jpg" alt="Diálogo de confirmación del cierre"><figcaption>Última confirmación, con el resumen de la atención.</figcaption></figure>
 <p><b>Confirmar cierre</b> muestra un resumen (técnico, estatus final y constancia) y permite agregar una observación. Con <b>Sí, cerrar ticket</b> el ticket queda <span class="et e-concluido">Concluido</span>, se registra quién confirmó y cuándo, y se avisa al Call Center y al técnico.</p>
-<figure class="media"><img src="capturas/ticket-devolver.jpg" alt="Diálogo para devolver el ticket"><figcaption>Devolución al técnico, con motivo obligatorio.</figcaption></figure>
+<figure class="media"><img src="capturas/d-ticket-devolver.jpg" alt="Diálogo para devolver el ticket"><figcaption>Devolución al técnico, con motivo obligatorio.</figcaption></figure>
 <p><b>Devolver al técnico</b> se usa cuando el cierre no se da por bueno: el banco reporta que el cajero sigue fallando, falta la foto de la constancia, etc. El ticket vuelve a <span class="et e-asignado">Asignado</span> y el técnico recibe el aviso con el motivo.</p>
 <div class="regla"><b>Regla del sistema</b><p>El tiempo de resolución y el SLA se miden hasta la hora en que el técnico terminó, no hasta la confirmación: la demora del administrador en confirmar no perjudica el indicador. Si el ticket se devuelve, el reloj continúa desde la apertura original. Mientras un ticket espera confirmación no se puede registrar otra atención ni reasignarlo.</p></div>
 <p>Los operadores y los técnicos ven estos tickets con una nota que indica que falta la confirmación del administrador, sin los botones.</p>
@@ -214,7 +214,7 @@
 <p>Es el maestro de cajeros automáticos. Los operadores lo consultan; solo el administrador crea o modifica.</p>
 <figure><img src="capturas/cajeros.jpg" alt="Maestro de cajeros"><figcaption>Maestro de cajeros.</figcaption></figure>
 <p>La lista muestra N° de ATM, serial, agencia con su código y tipo, estado, modelo, banco y cuántos tickets abiertos tiene. Se busca por N° de ATM, serial, agencia o código, y se filtra por estado. Al tocar el número se abre la hoja de vida.</p>
-<figure class="media"><img src="capturas/cajero-editar.jpg" alt="Formulario de cajero"><figcaption>Alta y edición de un cajero.</figcaption></figure>
+<figure class="media"><img src="capturas/d-cajero-editar.jpg" alt="Formulario de cajero"><figcaption>Alta y edición de un cajero.</figcaption></figure>
 <table>
 <thead><tr><th style="width:26%">Campo</th><th class="c" style="width:13%">Obligatorio</th><th>Descripción</th></tr></thead>
 <tr><td><b>N° de ATM</b></td><td class="si">Sí</td><td>Identificador del cajero. No se puede repetir.</td></tr>
@@ -257,7 +257,7 @@
 <h2>4.12 Usuarios y técnicos</h2>
 <figure><img src="capturas/usuarios.jpg" alt="Usuarios y técnicos"><figcaption>Lista de usuarios, con su último ingreso.</figcaption></figure>
 <p>La lista muestra, por cada usuario, su nombre y <b>con qué inicia sesión</b> (teléfono o correo), su rol, los estados que cubre, su <b>último ingreso</b> y sus tickets activos. Se puede filtrar por rol. La etiqueta <b>Nunca ingresó</b> señala a quien aún no ha entrado, y <b>Enlace enviado</b> a quien tiene un enlace de acceso vigente.</p>
-<figure class="media"><img src="capturas/usuario-editar.jpg" alt="Formulario de usuario"><figcaption>Alta y edición de un usuario.</figcaption></figure>
+<figure class="media"><img src="capturas/d-usuario-editar.jpg" alt="Formulario de usuario"><figcaption>Alta y edición de un usuario.</figcaption></figure>
 <table>
 <thead><tr><th style="width:26%">Campo</th><th>Descripción</th></tr></thead>
 <tr><td><b>Nombre completo</b></td><td>Obligatorio.</td></tr>
@@ -269,7 +269,7 @@
 <tr><td><b>Puede iniciar sesión</b></td><td>Al apagarlo, el usuario queda desactivado.</td></tr>
 </table>
 <h3>Dar acceso a un usuario</h3>
-<figure class="media"><img src="capturas/usuario-acceso.jpg" alt="Diálogo para enviar acceso"><figcaption>«Enviar acceso» genera un enlace de un solo uso.</figcaption></figure>
+<figure class="media"><img src="capturas/d-usuario-acceso.jpg" alt="Diálogo para enviar acceso"><figcaption>«Enviar acceso» genera un enlace de un solo uso.</figcaption></figure>
 <ol class="pasos">
 <li>Verifique que el usuario tenga cargado su teléfono (técnicos) o su correo.</li>
 <li>En su fila, toque <b>Enviar acceso</b> y luego <b>Generar enlace</b>.</li>
@@ -326,7 +326,7 @@
 <h2>4.15 Notificaciones en el portal</h2>
 <figure><img src="capturas/campana.jpg" alt="Campana de notificaciones"><figcaption>Campana con los avisos recibidos.</figcaption></figure>
 <p>La <b>campana</b>, arriba en el menú, muestra un número rojo con los avisos sin leer. Al abrirla aparecen los últimos avisos; al tocar uno se abre el ticket y queda leído. <b>Marcar leídas</b> los limpia todos. Con la aplicación abierta, cada aviso nuevo suena y se muestra en una esquina.</p>
-<figure class="media"><img src="capturas/avisos-ajustes.jpg" alt="Ajustes de notificaciones"><figcaption>Ajustes de notificaciones (ícono de engranaje de la campana).</figcaption></figure>
+<figure class="media"><img src="capturas/d-avisos-ajustes.jpg" alt="Ajustes de notificaciones"><figcaption>Ajustes de notificaciones (ícono de engranaje de la campana).</figcaption></figure>
 <table>
 <tr><th style="width:30%">Ajuste</th><th>Para qué sirve</th></tr>
 <tr><td><b>En este dispositivo</b></td><td><b>Activar en este dispositivo</b> permite que los avisos lleguen aunque el sistema esté cerrado. Hay que hacerlo una vez en cada computadora o teléfono. <b>Enviar prueba</b> comprueba que funcionan; <b>Desactivar aquí</b> los detiene en ese equipo.</td></tr>

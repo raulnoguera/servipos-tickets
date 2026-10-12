@@ -2,7 +2,9 @@
 //   pdf render <entrada.html> <salida.pdf> <margenSup> <margenInf> <margenLat>
 //   pdf paginas <archivo.pdf>                      → texto de cada página (para armar el índice)
 //   pdf png <archivo.pdf> <página> <salida.png> [escala]
-//   pdf armar <portada.pdf> <cuerpo.pdf> <salida.pdf> <título del pie>
+//   pdf hoja <archivo.pdf> <primera> <cuántas> <salida.png> [escala]   → varias páginas en una imagen
+//   pdf armar <portada.pdf> <cuerpo.pdf> <salida.pdf> <título del pie> [marcadores.tsv]
+//     marcadores.tsv: nivel <tab> página del cuerpo <tab> título (panel de marcadores del PDF)
 import Cocoa
 import WebKit
 import PDFKit
@@ -62,7 +64,7 @@ func pageTexts(_ path: String) {
     }
 }
 
-func assemble(cover: String, body: String, out: String, title: String) {
+func assemble(cover: String, body: String, out: String, title: String, outline: String?) {
     guard let c = CGPDFDocument(URL(fileURLWithPath: cover) as CFURL), let b = CGPDFDocument(URL(fileURLWithPath: body) as CFURL) else { print("no se pudieron abrir los PDF"); exit(1) }
     var box = CGRect(x: 0, y: 0, width: 612, height: 792)
     guard let ctx = CGContext(URL(fileURLWithPath: out) as CFURL, mediaBox: &box, [kCGPDFContextTitle: title, kCGPDFContextAuthor: "GT Consulting", kCGPDFContextCreator: "ServiPos Tickets"] as CFDictionary) else { exit(1) }
@@ -82,6 +84,9 @@ func assemble(cover: String, body: String, out: String, title: String) {
     for n in 1...total {
         ctx.beginPDFPage(nil)
         draw(b, n)
+        // Cabecera: cliente y desarrollador.
+        text("ServiPos 2019, C.A.", bold, gray, x: 54, y: 760)
+        text("Desarrollado por GT Consulting", font, gray, x: 558, y: 760, right: true)
         // Pie: línea, título del documento y número de página.
         ctx.setStrokeColor(CGColor(red: 0.86, green: 0.89, blue: 0.93, alpha: 1)); ctx.setLineWidth(0.7)
         ctx.move(to: CGPoint(x: 54, y: 44)); ctx.addLine(to: CGPoint(x: 558, y: 44)); ctx.strokePath()
@@ -90,6 +95,24 @@ func assemble(cover: String, body: String, out: String, title: String) {
         ctx.endPDFPage()
     }
     ctx.closePDF()
+    if let outline, let rows = try? String(contentsOfFile: outline, encoding: .utf8), let doc = PDFDocument(url: URL(fileURLWithPath: out)) {
+        let root = PDFOutline()
+        var chapter: PDFOutline?
+        for row in rows.split(separator: "\n") {
+            let f = row.split(separator: "\t", maxSplits: 2).map(String.init)
+            guard f.count == 3, let n = Int(f[1]), let page = doc.page(at: c.numberOfPages + n - 1) else { continue }
+            let item = PDFOutline()
+            item.label = f[2]
+            item.destination = PDFDestination(page: page, at: CGPoint(x: 0, y: 792))
+            if f[0] == "1" || chapter == nil {
+                root.insertChild(item, at: root.numberOfChildren); chapter = item; item.isOpen = false
+            } else {
+                chapter!.insertChild(item, at: chapter!.numberOfChildren)
+            }
+        }
+        doc.outlineRoot = root
+        doc.write(to: URL(fileURLWithPath: out))
+    }
     print("ok \(URL(fileURLWithPath: out).lastPathComponent): \(c.numberOfPages + total) páginas")
 }
 
@@ -107,12 +130,35 @@ func png(_ path: String, _ pageNumber: Int, _ out: String, _ scale: CGFloat) {
     print("ok \(out) (\(doc.numberOfPages) páginas en total)")
 }
 
+/// Varias páginas en una sola imagen (4 por fila), para revisar la maquetación de un vistazo.
+func sheet(_ path: String, _ first: Int, _ count: Int, _ out: String, _ scale: CGFloat) {
+    guard let doc = CGPDFDocument(URL(fileURLWithPath: path) as CFURL) else { exit(1) }
+    let last = min(doc.numberOfPages, first + count - 1), cols = 4
+    let rows = Int(ceil(Double(last - first + 1) / Double(cols)))
+    let pw = 612 * scale, ph = 792 * scale, gap: CGFloat = 6
+    let w = Int(CGFloat(cols) * (pw + gap) + gap), h = Int(CGFloat(rows) * (ph + gap) + gap)
+    guard let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { exit(1) }
+    ctx.setFillColor(CGColor(red: 0.45, green: 0.45, blue: 0.5, alpha: 1)); ctx.fill(CGRect(x: 0, y: 0, width: w, height: h))
+    for n in first...last {
+        let i = n - first, x = gap + CGFloat(i % cols) * (pw + gap), y = CGFloat(h) - gap - ph - CGFloat(i / cols) * (ph + gap)
+        ctx.saveGState()
+        ctx.translateBy(x: x, y: y); ctx.scaleBy(x: scale, y: scale)
+        ctx.setFillColor(CGColor(red: 1, green: 1, blue: 1, alpha: 1)); ctx.fill(CGRect(x: 0, y: 0, width: 612, height: 792))
+        if let page = doc.page(at: n) { ctx.drawPDFPage(page) }
+        ctx.restoreGState()
+    }
+    guard let image = ctx.makeImage(), let data = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]) else { exit(1) }
+    try? data.write(to: URL(fileURLWithPath: out))
+    print("ok \(out): páginas \(first)–\(last)")
+}
+
 let a = CommandLine.arguments
 setbuf(stdout, nil)
 switch a.count > 1 ? a[1] : "" {
 case "paginas": pageTexts(a[2])
 case "png": png(a[2], Int(a[3])!, a[4], a.count > 5 ? CGFloat(Double(a[5])!) : 1.4)
-case "armar": assemble(cover: a[2], body: a[3], out: a[4], title: a[5])
+case "hoja": sheet(a[2], Int(a[3])!, Int(a[4])!, a[5], a.count > 6 ? CGFloat(Double(a[6])!) : 0.6)
+case "armar": assemble(cover: a[2], body: a[3], out: a[4], title: a[5], outline: a.count > 6 ? a[6] : nil)
 case "render":
     let app = NSApplication.shared
     app.setActivationPolicy(.accessory)

@@ -22,6 +22,13 @@ h1 .cap { display: block; font-family: 'Plus Jakarta Sans', sans-serif; font-siz
 h2 { font-family: 'Urbanist', sans-serif; font-weight: 800; font-size: 15pt; line-height: 1.2; color: var(--navy); margin: 18pt 0 7pt; break-after: avoid; }
 h3 { font-size: 10.8pt; font-weight: 700; color: var(--ink); margin: 12pt 0 5pt; break-after: avoid; }
 h2 + p, h3 + p { break-before: avoid; }
+/* Un título nunca queda solo al pie: reserva espacio debajo (WebKit ignora break-after al imprimir)… */
+h2, h3 { break-inside: avoid; padding-bottom: 64pt; }
+h2 { margin-bottom: -57pt; }
+h3 { margin-bottom: -59pt; }
+/* …y armar.py lo agrupa con el bloque que le sigue cuando ese bloque no se puede partir. */
+/* Va como bloque en línea: WebKit lo trata como una pieza indivisible, aunque dentro haya una figura. */
+.grupo { display: inline-block; width: 100%; vertical-align: top; }
 .entrada { font-size: 11pt; line-height: 1.5; color: var(--ink); margin-bottom: 12pt; }
 
 ul, ol { margin: 0 0 8pt; padding-left: 16pt; }
@@ -41,6 +48,8 @@ td.c, th.c { text-align: center; }
 td.si { text-align: center; color: #136C34; font-weight: 700; }
 td.no { text-align: center; color: #A3ACBF; }
 .estrecha { width: auto; }
+/* Las tablas cortas no se parten entre páginas (armar.py les pone esta clase). */
+table.junta { break-inside: avoid; }
 
 /* Avisos */
 .nota, .aviso, .regla, .consejo { break-inside: avoid; border-radius: 6pt; padding: 8pt 11pt; margin: 8pt 0 12pt; font-size: 9.1pt; }
@@ -48,7 +57,7 @@ td.no { text-align: center; color: #A3ACBF; }
 .aviso { background: #FFF6E0; border-left: 3pt solid #D98E00; }
 .regla { background: var(--soft); border-left: 3pt solid var(--navy); }
 .consejo { background: #E7F6EC; border-left: 3pt solid #1E8E4A; }
-.nota b:first-child, .aviso b:first-child, .regla b:first-child, .consejo b:first-child { display: block; margin-bottom: 2pt; font-size: 8.4pt; letter-spacing: 0.8pt; text-transform: uppercase; }
+.nota > b:first-child, .aviso > b:first-child, .regla > b:first-child, .consejo > b:first-child { display: block; margin-bottom: 2pt; font-size: 8.4pt; letter-spacing: 0.8pt; text-transform: uppercase; }
 .nota p:last-child, .aviso p:last-child, .regla p:last-child, .consejo p:last-child { margin-bottom: 0; }
 
 /* Figuras */
@@ -57,7 +66,7 @@ figure { margin: 10pt 0 14pt; break-inside: avoid; counter-increment: figura; }
 figure img { display: block; width: 100%; border: 0.7pt solid var(--line); border-radius: 6pt; }
 figcaption { margin-top: 5pt; font-size: 8.3pt; color: var(--muted); text-align: center; }
 figcaption::before { content: 'Figura ' counter(figura) '. '; font-weight: 700; color: var(--navy); }
-figure.media img { width: 78%; margin: 0 auto; }
+figure.media img { width: 62%; margin: 0 auto; }
 .moviles { display: flex; gap: 14pt; justify-content: center; align-items: flex-start; margin: 10pt 0 14pt; break-inside: avoid; }
 .moviles figure { margin: 0; width: 150pt; }
 .moviles figure img { border: 3pt solid #0F1A3A; border-radius: 14pt; }
@@ -91,8 +100,8 @@ figure.media img { width: 78%; margin: 0 auto; }
 .indice h1 { break-before: auto; }
 .indice ol { list-style: none; padding: 0; margin: 0; }
 .indice li { margin: 0; }
-.indice .n1 { display: flex; align-items: baseline; gap: 6pt; margin-top: 9pt; font-weight: 700; color: var(--navy); font-size: 10.4pt; }
-.indice .n2 { display: flex; align-items: baseline; gap: 6pt; padding-left: 16pt; font-size: 9.2pt; color: var(--body); margin-top: 1.5pt; }
+.indice .n1 { display: flex; align-items: baseline; gap: 6pt; margin-top: 7.5pt; font-weight: 700; color: var(--navy); font-size: 10.2pt; }
+.indice .n2 { display: flex; align-items: baseline; gap: 6pt; padding-left: 16pt; font-size: 9pt; line-height: 1.38; color: var(--body); margin-top: 1pt; }
 .indice .pt { flex: 1; border-bottom: 0.8pt dotted #B7C1D6; transform: translateY(-2.5pt); }
 .indice .pg { font-variant-numeric: tabular-nums; min-width: 16pt; text-align: right; }
 .ficha { width: auto; min-width: 62%; }
