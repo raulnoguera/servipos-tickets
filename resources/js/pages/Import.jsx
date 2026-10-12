@@ -28,7 +28,7 @@ export default function Import() {
             setReport(r);
             if (!r.simulated) {
                 queryClient.invalidateQueries();
-                toast('Importación completada');
+                toast(r.emails?.tickets ? `Importación completada. Se abrieron ${r.emails.tickets} ticket(s) de correos del banco que esperaban por sus cajeros.` : 'Importación completada');
             }
         },
     });

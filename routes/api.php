@@ -73,6 +73,7 @@ Route::prefix('v1')->group(function () {
             Route::get('reports/parts', [ReportController::class, 'parts'])->middleware('throttle:heavy');
             Route::get('reports/consolidado', [ReportController::class, 'consolidado'])->middleware('throttle:heavy');
             Route::get('inbound-emails', [InboundEmailController::class, 'index']);
+            Route::post('inbound-emails/reevaluate', [InboundEmailController::class, 'reevaluate'])->middleware('throttle:heavy');
             Route::post('inbound-emails/{email}/ticket', [InboundEmailController::class, 'ticket']);
             Route::post('inbound-emails/{email}/ignore', [InboundEmailController::class, 'ignore']);
         });

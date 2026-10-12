@@ -79,6 +79,15 @@ class InboundEmailController extends Controller
         return response()->json(['data' => new TicketResource($ticket->load(['atm.bank', 'atm.state', 'faultType']))], 201);
     }
 
+    /** Vuelve a evaluar los correos por revisar: útil después de cargar o corregir cajeros. */
+    public function reevaluate(InboundMailProcessor $processor, AuditLogger $audit): JsonResponse
+    {
+        $result = $processor->reevaluatePending();
+        $audit->record('email.reevaluated', "Correos por revisar reevaluados: {$result['tickets']} ticket(s) abiertos, {$result['follow_ups']} agregados, {$result['pending']} siguen pendientes", meta: $result);
+
+        return response()->json($result);
+    }
+
     public function ignore(Request $request, InboundEmail $email, AuditLogger $audit): JsonResponse
     {
         $this->ensurePending($email);

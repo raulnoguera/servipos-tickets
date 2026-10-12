@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** Correo de reporte de falla recibido en el buzón de la empresa. */
-#[Fillable(['message_id', 'from_email', 'from_name', 'subject', 'sent_at', 'body', 'status', 'reason', 'parsed', 'atm_id', 'ticket_id', 'handled_by', 'handled_at'])]
+#[Fillable(['message_id', 'from_email', 'from_name', 'subject', 'sent_at', 'body', 'status', 'trusted', 'reason', 'parsed', 'atm_id', 'ticket_id', 'handled_by', 'handled_at'])]
 class InboundEmail extends Model
 {
     /** Abrió un ticket (solo, o a mano desde la bandeja). */
@@ -26,7 +26,7 @@ class InboundEmail extends Model
     /** @return array<string, string> */
     protected function casts(): array
     {
-        return ['sent_at' => 'datetime', 'handled_at' => 'datetime', 'parsed' => 'array'];
+        return ['sent_at' => 'datetime', 'handled_at' => 'datetime', 'parsed' => 'array', 'trusted' => 'boolean'];
     }
 
     public function atm(): BelongsTo

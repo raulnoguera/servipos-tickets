@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\AuditLogger;
 use App\Services\Import\ExcelHistoryImporter;
 use App\Services\Import\ImportException;
+use App\Services\Inbound\InboundMailProcessor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -14,7 +15,7 @@ use Throwable;
 /** Importación del consolidado histórico desde el panel (RNF Migración). */
 class ImportController extends Controller
 {
-    public function __invoke(Request $request, ExcelHistoryImporter $importer, AuditLogger $audit): JsonResponse
+    public function __invoke(Request $request, ExcelHistoryImporter $importer, AuditLogger $audit, InboundMailProcessor $processor): JsonResponse
     {
         $data = $request->validate([
             'file' => ['required', 'file', 'mimes:xlsx', 'max:20480'],
@@ -32,6 +33,8 @@ class ImportController extends Controller
             report($e);
             throw ValidationException::withMessages(['file' => 'No se pudo procesar el archivo. Verifique que sea el Libro Consolidado en formato .xlsx y que no tenga datos repetidos.']);
         }
+        // Con los cajeros recién cargados, los reportes del banco que esperaban por ellos ya pueden abrir su ticket.
+        $emails = $request->boolean('simulate') || $report->hasErrors() ? null : $processor->reevaluatePending();
         $audit->record(
             'import.excel',
             ($request->boolean('simulate') ? 'Simulación de importación' : 'Importación').' del Excel histórico · '.$request->file('file')->getClientOriginalName(),
@@ -43,6 +46,7 @@ class ImportController extends Controller
             'counts' => $report->counts,
             'notes' => $report->notes,
             'has_errors' => $report->hasErrors(),
+            'emails' => $emails,
         ]);
     }
 }

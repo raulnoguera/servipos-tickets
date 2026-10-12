@@ -72,8 +72,16 @@ class InboundMailProcessor
             'body' => mb_strimwidth($this->parser->ownText($mail->text), 0, 8000, '…'),
             'parsed' => $parsed,
         ]);
-
         $distrust = $this->distrust($mail);
+        $email->trusted = $distrust === null;
+
+        return $this->decide($email, $distrust);
+    }
+
+    /** Qué hacer con un correo, dado lo que dice y si se confía en quien lo envía. */
+    private function decide(InboundEmail $email, ?string $distrust): InboundEmail
+    {
+        $parsed = $email->parsed;
         if (! $parsed['atm_number'] && ! $parsed['serial']) {
             return $distrust
                 ? $this->close($email, InboundEmail::IGNORED, $distrust.' y el correo no menciona ningún cajero.')
@@ -106,6 +114,60 @@ class InboundMailProcessor
         $email->ticket_id = $this->openTicket($email, $atm, null)->id;
 
         return $this->close($email, InboundEmail::TICKET);
+    }
+
+    /**
+     * Vuelve a evaluar un correo que quedó por revisar, con los datos de ahora:
+     * sirve cuando el cajero no existía al llegar el correo y ya se cargó. Solo
+     * se reevalúan los que vinieron de un banco verificado; el resto sigue
+     * esperando a una persona.
+     */
+    public function reevaluate(InboundEmail $email, bool $notify = true): InboundEmail
+    {
+        $resolved = false;
+        $email = DB::transaction(function () use ($email, &$resolved) {
+            $email = InboundEmail::whereKey($email->id)->lockForUpdate()->firstOrFail();
+            if ($email->status !== InboundEmail::REVIEW || ! $email->trusted) {
+                return $email;
+            }
+            $email->parsed = $this->parser->parse($email->subject, $email->body);
+            $email = $this->decide($email, null);
+            $resolved = $email->status !== InboundEmail::REVIEW;
+
+            return $email;
+        });
+
+        if ($notify && $resolved) {
+            try {
+                $this->announce($email);
+            } catch (Throwable $e) {
+                report($e);
+            }
+        }
+
+        return $email;
+    }
+
+    /**
+     * Reevalúa todos los correos por revisar, del más antiguo al más reciente.
+     *
+     * @return array{evaluated: int, tickets: int, follow_ups: int, pending: int}
+     */
+    public function reevaluatePending(bool $notify = true): array
+    {
+        $result = ['evaluated' => 0, 'tickets' => 0, 'follow_ups' => 0, 'pending' => 0];
+        InboundEmail::where('status', InboundEmail::REVIEW)->where('trusted', true)->orderBy('sent_at')->orderBy('id')->get()
+            ->each(function (InboundEmail $email) use (&$result, $notify) {
+                $result['evaluated']++;
+                match ($this->reevaluate($email, $notify)->status) {
+                    InboundEmail::TICKET => $result['tickets']++,
+                    InboundEmail::FOLLOW_UP => $result['follow_ups']++,
+                    default => null,
+                };
+            });
+        $result['pending'] = InboundEmail::where('status', InboundEmail::REVIEW)->count();
+
+        return $result;
     }
 
     /** Abre el ticket de un correo; `$by` es quien lo decide a mano desde la bandeja, o nadie si fue automático. */

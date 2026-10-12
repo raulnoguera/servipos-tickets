@@ -242,6 +242,37 @@ class InboundEmailTest extends TestCase
         $this->actingAs($operator)->getJson('/api/v1/inbound-emails')->assertJsonPath('meta.last_error', null);
     }
 
+    public function test_emails_that_waited_for_a_missing_atm_are_resolved_when_reevaluated(): void
+    {
+        $operator = User::factory()->create();
+        $technician = User::factory()->technician()->create();
+        $sentAt = CarbonImmutable::now()->subDay()->startOfSecond();
+
+        // Llegan antes de que el cajero exista en el maestro.
+        $waiting = $this->process("ATM 7001 Agencia Nueva\nSerial: NUEVO001\nFalla: LECTORA", ['at' => $sentAt]);
+        $second = $this->process("ATM 7001 Agencia Nueva\nSerial: NUEVO001\nFalla: LECTORA\nObservación: Sigue igual.");
+        $mismatch = $this->process("ATM A1916524\nSerial: XXX00000\nFalla: X");
+        $untrusted = $this->process("ATM 7001\nSerial: NUEVO001\nFalla: X", ['from' => 'alguien@otro.test', 'verified' => ['otro.test']]);
+        $this->assertSame([InboundEmail::REVIEW, true, false], [$waiting->status, $waiting->trusted, $untrusted->trusted]);
+
+        $atm = Atm::factory()->create(['atm_number' => 'A1917001', 'serial' => 'NUEVO001']);
+
+        $this->actingAs($technician)->postJson('/api/v1/inbound-emails/reevaluate')->assertForbidden();
+        $this->actingAs($operator)->postJson('/api/v1/inbound-emails/reevaluate')
+            ->assertOk()->assertExactJson(['evaluated' => 3, 'tickets' => 1, 'follow_ups' => 1, 'pending' => 2]);
+
+        // El más antiguo abre el ticket, contado desde que el banco escribió; el siguiente se suma a ese ticket.
+        $ticket = $waiting->refresh()->ticket;
+        $this->assertSame([InboundEmail::TICKET, $atm->id, 'email', null], [$waiting->status, $ticket->atm_id, $ticket->source, $waiting->reason]);
+        $this->assertTrue($ticket->opened_at->equalTo($sentAt));
+        $this->assertSame([InboundEmail::FOLLOW_UP, $ticket->id], [$second->refresh()->status, $second->ticket_id]);
+
+        // Lo que sigue siendo dudoso, y lo que no vino de un banco verificado, sigue esperando a una persona.
+        $this->assertSame(InboundEmail::REVIEW, $mismatch->refresh()->status);
+        $this->assertSame([InboundEmail::REVIEW, null], [$untrusted->refresh()->status, $untrusted->ticket_id]);
+        $this->assertSame(1, Ticket::count());
+    }
+
     public function test_staff_resolve_emails_waiting_for_review(): void
     {
         $operator = User::factory()->create();

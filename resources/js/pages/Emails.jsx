@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Mail, MailCheck, Search } from 'lucide-react';
+import { Mail, MailCheck, RefreshCw, Search } from 'lucide-react';
 import { api } from '../lib/api';
 import { formatDateTime } from '../lib/format';
 import { useCatalogs } from '../lib/queries';
@@ -195,6 +195,16 @@ export default function Emails() {
         refetchInterval: 30000,
     });
     const counts = data?.meta.counts ?? {};
+    const queryClient = useQueryClient();
+    const reevaluate = useMutation({
+        mutationFn: () => api('inbound-emails/reevaluate', { method: 'POST' }),
+        onSuccess: (r) => {
+            ['emails', 'tickets', 'dashboard'].forEach((key) => queryClient.invalidateQueries({ queryKey: [key] }));
+            const solved = [r.tickets && `${r.tickets} ticket(s) abierto(s)`, r.follow_ups && `${r.follow_ups} agregado(s) a tickets abiertos`].filter(Boolean).join(' y ');
+            toast(solved ? `${solved}. ${r.pending ? `Siguen por revisar: ${r.pending}.` : 'No queda nada por revisar.'}` : 'Ningún correo pudo resolverse solo: siguen necesitando una decisión.');
+        },
+        onError: (e) => toast(e.message, 'error'),
+    });
     const tab = (value, label) => ({ value, label: counts[value] ? `${label} (${counts[value]})` : label });
 
     return (
@@ -202,6 +212,11 @@ export default function Emails() {
             <PageHeader
                 title="Correos del banco"
                 subtitle="Reportes de falla que llegan al buzón. El sistema abre el ticket cuando reconoce el banco y el cajero; los que generan dudas esperan aquí a que alguien decida."
+                actions={counts.revisar > 0 && (
+                    <Button variant="secondary" icon={RefreshCw} onClick={() => reevaluate.mutate()} loading={reevaluate.isPending} title="Después de cargar o corregir cajeros, intenta de nuevo con los correos por revisar">
+                        Volver a evaluar
+                    </Button>
+                )}
             />
             <Reading meta={data?.meta} />
             <Card>
