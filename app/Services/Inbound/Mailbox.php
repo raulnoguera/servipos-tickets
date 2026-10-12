@@ -19,6 +19,8 @@ class Mailbox
     /** Cada lectura revisa los últimos días, por si el servidor estuvo sin poder leer. */
     private const LOOK_BACK_DAYS = 3;
 
+    public function __construct(private DkimVerifier $dkim) {}
+
     public function configured(): bool
     {
         return filled(config('inbound.host')) && filled(config('inbound.username'))
@@ -82,7 +84,7 @@ class Mailbox
                 }
                 /** @var Message $message */
                 $message = $folder->query()->leaveUnread()->getMessageByUid($header->getUid());
-                $mail = IncomingMail::fromMessage($message, config('inbound.trusted_authserv'));
+                $mail = IncomingMail::fromMessage($message, $this->dkim);
                 if ($mail->sentAt->greaterThanOrEqualTo($since)) {
                     yield $mail;
                 }

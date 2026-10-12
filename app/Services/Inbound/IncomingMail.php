@@ -18,15 +18,14 @@ final readonly class IncomingMail
         public CarbonImmutable $sentAt,
         public string $text,
         /**
-         * Dominios cuya autenticidad confirmó el servidor de correo de la empresa (SPF o DKIM).
-         * Puede haber más de uno si el correo llegó reenviado desde otro buzón de la empresa.
+         * Dominios con una firma DKIM válida en el mensaje ({@see DkimVerifier}).
          *
          * @var list<string>
          */
         public array $verifiedDomains = [],
     ) {}
 
-    public static function fromMessage(Message $message, string $trustedAuthserv): self
+    public static function fromMessage(Message $message, DkimVerifier $dkim): self
     {
         $from = $message->getFrom()[0] ?? null;
         $email = strtolower(trim((string) ($from->mail ?? '')));
@@ -46,37 +45,8 @@ final readonly class IncomingMail
             subject: Str::limit(trim((string) $message->getSubject()), 480, '…') ?: null,
             sentAt: $sentAt,
             text: mb_scrub($text, 'UTF-8'),
-            verifiedDomains: self::verifiedDomains($message, $trustedAuthserv),
+            verifiedDomains: $dkim->verifiedDomains(rtrim((string) $message->getHeader()?->raw, "\r\n")."\r\n\r\n".$message->getRawBody()),
         );
-    }
-
-    /**
-     * Lee la cabecera Authentication-Results que agrega el servidor de la empresa
-     * al recibir el correo. Las que no vienen de ese servidor se descartan: el
-     * remitente puede escribir cualquier cabecera, esa no.
-     *
-     * @return list<string>
-     */
-    private static function verifiedDomains(Message $message, string $trustedAuthserv): array
-    {
-        if ($trustedAuthserv === '') {
-            return [];
-        }
-        $domains = [];
-        foreach ($message->getHeader()?->get('authentication_results')?->toArray() ?? [] as $result) {
-            $result = strtolower(preg_replace('/\s+/', ' ', (string) $result));
-            if (! str_ends_with(trim(strtok($result, ';')), $trustedAuthserv)) {
-                continue;
-            }
-            if (preg_match('/\bdkim=pass\b[^;]*\bheader\.d=([a-z0-9.-]+)/', $result, $m)) {
-                $domains[] = $m[1];
-            }
-            if (preg_match('/\bspf=pass\b[^;]*\bsmtp\.mailfrom=(?:[^@;\s]*@)?([a-z0-9.-]+)/', $result, $m)) {
-                $domains[] = $m[1];
-            }
-        }
-
-        return array_values(array_unique($domains));
     }
 
     private static function plain(string $html): string

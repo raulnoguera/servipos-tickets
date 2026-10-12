@@ -10,6 +10,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use App\Models\UserNotification;
 use App\Services\Inbound\BankReportParser;
+use App\Services\Inbound\DkimVerifier;
 use App\Services\Inbound\InboundMailProcessor;
 use App\Services\Inbound\IncomingMail;
 use Carbon\CarbonImmutable;
@@ -148,39 +149,51 @@ class InboundEmailTest extends TestCase
         $this->assertSame(InboundEmail::IGNORED, $spam->status);
     }
 
-    public function test_real_message_headers_decide_who_is_verified(): void
+    public function test_only_a_valid_signature_from_the_bank_counts_as_verified(): void
     {
-        // Reenviado dentro de la empresa: la cabecera de arriba es del reenvío; la original sigue debajo.
-        $raw = fn (string $authserv) => implode("\r\n", [
-            'Authentication-Results: entrada.antispam.hosting.test; spf=pass smtp.mailfrom=empresa.test; dkim=none',
-            "Authentication-Results: {$authserv}; spf=pass smtp.mailfrom=banco.test; dkim=pass header.d=banco.test header.s=x",
-            'From: Mesa de Ayuda <reportes@banco.test>',
+        $key = openssl_pkey_new(['private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA]);
+        $public = preg_replace('/-----[^-]+-----|\s+/', '', openssl_pkey_get_details($key)['key']);
+        $dkim = new DkimVerifier(fn (string $selector, string $domain) => [$selector, $domain] === ['sel', 'banco.test'] ? $public : null);
+
+        $from = 'From: Mesa de Ayuda <reportes@banco.test>';
+        $body = "Buenos d=EDas.\r\n\r\nATM 6524 Maracay Centro\r\nSerial: RDC52714\r\nDispensaci=F3n\r\n";
+        // El banco firma el remitente dos veces: así nadie puede agregar otro "From" sin romper la firma.
+        $signature = 'DKIM-Signature: v=1; a=rsa-sha256; c=simple/simple; d=banco.test; s=sel; h=From:From; bh='.base64_encode(hash('sha256', $body, true)).'; b=';
+        openssl_sign($from."\r\n".$signature, $signed, $key, OPENSSL_ALGO_SHA256);
+        $raw = implode("\r\n", [
+            // Cabecera "de verificación" que cualquiera puede escribir: no se le hace caso.
+            'Authentication-Results: servidor.cualquiera.test; dkim=pass header.d=banco.test',
+            $signature.base64_encode($signed),
+            $from,
             'To: atm@empresa.test',
             'Subject: Reporte ATM D',
             'Date: Wed, 07 Oct 2026 14:29:32 +0000',
-            'Message-ID: <'.uniqid().'@banco.test>',
+            'Message-ID: <firmado-1@banco.test>',
             'MIME-Version: 1.0',
             'Content-Type: text/plain; charset="iso-8859-1"',
             'Content-Transfer-Encoding: quoted-printable',
             '',
-            'Buenos d=EDas.',
-            '',
-            'ATM 6524 Maracay Centro',
-            'Serial: RDC52714',
-            'Dispensaci=F3n',
-            '',
+            $body,
         ]);
 
-        $trusted = IncomingMail::fromMessage(Message::fromString($raw('entrada.antispam.hosting.test')), 'hosting.test');
-        $this->assertSame(['reportes@banco.test', 'Reporte ATM D'], [$trusted->fromEmail, $trusted->subject]);
-        $this->assertEqualsCanonicalizing(['empresa.test', 'banco.test'], $trusted->verifiedDomains);
-        $this->assertSame(InboundEmail::TICKET, app(InboundMailProcessor::class)->process($trusted)->status);
-        $this->assertSame('2026-10-07T14:29:32+00:00', $trusted->sentAt->toIso8601String());
-        $this->assertSame('Dispensación', (new BankReportParser)->parse($trusted->subject, $trusted->text)['fault']);
+        $this->assertSame(['banco.test'], $dkim->verifiedDomains($raw));
+        $this->assertSame(['banco.test'], $dkim->verifiedDomains(str_replace("\r\n", "\n", $raw)));
+        $this->assertSame([], $dkim->verifiedDomains(str_replace('RDC52714', 'RDC00000', $raw)), 'cuerpo alterado');
+        $this->assertSame([], $dkim->verifiedDomains(str_replace('reportes@', 'gerencia@', $raw)), 'remitente alterado');
+        $this->assertSame([], $dkim->verifiedDomains("From: Otro <otro@banco.test>\r\n".$raw), 'segundo remitente agregado');
+        $this->assertSame([], $dkim->verifiedDomains(str_replace('d=banco.test; s=sel', 'd=otro.test; s=sel', $raw)), 'dominio sin esa clave');
+        $this->assertSame([], $dkim->verifiedDomains(preg_replace('/^DKIM-Signature:.*\r\n/m', '', $raw)), 'sin firma');
 
-        // Una cabecera de verificación escrita por otro servidor (o por el remitente) no cuenta.
-        $forged = IncomingMail::fromMessage(Message::fromString($raw('servidor.del-atacante.test')), 'hosting.test');
-        $this->assertSame(['empresa.test'], $forged->verifiedDomains);
+        $mail = IncomingMail::fromMessage(Message::fromString($raw), $dkim);
+        $this->assertSame(['reportes@banco.test', ['banco.test'], 'Reporte ATM D'], [$mail->fromEmail, $mail->verifiedDomains, $mail->subject]);
+        $this->assertSame('2026-10-07T14:29:32+00:00', $mail->sentAt->toIso8601String());
+        $this->assertSame('Dispensación', (new BankReportParser)->parse($mail->subject, $mail->text)['fault']);
+        $this->assertSame(InboundEmail::TICKET, app(InboundMailProcessor::class)->process($mail)->status);
+
+        // El mismo correo sin firma válida: solo la cabecera falsa. Espera a una persona.
+        $unsigned = str_replace(['firmado-1@', 'b='.base64_encode($signed)], ['firmado-2@', 'b='.base64_encode('falsa')], $raw);
+        $forged = IncomingMail::fromMessage(Message::fromString($unsigned), $dkim);
+        $this->assertSame([], $forged->verifiedDomains);
         $this->assertSame(InboundEmail::REVIEW, app(InboundMailProcessor::class)->process($forged)->status);
     }
 

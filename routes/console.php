@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Services\AccessLinks;
 use App\Services\Export\ConsolidadoExporter;
 use App\Services\Import\ExcelHistoryImporter;
+use App\Services\Inbound\DkimVerifier;
 use App\Services\Inbound\InboundMailProcessor;
 use App\Services\Inbound\IncomingMail;
 use App\Services\Inbound\Mailbox;
@@ -149,7 +150,7 @@ Artisan::command('servipos:leer-correo
     }
 
     $mails = $files
-        ? collect($files)->map(fn (string $file) => IncomingMail::fromMessage(Message::fromFile($file), config('inbound.trusted_authserv')))
+        ? collect($files)->map(fn (string $file) => IncomingMail::fromMessage(Message::fromFile($file), app(DkimVerifier::class)))
         : $mailbox->pending();
 
     $rows = [];
