@@ -28,7 +28,7 @@ export default function Import() {
             setReport(r);
             if (!r.simulated) {
                 queryClient.invalidateQueries();
-                toast('Histórico importado');
+                toast('Importación completada');
             }
         },
     });
@@ -36,7 +36,7 @@ export default function Import() {
 
     return (
         <>
-            <PageHeader title="Importar Excel histórico" subtitle="Carga el “Libro Consolidado” (pestañas Tablas y Base General): cajeros, catálogos, técnicos y atenciones." />
+            <PageHeader title="Importar Excel histórico" subtitle="Carga el “Libro Consolidado” (pestañas Tablas y Base General): cajeros, catálogos, técnicos y atenciones. Se puede repetir para agregar lo nuevo." />
             <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
                 <Card className="self-start">
                     <CardHeader title="Archivo" />
@@ -55,7 +55,7 @@ export default function Import() {
                             <Button variant="secondary" icon={FlaskConical} disabled={!file} loading={run.isPending && run.variables} onClick={() => run.mutate(true)}>Simular</Button>
                             <Button icon={Upload} disabled={!file || !report?.simulated || report.has_errors} loading={run.isPending && !run.variables} onClick={() => run.mutate(false)}>Importar</Button>
                         </div>
-                        <p className="text-xs text-muted">Primero simule: valida el archivo y muestra qué se corregirá, sin guardar nada. La importación real solo se habilita después de una simulación sin errores y puede hacerse una sola vez.</p>
+                        <p className="text-xs text-muted">Primero simule: valida el archivo y muestra qué se agregaría y qué se corregirá, sin guardar nada. Puede cargar el archivo las veces que necesite: cada vez se agregan solo los cajeros y las atenciones nuevas; lo que ya está en el sistema no se modifica.</p>
                     </div>
                 </Card>
 

@@ -30,6 +30,12 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
  * "Reporte de Falla" es "Pendiente por Repuesto" se agregan al ticket
  * pendiente del mismo cajero; el resto abre un ticket nuevo. El histórico no
  * trae horas, así que sus tickets no tienen duración (no cuentan para el SLA).
+ *
+ * El archivo se puede cargar las veces que haga falta (el cliente lo sigue
+ * llenando): cada carga agrega solo lo nuevo. Un cajero ya existe si coincide su
+ * número; una atención ya existe si coinciden cajero, fecha y N° de constancia
+ * (o, sin constancia, cajero, fecha y trabajo realizado). Lo que ya existe no se
+ * modifica, para no pisar correcciones hechas en el sistema.
  */
 class ExcelHistoryImporter
 {
@@ -75,10 +81,6 @@ class ExcelHistoryImporter
         $this->report = new ImportReport;
         $this->states = $this->faultTypes = $this->parts = $this->conditions = [];
         $this->technicians = $this->atms = $this->reportedFixes = [];
-
-        if (Ticket::where('source', 'import')->exists()) {
-            throw new ImportException('Ya existe un histórico importado. Para repetir la importación, consulte con el administrador del sistema.');
-        }
 
         $reader = IOFactory::createReader('Xlsx');
         $reader->setReadDataOnly(true);
@@ -139,11 +141,28 @@ class ExcelHistoryImporter
         $cols = $this->headers($sheet);
         $col = fn (string $header) => $cols[Normalizer::key($header)] ?? throw new ImportException("Falta la columna \"{$header}\" en Tablas.");
 
+        $existing = Atm::all()->keyBy(fn (Atm $atm) => Str::upper($atm->atm_number));
+        $this->report->count('Cajeros nuevos', 0);
+
         foreach ($this->rows($sheet, $col('N° ATM´s')) as $row) {
             $where = "Tablas fila {$row}";
             $get = fn (string $header) => $sheet->getCell($col($header).$row)->getValue();
 
             $number = Str::upper(Normalizer::text($get('N° ATM´s')));
+            // Ya está en el sistema (carga anterior o creado a mano): se usa tal cual, sin modificarlo.
+            if (! isset($this->atms[$number]) && $existing->has($number)) {
+                $this->atms[$number] = $existing[$number];
+                $this->report->count('Cajeros que ya existían (no se modifican)');
+
+                continue;
+            }
+            if (isset($this->atms[$number])) {
+                if (! $existing->has($number)) {
+                    $this->report->warn($where, "ATM {$number} repetido en el maestro; se conserva el primero.");
+                }
+
+                continue;
+            }
             $serial = Normalizer::text($get('Serial de Equipo'));
             if ($serial !== null && str_contains($serial, ' ')) {
                 $this->report->fix($where, "Serial \"{$serial}\" con espacios → \"".str_replace(' ', '', $serial).'"');
@@ -171,12 +190,6 @@ class ExcelHistoryImporter
                 $this->report->warn($where, "ATM {$number}: sin marca.");
             }
 
-            if (isset($this->atms[$number])) {
-                $this->report->warn($where, "ATM {$number} repetido en el maestro; se conserva el primero.");
-
-                continue;
-            }
-
             $this->atms[$number] = Atm::create([
                 'atm_number' => $number,
                 'serial' => $serial,
@@ -189,7 +202,7 @@ class ExcelHistoryImporter
                 'model' => $model,
                 'address' => Normalizer::text($get('Direccion')),
             ]);
-            $this->report->count('Cajeros importados');
+            $this->report->count('Cajeros nuevos');
         }
 
         if (! $this->bank) {
@@ -223,16 +236,31 @@ class ExcelHistoryImporter
             ];
         }
 
+        // Qué filas ya están en el sistema. Se cuenta cuántas atenciones iguales existen, para que
+        // dos filas idénticas del archivo sigan siendo dos atenciones y una tercera sí se agregue.
+        $loaded = $this->loadedVisitKeys();
+        foreach ($rows as $i => $r) {
+            $key = $r['date'] ? self::visitKey($r['atm'], $r['date']->toDateString(), $r['constancia'], $r['work']) : null;
+            $rows[$i]['new'] = $key === null || ($loaded[$key] ?? 0) < 1;
+            if (! $rows[$i]['new']) {
+                $loaded[$key]--;
+            }
+        }
+
         $this->flagDateOutliers($rows);
         $this->flagDuplicateConstancias($rows);
 
         usort($rows, fn ($a, $b) => [$a['date'], $a['row']] <=> [$b['date'], $b['row']]);
-
-        /** @var array<int, Ticket> $pendingByAtm tickets pendientes por cajero */
-        $pendingByAtm = [];
+        $this->report->count('Tickets creados', 0);
+        $this->report->count('Visitas importadas', 0);
 
         foreach ($rows as $r) {
             $where = "Base General fila {$r['row']}";
+            if (! $r['new']) {
+                $this->report->count('Atenciones que ya estaban cargadas (se omiten)');
+
+                continue;
+            }
 
             $atm = $this->atms[$r['atm']] ?? null;
             if (! $atm) {
@@ -253,9 +281,10 @@ class ExcelHistoryImporter
                 $this->report->warn($where, "ATM {$r['atm']}: sin N° de constancia.");
             }
 
-            $ticket = null;
-            if (Normalizer::key($fault?->name) === self::FOLLOW_UP_FAULT && isset($pendingByAtm[$atm->id])) {
-                $ticket = $pendingByAtm[$atm->id];
+            // Seguimiento: se suma al ticket histórico que ese cajero tenga pendiente, sea de esta carga
+            // o de una anterior. Los tickets abiertos en el sistema no se tocan desde el Excel.
+            $ticket = Normalizer::key($fault?->name) === self::FOLLOW_UP_FAULT ? $this->pendingImportedTicket($atm, $r['date']) : null;
+            if ($ticket) {
                 $this->report->count('Visitas de seguimiento agregadas a un ticket');
             } else {
                 $ticket = Ticket::create([
@@ -310,15 +339,52 @@ class ExcelHistoryImporter
                 'note' => "Importado del consolidado Excel ({$where})",
                 'created_at' => now(),
             ]);
-
-            if ($status === TicketStatus::Closed) {
-                unset($pendingByAtm[$atm->id]);
-            } else {
-                $pendingByAtm[$atm->id] = $ticket;
-            }
         }
 
-        $this->report->count('Tickets que quedan pendientes', count($pendingByAtm));
+        $this->report->count(
+            'Tickets históricos que quedan pendientes',
+            Ticket::where('source', 'import')->whereNotIn('status', [TicketStatus::Closed, TicketStatus::Cancelled])->count(),
+        );
+    }
+
+    /** Ticket del histórico que el cajero tiene pendiente a esa fecha (el más reciente). */
+    private function pendingImportedTicket(Atm $atm, CarbonImmutable $date): ?Ticket
+    {
+        return Ticket::query()
+            ->where('atm_id', $atm->id)
+            ->where('source', 'import')
+            ->whereNotIn('status', [TicketStatus::Closed, TicketStatus::Cancelled])
+            ->where('opened_at', '<=', $date->endOfDay())
+            ->orderByDesc('opened_at')->orderByDesc('id')
+            ->first();
+    }
+
+    /**
+     * Atenciones que ya están en el sistema (importadas antes o registradas desde la app),
+     * con cuántas veces aparece cada una.
+     *
+     * @return array<string, int>
+     */
+    private function loadedVisitKeys(): array
+    {
+        $keys = [];
+        $visits = DB::table('visits')
+            ->join('tickets', 'tickets.id', '=', 'visits.ticket_id')
+            ->join('atms', 'atms.id', '=', 'tickets.atm_id')
+            ->select(['atms.atm_number', 'visits.visit_date', 'visits.constancia_number', 'visits.work_done'])
+            ->cursor();
+        foreach ($visits as $visit) {
+            $key = self::visitKey(Str::upper($visit->atm_number), substr((string) $visit->visit_date, 0, 10), $visit->constancia_number, $visit->work_done);
+            $keys[$key] = ($keys[$key] ?? 0) + 1;
+        }
+
+        return $keys;
+    }
+
+    /** Identidad de una atención: cajero + fecha + constancia; sin constancia, cajero + fecha + trabajo realizado. */
+    private static function visitKey(string $atm, string $date, ?string $constancia, ?string $work): string
+    {
+        return $atm.'|'.$date.'|'.($constancia !== null && $constancia !== '' ? 'c:'.$constancia : 'w:'.md5((string) $work));
     }
 
     /** @param list<array<string, mixed>> $rows */
@@ -331,7 +397,7 @@ class ExcelHistoryImporter
         sort($timestamps);
         $median = CarbonImmutable::createFromTimestamp($timestamps[intdiv(count($timestamps), 2)]);
         foreach ($rows as $r) {
-            if ($r['date'] && abs($r['date']->diffInDays($median)) > 45) {
+            if ($r['new'] && $r['date'] && abs($r['date']->diffInDays($median)) > 45) {
                 $this->report->warn("Base General fila {$r['row']}", "Fecha {$r['date']->format('d/m/Y')} muy distinta al resto del período (¿error de tipeo?). Se importa tal cual.");
             }
         }
@@ -346,7 +412,7 @@ class ExcelHistoryImporter
                 continue;
             }
             $key = $r['atm'].'_'.$r['constancia'];
-            if (isset($seen[$key])) {
+            if (isset($seen[$key]) && $r['new']) {
                 $this->report->warn("Base General fila {$r['row']}", "ATM {$r['atm']} con la constancia {$r['constancia']} repetida (también en la fila {$seen[$key]}).");
             }
             $seen[$key] ??= $r['row'];
