@@ -43,6 +43,32 @@ function Parsed({ parsed, className }) {
     );
 }
 
+/** Estado de la lectura automática del buzón: apagada, al día, detenida o con error. */
+function Reading({ meta }) {
+    if (!meta) {
+        return null;
+    }
+    if (!meta.reading) {
+        return <Alert tone="info" className="mb-4">La lectura automática del buzón todavía no está activada. Cuando se conecte, los correos aparecerán aquí.</Alert>;
+    }
+    if (meta.last_error) {
+        return (
+            <Alert className="mb-4">
+                El sistema no logra leer el buzón desde {formatDateTime(meta.last_error.at)}. Los reportes que lleguen no abrirán tickets hasta que se resuelva; avise al administrador.
+                <span className="mt-1 block text-xs opacity-80">{meta.last_error.message}</span>
+            </Alert>
+        );
+    }
+    if (!meta.last_read_at) {
+        return <Alert tone="warn" className="mb-4">El buzón está conectado, pero el sistema todavía no lo ha leído. La primera lectura ocurre a los pocos minutos de activar la tarea programada.</Alert>;
+    }
+    const minutes = Math.round((Date.now() - new Date(meta.last_read_at).getTime()) / 60000);
+    if (minutes > 15) {
+        return <Alert tone="warn" className="mb-4">La última lectura del buzón fue el {formatDateTime(meta.last_read_at)}. Debería leerse cada dos minutos; avise al administrador.</Alert>;
+    }
+    return <p className="mb-3 text-xs text-muted">Buzón leído por última vez {minutes < 1 ? 'hace menos de un minuto' : `hace ${minutes} min`} · se revisa cada dos minutos.</p>;
+}
+
 /** Correo abierto: lo que dice, lo que el sistema hizo y, si quedó por revisar, cómo resolverlo. */
 function EmailModal({ email, onClose }) {
     const { data: catalogs } = useCatalogs();
@@ -177,9 +203,7 @@ export default function Emails() {
                 title="Correos del banco"
                 subtitle="Reportes de falla que llegan al buzón. El sistema abre el ticket cuando reconoce el banco y el cajero; los que generan dudas esperan aquí a que alguien decida."
             />
-            {data && !data.meta.reading && (
-                <Alert tone="info" className="mb-4">La lectura automática del buzón todavía no está activada. Cuando se conecte, los correos aparecerán aquí.</Alert>
-            )}
+            <Reading meta={data?.meta} />
             <Card>
                 <div className="flex flex-wrap items-center gap-3 border-b border-line p-4">
                     <Segmented

@@ -16,6 +16,11 @@ use Webklex\PHPIMAP\Message;
  */
 class Mailbox
 {
+    /** Claves de caché con el rastro de la lectura automática. */
+    public const LAST_READ = 'inbound:last_read';
+
+    public const LAST_ERROR = 'inbound:last_error';
+
     /** Cada lectura revisa los últimos días, por si el servidor estuvo sin poder leer. */
     private const LOOK_BACK_DAYS = 3;
 

@@ -13,8 +13,11 @@ use App\Services\Inbound\BankReportParser;
 use App\Services\Inbound\DkimVerifier;
 use App\Services\Inbound\InboundMailProcessor;
 use App\Services\Inbound\IncomingMail;
+use App\Services\Inbound\Mailbox;
 use Carbon\CarbonImmutable;
+use Generator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use RuntimeException;
 use Tests\TestCase;
 use Webklex\PHPIMAP\Message;
 
@@ -195,6 +198,48 @@ class InboundEmailTest extends TestCase
         $forged = IncomingMail::fromMessage(Message::fromString($unsigned), $dkim);
         $this->assertSame([], $forged->verifiedDomains);
         $this->assertSame(InboundEmail::REVIEW, app(InboundMailProcessor::class)->process($forged)->status);
+    }
+
+    public function test_the_scheduled_reading_leaves_a_trace_the_inbox_can_show(): void
+    {
+        $operator = User::factory()->create();
+        $mailbox = new class($this->mail("ATM 6524\nSerial: RDC52714\nFalla: LECTORA")) extends Mailbox
+        {
+            public bool $down = false;
+
+            public function __construct(private IncomingMail $mail) {}
+
+            public function configured(): bool
+            {
+                return true;
+            }
+
+            public function pending(): Generator
+            {
+                if ($this->down) {
+                    throw new RuntimeException('connection refused');
+                }
+                yield $this->mail;
+            }
+        };
+        $this->app->instance(Mailbox::class, $mailbox);
+
+        $this->travelTo('2026-10-12 12:30:00');
+        $this->artisan('servipos:leer-correo')->assertSuccessful();
+        $this->assertSame(1, Ticket::where('source', 'email')->count());
+        $this->actingAs($operator)->getJson('/api/v1/inbound-emails')
+            ->assertJsonPath('meta.reading', true)->assertJsonPath('meta.last_read_at', now()->toIso8601String())->assertJsonPath('meta.last_error', null);
+
+        $mailbox->down = true;
+        $this->travelTo('2026-10-12 12:32:00');
+        $this->artisan('servipos:leer-correo')->assertFailed();
+        $this->actingAs($operator)->getJson('/api/v1/inbound-emails')
+            ->assertJsonPath('meta.last_error.message', 'connection refused')->assertJsonPath('meta.last_error.at', now()->toIso8601String());
+
+        // Al volver a leer bien, el error desaparece.
+        $mailbox->down = false;
+        $this->artisan('servipos:leer-correo')->assertSuccessful();
+        $this->actingAs($operator)->getJson('/api/v1/inbound-emails')->assertJsonPath('meta.last_error', null);
     }
 
     public function test_staff_resolve_emails_waiting_for_review(): void

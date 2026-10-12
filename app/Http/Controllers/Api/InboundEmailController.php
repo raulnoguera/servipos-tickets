@@ -12,6 +12,7 @@ use App\Services\Inbound\InboundMailProcessor;
 use App\Services\Inbound\Mailbox;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -46,6 +47,8 @@ class InboundEmailController extends Controller
                 'from' => $emails->firstItem(), 'to' => $emails->lastItem(), 'total' => $emails->total(), 'per_page' => $emails->perPage(),
                 'counts' => InboundEmail::query()->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status'),
                 'reading' => $mailbox->configured(),
+                'last_read_at' => Cache::get(Mailbox::LAST_READ),
+                'last_error' => Cache::get(Mailbox::LAST_ERROR),
             ],
         ]);
     }

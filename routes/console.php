@@ -13,6 +13,7 @@ use App\Services\Inbound\Mailbox;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Facades\Storage;
@@ -153,22 +154,39 @@ Artisan::command('servipos:leer-correo
         ? collect($files)->map(fn (string $file) => IncomingMail::fromMessage(Message::fromFile($file), app(DkimVerifier::class)))
         : $mailbox->pending();
 
+    // La lectura real del buzón deja su rastro: cuándo fue la última y, si falló, por qué.
+    $live = ! $files && ! $dryRun;
     $rows = [];
-    foreach ($mails as $mail) {
-        if ($dryRun) {
-            DB::beginTransaction();
+    try {
+        foreach ($mails as $mail) {
+            if ($dryRun) {
+                DB::beginTransaction();
+            }
+            $email = $processor->process($mail, notify: ! $dryRun)->load(['ticket', 'atm']);
+            $rows[] = [
+                $mail->sentAt->timezone(config('app.timezone'))->format('d/m H:i'),
+                mb_strimwidth((string) $mail->subject, 0, 44, '…'),
+                $email->status,
+                $email->ticket?->number ?? $email->atm?->atm_number ?? '—',
+                mb_strimwidth((string) $email->reason, 0, 70, '…'),
+            ];
+            if ($dryRun) {
+                DB::rollBack();
+            }
         }
-        $email = $processor->process($mail, notify: ! $dryRun)->load(['ticket', 'atm']);
-        $rows[] = [
-            $mail->sentAt->timezone(config('app.timezone'))->format('d/m H:i'),
-            mb_strimwidth((string) $mail->subject, 0, 44, '…'),
-            $email->status,
-            $email->ticket?->number ?? $email->atm?->atm_number ?? '—',
-            mb_strimwidth((string) $email->reason, 0, 70, '…'),
-        ];
-        if ($dryRun) {
-            DB::rollBack();
+    } catch (Throwable $e) {
+        if (! $live) {
+            throw $e;
         }
+        report($e);
+        Cache::forever(Mailbox::LAST_ERROR, ['at' => now()->toIso8601String(), 'message' => mb_strimwidth($e->getMessage(), 0, 200, '…')]);
+        $this->error('No se pudo leer el buzón: '.$e->getMessage());
+
+        return 1;
+    }
+    if ($live) {
+        Cache::forever(Mailbox::LAST_READ, now()->toIso8601String());
+        Cache::forget(Mailbox::LAST_ERROR);
     }
 
     if ($rows) {
