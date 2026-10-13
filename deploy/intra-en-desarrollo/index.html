@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Sitio en desarrollo · GT Consulting</title>
+<style>
+  @font-face { font-family: 'Urbanist'; src: url('urbanist-800.woff2') format('woff2'); font-weight: 800; font-display: swap; }
+  :root { --teal: #0B5B55; --teal-ink: #073B37; --gold: #B98A12; --gold-soft: #EBD27A; --paper: #FBFAF6; --body: #46534F; --line: #E7E2D3; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--body);
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    display: grid; grid-template-rows: 1fr auto; min-height: 100vh; overflow-x: hidden;
+  }
+  /* Los dos arcos del logo, muy grandes y tenues, como fondo. */
+  body::before, body::after { content: ''; position: fixed; border-radius: 50%; pointer-events: none; }
+  body::before { width: 78vmax; height: 78vmax; right: -34vmax; top: -30vmax; border: 5vmax solid var(--gold-soft); opacity: .28; }
+  body::after { width: 56vmax; height: 56vmax; left: -26vmax; bottom: -30vmax; border: 4vmax solid var(--teal); opacity: .07; }
+  main { position: relative; z-index: 1; display: grid; place-items: center; padding: 48px 24px 24px; }
+  .tarjeta {
+    width: 100%; max-width: 560px; background: #fff; border: 1px solid var(--line); border-radius: 28px;
+    padding: 44px 40px 40px; text-align: center; box-shadow: 0 30px 60px -30px rgba(7, 59, 55, .28);
+  }
+  .tarjeta img { display: block; width: 190px; height: auto; margin: 0 auto 26px; }
+  .etiqueta {
+    display: inline-flex; align-items: center; gap: 10px; margin: 0 0 14px; padding: 7px 14px; border-radius: 999px;
+    background: #FBF4DC; color: #7A5A06; font-size: 12.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  }
+  .etiqueta i { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); animation: pulso 1.8s ease-in-out infinite; }
+  h1 { margin: 0 0 14px; font-family: 'Urbanist', system-ui, sans-serif; font-weight: 800; font-size: clamp(30px, 6vw, 42px); line-height: 1.08; color: var(--teal-ink); letter-spacing: -.01em; text-wrap: balance; }
+  p { margin: 0; font-size: 17px; line-height: 1.55; text-wrap: pretty; }
+  p b { color: var(--teal); font-weight: 700; }
+  .regla { width: 64px; height: 4px; margin: 28px auto 0; border-radius: 4px; background: linear-gradient(90deg, var(--gold), var(--gold-soft)); }
+  footer { position: relative; z-index: 1; padding: 22px 24px 28px; text-align: center; font-size: 13px; color: #7C8783; }
+  @keyframes pulso { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.7); } }
+  @media (prefers-reduced-motion: reduce) { .etiqueta i { animation: none; } }
+  @media (max-width: 480px) { .tarjeta { padding: 34px 24px 32px; border-radius: 22px; } .tarjeta img { width: 150px; } p { font-size: 16px; } }
+</style>
+</head>
+<body>
+<main>
+  <section class="tarjeta">
+    <img src="gt-consulting.jpg" alt="GT Consulting" width="190" height="205">
+    <p class="etiqueta"><i></i>Sitio en desarrollo</p>
+    <h1>Estamos construyendo este sitio</h1>
+    <p>Este sitio está siendo desarrollado por <b>GT Consulting</b>. Pronto estará disponible.</p>
+    <div class="regla"></div>
+  </section>
+</main>
+<footer>© 2026 GT Consulting · RIF J-502170120</footer>
+</body>
+</html>
