@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import {
@@ -8,9 +8,10 @@ import { api, download } from '../lib/api';
 import { useCatalogs } from '../lib/queries';
 import { formatDate, formatDuration, formatNumber, formatPct, monthToDate } from '../lib/format';
 import {
-    Alert, Button, Card, CardHeader, EmptyState, Field, Input, LoadingBlock, PageHeader, Select, Table, Td, Th, cx, toast,
+    Alert, Button, Card, CardHeader, EmptyState, Field, Input, LoadingBlock, PageHeader, Segmented, Select, Table, Td, Th, cx, toast,
 } from '../components/ui';
 import { CATEGORICAL, ColumnChart, DonutChart, HBarChart, TrendChart, WeeklyChart, donutColor } from '../components/Charts';
+import InformePrint from '../components/InformePrint';
 import { detailUrl } from './ReportDetail';
 
 const TABS = [
@@ -493,6 +494,18 @@ function ValueTable({ head, rows }) {
 /** El resumen mensual que se presenta al banco: zona, estados, motivos y repuestos, listo para imprimir. */
 function VisualTab({ filters }) {
     const { data, isLoading } = useReport('visual', filters);
+    const [view, setView] = useState('tablero');
+    // En pantalla, las diapositivas se achican para caber en el ancho disponible; al imprimir van a tamaño real.
+    const slidesRef = useRef(null);
+    const [zoom, setZoom] = useState(1);
+    useEffect(() => {
+        if (!slidesRef.current || typeof ResizeObserver === 'undefined') {
+            return undefined;
+        }
+        const observer = new ResizeObserver(([entry]) => setZoom(Math.min(1, entry.contentRect.width / 1280)));
+        observer.observe(slidesRef.current);
+        return () => observer.disconnect();
+    }, [view, isLoading]);
     if (isLoading || !data) {
         return <LoadingBlock />;
     }
@@ -515,17 +528,41 @@ function VisualTab({ filters }) {
         ? `Se utilizaron ${count(data.parts.total, 'repuesto', 'repuestos')}, ${topParts.length > 1 ? `siendo ${join(topParts)} los más utilizados (${formatNumber(maxParts)} cada uno)` : `siendo ${topParts[0]} el más utilizado (${formatNumber(maxParts)})`}.`
         : 'No se registraron repuestos en el período.';
 
+    // Los mismos textos, redactados como en la presentación que el banco recibe.
+    const wholeMonth = !period.startsWith('del ');
+    const monthTitle = (wholeMonth ? period.replace(' de ', ' ') : period).replace(/^./, (c) => c.toUpperCase());
+    const slideText = {
+        statuses: data.reports
+            ? `Se atendieron un total de ${count(data.reports, 'reporte', 'reportes')} quedando: ${join(data.statuses.map((s) => `${s.name} ${formatNumber(s.total)}`))}.`
+            : 'No se atendieron reportes en el período.',
+        faults: data.reports
+            ? `Se registraron para ${wholeMonth ? `el mes de ${monthTitle}` : `el período ${period}`}: ${join(data.faults.map((f) => `${pct(f.pct)} ${f.name}`))}.`
+            : 'No se registraron reportes en el período.',
+        parts: partText,
+    };
+
     return (
         <div className="visual-report space-y-5">
-            <div className="flex flex-wrap items-end justify-between gap-3">
+            <div className="no-print flex flex-wrap items-end justify-between gap-3">
                 <div>
                     <p className="text-xs font-bold tracking-[0.16em] text-brand-600 uppercase">Informe visual</p>
                     <h2 className="text-2xl font-extrabold">Resumen de reportes de atención a cajeros</h2>
                     <p className="mt-1 text-sm text-muted capitalize-first">{data.bank ?? 'Todos los bancos'} · {period}</p>
                 </div>
-                <Button className="no-print" icon={Printer} onClick={() => window.print()}>Imprimir o guardar en PDF</Button>
+                <div className="flex flex-wrap items-center gap-2">
+                    <Segmented size="sm" value={view} onChange={setView} options={[{ value: 'tablero', label: 'Tablero' }, { value: 'presentacion', label: 'Presentación' }]} />
+                    <Button icon={Printer} onClick={() => window.print()}>Imprimir o guardar en PDF</Button>
+                </div>
             </div>
-            {!data.reports && <Alert tone="info">No hay reportes atendidos en este período.</Alert>}
+            <p className="no-print -mt-2 text-xs text-muted">El PDF sale en formato de presentación, como el informe que se entrega al banco. Use «Presentación» para verlo antes de imprimir.</p>
+            {!data.reports && <Alert tone="info" className="no-print">No hay reportes atendidos en este período.</Alert>}
+
+            <div ref={slidesRef} className={cx(view === 'presentacion' && 'show-slides')} style={{ '--slide-zoom': zoom }}>
+                <InformePrint data={data} period={monthTitle} monthTitle={monthTitle} sentences={slideText} />
+            </div>
+
+            {view === 'tablero' && (
+            <div className="no-print space-y-5">
 
             <VisualSection number="01" title="Zona de atención" sentence={zoneText}>
                 {zones.length > 0 && (
@@ -584,6 +621,8 @@ function VisualTab({ filters }) {
                     </div>
                 )}
             </VisualSection>
+            </div>
+            )}
         </div>
     );
 }

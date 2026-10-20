@@ -51,20 +51,114 @@
     font-variant-numeric: tabular-nums;
 }
 
-/* Impresión del informe visual: solo el informe, cada sección sin cortarse entre páginas. */
+/* Informe visual: en formato de presentación 16:9, como el que se entrega al banco. */
+.print-slides {
+    display: none;
+}
+.show-slides .print-slides {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding-bottom: 8px;
+}
+.show-slides .slide {
+    zoom: var(--slide-zoom, 1);
+}
+.slide {
+    position: relative;
+    flex: none;
+    width: 1280px;
+    height: 720px;
+    overflow: hidden;
+    background: #fff center / 100% 100% no-repeat;
+    color: #002060;
+    font-family: 'Arial Rounded MT Bold', 'Nunito', Arial, sans-serif;
+    font-weight: 800;
+    border-radius: 6px;
+    box-shadow: 0 12px 32px rgba(0, 25, 76, 0.12);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+.slide-title,
+.slide-body {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+.slide-title {
+    line-height: 1.08;
+}
+.slide-body {
+    line-height: 1.2;
+}
+.slide-photo {
+    position: absolute;
+    object-fit: cover;
+}
+.slide-logo {
+    position: absolute;
+    top: 28px;
+    right: 40px;
+}
+.slide-table {
+    position: absolute;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+}
+.slide-table table {
+    min-width: 62%;
+    border-collapse: collapse;
+    color: #000;
+    font-family: Calibri, Carlito, Arial, sans-serif;
+    font-size: 12pt;
+    font-weight: 400;
+}
+.slide-table th {
+    padding: 3px 10px;
+    border-bottom: 2px solid #5b9bd5;
+    font-weight: 700;
+}
+.slide-table td {
+    padding: 2px 10px;
+    border-bottom: 1px solid #bdd7ee;
+}
+.slide-table tbody tr:nth-child(odd) td {
+    background: #ddebf7;
+}
+.slide-table tr.total td {
+    border-top: 2px solid #5b9bd5;
+    background: #fff;
+    font-weight: 700;
+}
+
+@page informe {
+    size: 13.333in 7.5in;
+    margin: 0;
+}
+
 @media print {
-    @page {
-        size: letter;
-        margin: 12mm;
-    }
     body {
         background: #fff;
     }
     .no-print {
         display: none !important;
     }
-    .visual-page {
-        break-inside: avoid;
+    .print-slides {
+        display: block !important;
+    }
+    .slide {
+        page: informe;
+        break-after: page;
+        zoom: 1 !important;
+        border-radius: 0;
+        box-shadow: none;
+    }
+    .slide:last-child {
+        break-after: auto;
     }
 }
 

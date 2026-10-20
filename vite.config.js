@@ -28,6 +28,8 @@ export default defineConfig({
             fonts: [
                 bunny('Plus Jakarta Sans', { weights: [400, 500, 600, 700] }),
                 bunny('Urbanist', { weights: [600, 700, 800] }),
+                // Respaldo redondeado de Arial Rounded MT Bold, la letra de la presentación del banco.
+                bunny('Nunito', { weights: [800] }),
             ],
         }),
         react(),

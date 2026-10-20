@@ -388,6 +388,8 @@ class ReportService
             'faults' => $faults,
             'parts' => ['total' => (int) $parts->sum('quantity'), 'by_part' => $parts],
             'zones' => ['atms' => $atms->count(), 'attended' => $visits->pluck('ticket.atm_id')->unique()->count(), 'by_state' => $zones],
+            // Para la portada del informe: «atenciones a ATM Diebold».
+            'brands' => $atms->pluck('brand')->filter()->map(fn ($b) => mb_convert_case(mb_strtolower($b), MB_CASE_TITLE))->unique()->values(),
         ];
     }
 

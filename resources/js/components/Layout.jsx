@@ -206,7 +206,7 @@ export default function Layout() {
                 </div>
             )}
 
-            <main key={location.pathname} className="mx-auto w-full max-w-[1400px] px-4 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:px-6 lg:px-8 lg:py-8">
+            <main key={location.pathname} className="mx-auto w-full max-w-[1400px] px-4 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:px-6 lg:px-8 lg:py-8 print:max-w-none print:p-0">
                 <OutboxSync />
                 <PushListener />
                 <ConnectivityBar />

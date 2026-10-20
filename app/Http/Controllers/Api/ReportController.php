@@ -52,6 +52,7 @@ class ReportController extends Controller
         return response()->json($this->reports->visual($f) + [
             'filters' => $this->describe($f),
             'bank' => $f['bank_id'] ? Bank::find($f['bank_id'])?->name : null,
+            'bank_short' => $f['bank_id'] ? Bank::find($f['bank_id'])?->short_name : null,
         ]);
     }
 
