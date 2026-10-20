@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\Priority;
 use App\Enums\Role;
+use App\Models\Scopes\BankScope;
 use App\Models\Ticket;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -22,7 +23,7 @@ class StoreTicketRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'atm_id' => ['required', 'integer', Rule::exists('atms', 'id')->where('active', true)],
+            'atm_id' => ['required', 'integer', Rule::exists('atms', 'id')->where('active', true)->where(fn ($q) => BankScope::banks() === null ? $q : $q->whereIn('bank_id', BankScope::banks()))],
             'fault_type_id' => ['required', 'integer', 'exists:fault_types,id'],
             'priority' => ['nullable', Rule::enum(Priority::class)],
             'description' => ['nullable', 'string', 'max:2000'],
@@ -36,7 +37,7 @@ class StoreTicketRequest extends FormRequest
      */
     public function messages(): array
     {
-        return ['atm_id.exists' => 'El cajero no existe o está inactivo.'];
+        return ['atm_id.exists' => 'El cajero no existe, está inactivo o es de un banco que usted no atiende.'];
     }
 
     /**

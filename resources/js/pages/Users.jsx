@@ -15,8 +15,8 @@ function UserForm({ user, onClose }) {
     const queryClient = useQueryClient();
     const [form, setForm] = useState(
         user
-            ? { name: user.name, email: user.email ?? '', role: user.role, phone: user.phone ?? '', active: user.active, password: '', state_ids: user.state_ids ?? [] }
-            : { name: '', email: '', role: 'technician', phone: '', active: true, password: '', state_ids: [] },
+            ? { name: user.name, email: user.email ?? '', role: user.role, phone: user.phone ?? '', active: user.active, password: '', state_ids: user.state_ids ?? [], bank_ids: user.bank_ids ?? [] }
+            : { name: '', email: '', role: 'technician', phone: '', active: true, password: '', state_ids: [], bank_ids: [] },
     );
     const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
     const save = useMutation({
@@ -31,6 +31,8 @@ function UserForm({ user, onClose }) {
     const err = save.error;
     const isTechnician = form.role === 'technician';
     const toggleState = (id) => setForm((f) => ({ ...f, state_ids: f.state_ids.includes(id) ? f.state_ids.filter((s) => s !== id) : [...f.state_ids, id] }));
+    const toggleBank = (id) => setForm((f) => ({ ...f, bank_ids: f.bank_ids.includes(id) ? f.bank_ids.filter((b) => b !== id) : [...f.bank_ids, id] }));
+    const chip = (on) => cx('rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset transition', on ? 'bg-brand-500 text-white ring-brand-500' : 'bg-white text-body ring-line hover:ring-brand-200');
 
     return (
         <Modal
@@ -77,6 +79,19 @@ function UserForm({ user, onClose }) {
                                     )}
                                 >
                                     {s.name}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+                {form.role === 'operator' && (
+                    <div className="sm:col-span-2">
+                        <p className="mb-1 text-sm font-semibold text-ink">Bancos que atiende</p>
+                        <p className="mb-2 text-xs text-muted">Solo verá los tickets, cajeros, correos y reportes de estos bancos, y solo podrá abrir tickets para ellos. Sin ninguno marcado, atiende todos.</p>
+                        <div className="flex flex-wrap gap-2">
+                            {catalogs?.banks.map((b) => (
+                                <button key={b.id} type="button" aria-pressed={form.bank_ids.includes(b.id)} onClick={() => toggleBank(b.id)} className={chip(form.bank_ids.includes(b.id))}>
+                                    {b.name}
                                 </button>
                             ))}
                         </div>
@@ -206,7 +221,11 @@ export default function Users() {
                                         </div>
                                     </Td>
                                     <Td><Badge tone={ROLE_TONE[u.role]}>{u.role_label}</Badge></Td>
-                                    <Td className="max-w-[240px] truncate text-sm">{u.states?.length ? u.states.join(', ') : <span className="text-faint">—</span>}</Td>
+                                    <Td className="max-w-[240px] truncate text-sm">
+                                        {u.role === 'operator'
+                                            ? (u.banks?.length ? u.banks.join(', ') : <span className="text-faint">Todos los bancos</span>)
+                                            : u.states?.length ? u.states.join(', ') : <span className="text-faint">—</span>}
+                                    </Td>
                                     <Td className="text-sm whitespace-nowrap">
                                         {u.last_login_at ? formatDateTime(u.last_login_at) : u.access_link_expires_at ? <Badge tone="brand">Enlace enviado</Badge> : <Badge tone="warn">Nunca ingresó</Badge>}
                                     </Td>

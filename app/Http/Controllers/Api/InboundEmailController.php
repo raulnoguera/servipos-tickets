@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\TicketResource;
 use App\Models\Atm;
 use App\Models\InboundEmail;
+use App\Models\Scopes\BankScope;
 use App\Services\AuditLogger;
 use App\Services\Inbound\InboundMailProcessor;
 use App\Services\Inbound\Mailbox;
@@ -57,10 +58,10 @@ class InboundEmailController extends Controller
     public function ticket(Request $request, InboundEmail $email, InboundMailProcessor $processor, AuditLogger $audit): JsonResponse
     {
         $data = $request->validate([
-            'atm_id' => ['required', 'integer', Rule::exists('atms', 'id')->where('active', true)],
+            'atm_id' => ['required', 'integer', Rule::exists('atms', 'id')->where('active', true)->where(fn ($q) => BankScope::banks() === null ? $q : $q->whereIn('bank_id', BankScope::banks()))],
             'fault_type_id' => ['nullable', 'integer', Rule::exists('fault_types', 'id')->where('active', true)],
             'priority' => ['nullable', Rule::enum(Priority::class)],
-        ], ['atm_id.exists' => 'El cajero no existe o está inactivo.'], ['atm_id' => 'cajero', 'fault_type_id' => 'tipo de falla', 'priority' => 'prioridad']);
+        ], ['atm_id.exists' => 'El cajero no existe, está inactivo o es de un banco que usted no atiende.'], ['atm_id' => 'cajero', 'fault_type_id' => 'tipo de falla', 'priority' => 'prioridad']);
 
         $ticket = DB::transaction(function () use ($email, $data, $processor, $request) {
             $email = InboundEmail::whereKey($email->id)->lockForUpdate()->firstOrFail();

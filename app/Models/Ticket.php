@@ -4,8 +4,10 @@ namespace App\Models;
 
 use App\Enums\Priority;
 use App\Enums\TicketStatus;
+use App\Models\Scopes\BankScope;
 use App\Services\SlaService;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'number', 'atm_id', 'bank_id', 'fault_type_id', 'description', 'bank_reference', 'status', 'priority', 'source',
     'assigned_to', 'opened_by', 'opened_at', 'assigned_at', 'responded_at', 'closed_at', 'confirmed_at', 'confirmed_by', 'duration_ms',
 ])]
+#[ScopedBy(BankScope::class)]
 class Ticket extends Model
 {
     /** Los tiempos del ciclo se guardan con milisegundos (RF-3.4). */

@@ -268,6 +268,7 @@ class PushNotifier
         return $this->deliver($this->callCenter(), [
             'kind' => 'email',
             'title' => 'Correo del banco por revisar',
+            'bank_id' => $email->atm?->bank_id,
             'body' => mb_strimwidth(($email->subject ?: 'Sin asunto').' · '.$email->reason, 0, 180, '…'),
             'url' => '/correos',
             'tag' => 'correo-'.$email->id,
@@ -302,13 +303,20 @@ class PushNotifier
      * todos sus dispositivos registrados.
      *
      * @param  Collection<int, User>  $users
-     * @param  array{kind?: string, ticket_id?: int, title: string, body: string, url?: string, tag?: string}  $message
+     * @param  array{kind?: string, ticket_id?: int, bank_id?: int|null, title: string, body: string, url?: string, tag?: string}  $message
      * @return int notificaciones push entregadas
      */
     public function deliver(Collection $users, array $message, bool $store = true): int
     {
         // Un usuario desactivado no recibe avisos (ni en la campana ni en el teléfono).
         $users = $users->filter(fn (User $user) => $user->active);
+        // Ni un operador de otro banco: el aviso sería de un ticket que no puede ver.
+        if (isset($message['ticket_id'])) {
+            $bank = Ticket::withoutGlobalScopes()->whereKey($message['ticket_id'])->value('bank_id');
+            $users = $users->filter(fn (User $user) => $user->canSeeBank($bank === null ? null : (int) $bank));
+        } elseif (! empty($message['bank_id'])) {
+            $users = $users->filter(fn (User $user) => $user->canSeeBank((int) $message['bank_id']));
+        }
         if ($users->isEmpty()) {
             return 0;
         }

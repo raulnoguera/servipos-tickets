@@ -47,7 +47,8 @@ class CatalogController extends Controller
         $list = fn (string $model) => $model::query()->orderBy('name')->get(['id', 'name', ...($model === State::class ? [] : ['active'])]);
 
         return response()->json([
-            'banks' => $list(Bank::class),
+            // El operador asignado a ciertos bancos solo los ve a ellos en los filtros.
+            'banks' => $list(Bank::class)->when($request->user()->bankScope() !== null, fn ($banks) => $banks->whereIn('id', $request->user()->bankScope())->values()),
             'states' => $list(State::class),
             'fault_types' => $list(FaultType::class),
             'parts' => $list(Part::class),

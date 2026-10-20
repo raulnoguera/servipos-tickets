@@ -29,6 +29,8 @@ class UserResource extends JsonResource
             'notify_scope' => $this->notify_scope,
             'state_ids' => $this->whenLoaded('states', fn () => $this->states->pluck('id')),
             'states' => $this->whenLoaded('states', fn () => $this->states->pluck('name')),
+            'bank_ids' => $this->whenLoaded('banks', fn () => $this->banks->pluck('id')),
+            'banks' => $this->whenLoaded('banks', fn () => $this->banks->pluck('name')),
             'open_tickets' => $this->whenCounted('assignedOpenTickets'),
         ];
     }

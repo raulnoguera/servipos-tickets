@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\BankScope;
 use App\Services\TicketService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
     'client_uuid', 'ticket_id', 'technician_id', 'fault_type_id', 'constancia_number', 'visit_date',
     'arrived_at', 'finished_at', 'work_done', 'parts_changed', 'atm_condition_id', 'constancia_path',
 ])]
+#[ScopedBy(BankScope::class)]
 class Visit extends Model
 {
     /** Los tiempos del ciclo se guardan con milisegundos (RF-3.4). */

@@ -3,14 +3,17 @@
 namespace App\Models;
 
 use App\Enums\TicketStatus;
+use App\Models\Scopes\BankScope;
 use Database\Factories\AtmFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['atm_number', 'serial', 'bank_id', 'state_id', 'agency_code', 'agency_name', 'site_type', 'brand', 'model', 'address', 'active'])]
+#[ScopedBy(BankScope::class)]
 class Atm extends Model
 {
     /** @use HasFactory<AtmFactory> */

@@ -92,6 +92,43 @@ class User extends Authenticatable
         return $this->belongsToMany(State::class);
     }
 
+    /** Bancos que atiende un operador. Sin ninguno, atiende todos. */
+    public function banks(): BelongsToMany
+    {
+        return $this->belongsToMany(Bank::class);
+    }
+
+    /** @var list<int>|false|null bancos visibles, calculados una vez por petición (false = aún no calculado) */
+    private array|false|null $bankScopeCache = false;
+
+    /**
+     * Bancos a los que se limita lo que ve el usuario, o null si ve todos.
+     * Solo se limita a los operadores con bancos asignados; el técnico ya ve solo sus tickets.
+     *
+     * @return list<int>|null
+     */
+    public function bankScope(): ?array
+    {
+        if ($this->bankScopeCache === false) {
+            $ids = $this->role === Role::Operator ? $this->banks()->pluck('banks.id')->map(fn ($id) => (int) $id)->all() : [];
+            $this->bankScopeCache = $ids === [] ? null : $ids;
+        }
+
+        return $this->bankScopeCache;
+    }
+
+    public function forgetBankScope(): void
+    {
+        $this->bankScopeCache = false;
+    }
+
+    public function canSeeBank(?int $bankId): bool
+    {
+        $banks = $this->bankScope();
+
+        return $banks === null || ($bankId !== null && in_array($bankId, $banks, true));
+    }
+
     public function assignedTickets(): HasMany
     {
         return $this->hasMany(Ticket::class, 'assigned_to');

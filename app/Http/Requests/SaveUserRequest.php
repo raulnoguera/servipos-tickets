@@ -42,6 +42,8 @@ class SaveUserRequest extends FormRequest
             'password' => ['nullable', Password::min(10)->letters()->numbers()],
             'state_ids' => ['array'],
             'state_ids.*' => ['integer', 'exists:states,id'],
+            'bank_ids' => ['array'],
+            'bank_ids.*' => ['integer', 'exists:banks,id'],
         ];
     }
 

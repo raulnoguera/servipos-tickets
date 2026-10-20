@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\BankScope;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\ScopedBy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** Correo de reporte de falla recibido en el buzón de la empresa. */
 #[Fillable(['message_id', 'from_email', 'from_name', 'subject', 'sent_at', 'body', 'status', 'trusted', 'reason', 'parsed', 'atm_id', 'ticket_id', 'handled_by', 'handled_at'])]
+#[ScopedBy(BankScope::class)]
 class InboundEmail extends Model
 {
     /** Abrió un ticket (solo, o a mano desde la bandeja). */

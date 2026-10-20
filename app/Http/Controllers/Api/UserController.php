@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SaveUserRequest;
 use App\Http\Resources\UserResource;
@@ -18,7 +19,7 @@ class UserController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $users = User::query()
-            ->with('states')
+            ->with(['states', 'banks'])
             ->withCount('assignedOpenTickets')
             ->when($request->query('role'), fn ($q, $role) => $q->where('role', $role))
             ->orderBy('name')
@@ -34,9 +35,10 @@ class UserController extends Controller
         $data['password'] = $data['password'] ?? Str::password(32);
         $user = User::create($data + ['email_verified_at' => now()]);
         $user->states()->sync($data['state_ids'] ?? []);
+        $user->banks()->sync($user->role === Role::Operator ? ($data['bank_ids'] ?? []) : []);
         $audit->record('user.created', "Usuario creado: {$user->name} ({$user->role->label()})", $user, ['usuario' => $user->loginIdentifier()]);
 
-        return new UserResource($user->load('states'));
+        return new UserResource($user->load(['states', 'banks']));
     }
 
     public function update(SaveUserRequest $request, User $user, AuditLogger $audit): UserResource
@@ -48,9 +50,10 @@ class UserController extends Controller
         if (empty($data['password'])) {
             unset($data['password']);
         }
-        $before = $user->only(['name', 'email', 'phone', 'active']) + ['role' => $user->role->value];
+        $before = $user->only(['name', 'email', 'phone', 'active']) + ['role' => $user->role->value, 'banks' => $user->banks()->orderBy('name')->pluck('name')->implode(', ')];
         $user->update($data);
         $user->states()->sync($data['state_ids'] ?? []);
+        $user->banks()->sync($user->role === Role::Operator ? ($data['bank_ids'] ?? []) : []);
 
         // Al desactivar o cambiar la contraseña: se invalida "recordarme" en todos sus
         // equipos y dejan de llegar notificaciones a sus teléfonos (puede ser un equipo
@@ -68,7 +71,7 @@ class UserController extends Controller
             $audit->record('user.updated', "Usuario modificado: {$user->name} · ".implode(', ', array_keys($changes)), $user, $changes);
         }
 
-        return new UserResource($user->load('states'));
+        return new UserResource($user->load(['states', 'banks']));
     }
 
     /**
@@ -79,8 +82,8 @@ class UserController extends Controller
      */
     private function changes(array $before, User $user, bool $passwordChanged): array
     {
-        $labels = ['name' => 'nombre', 'email' => 'correo', 'phone' => 'teléfono', 'active' => 'activo', 'role' => 'rol'];
-        $after = $user->only(['name', 'email', 'phone', 'active']) + ['role' => $user->role->value];
+        $labels = ['name' => 'nombre', 'email' => 'correo', 'phone' => 'teléfono', 'active' => 'activo', 'role' => 'rol', 'banks' => 'bancos'];
+        $after = $user->only(['name', 'email', 'phone', 'active']) + ['role' => $user->role->value, 'banks' => $user->banks()->orderBy('name')->pluck('name')->implode(', ')];
         $changes = [];
         foreach ($labels as $field => $label) {
             if ($before[$field] != $after[$field]) {
