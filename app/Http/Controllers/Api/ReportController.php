@@ -44,6 +44,17 @@ class ReportController extends Controller
         return response()->json($this->reports->summary($f) + ['filters' => $this->describe($f)]);
     }
 
+    /** Informe visual del período (zona, estados, motivos y repuestos), pensado para presentar al banco. */
+    public function visual(Request $request): JsonResponse
+    {
+        $f = $this->filters($request);
+
+        return response()->json($this->reports->visual($f) + [
+            'filters' => $this->describe($f),
+            'bank' => $f['bank_id'] ? Bank::find($f['bank_id'])?->name : null,
+        ]);
+    }
+
     public function atms(Request $request): JsonResponse|BinaryFileResponse
     {
         $f = $this->filters($request);

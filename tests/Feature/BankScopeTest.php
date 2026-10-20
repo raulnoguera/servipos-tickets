@@ -4,13 +4,16 @@ namespace Tests\Feature;
 
 use App\Enums\TicketStatus;
 use App\Models\Atm;
+use App\Models\AtmCondition;
 use App\Models\AuditLog;
 use App\Models\Bank;
 use App\Models\FaultType;
 use App\Models\InboundEmail;
+use App\Models\Part;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Models\UserNotification;
+use App\Models\Visit;
 use App\Services\PushNotifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -143,5 +146,36 @@ class BankScopeTest extends TestCase
         $this->actingAs($admin)->postJson('/api/v1/users', [
             'name' => 'Técnico', 'role' => 'technician', 'phone' => '0414-7654321', 'active' => true, 'bank_ids' => [$this->bnc->id],
         ])->assertCreated()->assertJsonPath('data.banks', []);
+    }
+
+    public function test_the_visual_report_counts_reports_reasons_parts_and_zones_of_the_operators_bank(): void
+    {
+        $operativo = AtmCondition::create(['name' => 'Operativo', 'resulting_ticket_status' => 'concluido', 'sort' => 1]);
+        $repuesto = AtmCondition::create(['name' => 'Operativo / Pendiente por Repuesto', 'resulting_ticket_status' => 'pendiente_repuesto', 'sort' => 2]);
+        $dispensacion = FaultType::create(['name' => 'Falla de Dispensación']);
+        $lectora = FaultType::create(['name' => 'Falla de Lectora']);
+        $feedshaft = Part::create(['name' => 'FEEDSHAFT']);
+        $visit = function (Ticket $ticket, $condition, $fault, int $parts = 0) use ($feedshaft) {
+            $v = Visit::create(['ticket_id' => $ticket->id, 'visit_date' => now()->toDateString(), 'atm_condition_id' => $condition->id, 'fault_type_id' => $fault->id, 'parts_changed' => $parts > 0]);
+            if ($parts) {
+                $v->parts()->attach($feedshaft->id, ['quantity' => $parts]);
+            }
+        };
+        $visit($this->bncTicket, $operativo, $dispensacion, 2);
+        $visit($this->bncTicket, $operativo, $dispensacion);
+        $visit($this->bncTicket, $repuesto, $lectora, 1);
+        $visit($this->otherTicket, $operativo, $lectora, 5); // de otro banco: no cuenta para el operador del BNC
+
+        $report = $this->actingAs($this->bncOperator)->getJson('/api/v1/reports/visual')->assertOk()->json();
+
+        $this->assertSame(3, $report['reports']);
+        $this->assertSame([['name' => 'Operativo', 'total' => 2, 'pct' => 66.7], ['name' => 'Operativo / Pendiente por Repuesto', 'total' => 1, 'pct' => 33.3]], $report['statuses']);
+        $this->assertSame(['Falla de Dispensación', 'Falla de Lectora'], array_column($report['faults'], 'name'));
+        $this->assertSame(['total' => 3, 'by_part' => [['name' => 'FEEDSHAFT', 'quantity' => 3]]], $report['parts']);
+        $this->assertSame(1, $report['zones']['atms']);
+        $this->assertSame(1, $report['zones']['attended']);
+
+        // Sin restricción de banco se ven los dos.
+        $this->actingAs(User::factory()->admin()->create())->getJson('/api/v1/reports/visual')->assertJsonPath('reports', 4)->assertJsonPath('zones.atms', 2);
     }
 }

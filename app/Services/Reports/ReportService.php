@@ -333,6 +333,64 @@ class ReportService
         });
     }
 
+    /* ------------------------------------------------------ Informe visual */
+
+    /**
+     * El informe que se le presenta al banco cada mes: dónde están sus cajeros,
+     * cómo quedaron los reportes atendidos, por qué fallaron y qué repuestos se
+     * usaron. Cada atención (visita) del período es un «reporte».
+     *
+     * @return array<string, mixed>
+     */
+    public function visual(array $f): array
+    {
+        $visits = Visit::query()
+            ->with(['atmCondition', 'faultType', 'parts', 'ticket.atm.state'])
+            ->whereDate('visit_date', '>=', $f['from']->toDateString())
+            ->whereDate('visit_date', '<=', $f['to']->toDateString())
+            ->when($f['technician_id'], fn ($q, $id) => $q->where('technician_id', $id))
+            ->whereHas('ticket', fn ($t) => $t
+                ->when($f['bank_id'], fn ($q, $id) => $q->where('bank_id', $id))
+                ->when($f['state_id'], fn ($q, $id) => $q->whereHas('atm', fn ($a) => $a->where('state_id', $id))))
+            ->get();
+        $total = $visits->count();
+        $pct = fn (int $n) => $total ? round($n * 100 / $total, 1) : 0.0;
+
+        $statuses = $visits->groupBy(fn (Visit $v) => $v->atm_condition_id ?? 0)
+            ->map(fn (Collection $g) => [
+                'name' => $g->first()->atmCondition?->name ?? 'Sin estatus final',
+                'total' => $g->count(),
+                'sort' => $g->first()->atmCondition?->sort ?? PHP_INT_MAX,
+            ])
+            ->sortBy([['sort', 'asc'], ['total', 'desc']])->values()
+            ->map(fn (array $r) => ['name' => $r['name'], 'total' => $r['total'], 'pct' => $pct($r['total'])]);
+
+        $faults = $visits->countBy(fn (Visit $v) => $v->faultType?->name ?? 'Sin clasificar')
+            ->sortDesc()
+            ->map(fn (int $n, string $name) => ['name' => $name, 'total' => $n, 'pct' => $pct($n)])->values();
+
+        $parts = $visits->flatMap(fn (Visit $v) => $v->parts)
+            ->groupBy('name')
+            ->map(fn (Collection $g, string $name) => ['name' => $name, 'quantity' => (int) $g->sum('pivot.quantity')])
+            ->sortByDesc('quantity')->values();
+
+        $atms = Atm::query()->with('state')->where('active', true)
+            ->when($f['bank_id'], fn ($q, $id) => $q->where('bank_id', $id))
+            ->when($f['state_id'], fn ($q, $id) => $q->where('state_id', $id))
+            ->get();
+        $attended = $visits->map(fn (Visit $v) => $v->ticket->atm)->unique('id')->countBy(fn (Atm $a) => $a->state?->name ?? 'Sin estado');
+        $zones = $atms->countBy(fn (Atm $a) => $a->state?->name ?? 'Sin estado')->sortDesc()
+            ->map(fn (int $n, string $state) => ['name' => $state, 'atms' => $n, 'attended' => (int) ($attended[$state] ?? 0)])->values();
+
+        return [
+            'reports' => $total,
+            'statuses' => $statuses,
+            'faults' => $faults,
+            'parts' => ['total' => (int) $parts->sum('quantity'), 'by_part' => $parts],
+            'zones' => ['atms' => $atms->count(), 'attended' => $visits->pluck('ticket.atm_id')->unique()->count(), 'by_state' => $zones],
+        ];
+    }
+
     /**
      * Atenciones (visitas) del período, p. ej. de un técnico o donde se usó un repuesto.
      *

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import {
-    AlertTriangle, BarChart3, Building2, CheckCircle2, ChevronRight, Clock3, Download, FileSpreadsheet, Gauge, Package, Repeat2, Timer, Wrench,
+    AlertTriangle, BarChart3, Building2, CheckCircle2, ChevronRight, Clock3, Download, FileSpreadsheet, Gauge, Package, PieChart, Printer, Repeat2, Timer, Wrench,
 } from 'lucide-react';
 import { api, download } from '../lib/api';
 import { useCatalogs } from '../lib/queries';
@@ -10,11 +10,12 @@ import { formatDate, formatDuration, formatNumber, formatPct, monthToDate } from
 import {
     Alert, Button, Card, CardHeader, EmptyState, Field, Input, LoadingBlock, PageHeader, Select, Table, Td, Th, cx, toast,
 } from '../components/ui';
-import { CATEGORICAL, ColumnChart, HBarChart, TrendChart, WeeklyChart } from '../components/Charts';
+import { CATEGORICAL, ColumnChart, DonutChart, HBarChart, TrendChart, WeeklyChart, donutColor } from '../components/Charts';
 import { detailUrl } from './ReportDetail';
 
 const TABS = [
     { key: 'resumen', label: 'Resumen', icon: Gauge },
+    { key: 'visual', label: 'Informe visual', icon: PieChart },
     { key: 'cajeros', label: 'Cajeros', icon: Building2 },
     { key: 'tecnicos', label: 'Técnicos', icon: Wrench },
     { key: 'repuestos', label: 'Repuestos', icon: Package },
@@ -444,6 +445,149 @@ function FaultsTab({ filters }) {
     );
 }
 
+/* ---------------------------------------------------------------- Informe visual */
+
+const longDate = (iso) => new Date(`${iso}T00:00:00`).toLocaleDateString('es-VE', { day: 'numeric', month: 'long', year: 'numeric' });
+const monthName = (iso) => new Date(`${iso}T00:00:00`).toLocaleDateString('es-VE', { month: 'long', year: 'numeric' });
+const count = (n, one, many) => `${formatNumber(n)} ${n === 1 ? one : many}`;
+const join = (items) => (items.length <= 1 ? items.join('') : `${items.slice(0, -1).join(', ')} y ${items[items.length - 1]}`);
+const pct = (n) => `${String(n).replace('.', ',')} %`;
+
+/** El período en palabras: «septiembre de 2026» si es un mes completo, o «del … al …». */
+function periodLabel({ from, to }) {
+    const start = new Date(`${from}T00:00:00`);
+    const end = new Date(`${to}T00:00:00`);
+    const lastDay = new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate();
+    const wholeMonth = start.getDate() === 1 && end.getFullYear() === start.getFullYear() && end.getMonth() === start.getMonth() && end.getDate() === lastDay;
+    return wholeMonth ? monthName(from) : `del ${longDate(from)} al ${longDate(to)}`;
+}
+
+function VisualSection({ number, title, sentence, children }) {
+    return (
+        <section className="visual-page overflow-hidden rounded-2xl border border-line bg-white">
+            <div className="flex items-baseline gap-3 border-b border-line bg-surface/60 px-5 py-4">
+                <span className="font-display text-2xl font-extrabold text-brand-600 tabular">{number}</span>
+                <h3 className="text-lg font-bold">{title}</h3>
+            </div>
+            <div className="p-5">
+                {sentence && <p className="mb-5 max-w-4xl text-[15px] leading-relaxed text-ink">{sentence}</p>}
+                {children}
+            </div>
+        </section>
+    );
+}
+
+function ValueTable({ head, rows }) {
+    return (
+        <Table compact>
+            <thead><tr>{head.map((h, i) => <Th key={h} className={cx(i > 0 && 'text-right')}>{h}</Th>)}</tr></thead>
+            <tbody>
+                {rows.map((r) => (
+                    <tr key={r[0]}>{r.map((c, i) => <Td key={i} className={cx(i > 0 ? 'text-right whitespace-nowrap tabular' : 'font-semibold text-ink')}>{c}</Td>)}</tr>
+                ))}
+            </tbody>
+        </Table>
+    );
+}
+
+/** El resumen mensual que se presenta al banco: zona, estados, motivos y repuestos, listo para imprimir. */
+function VisualTab({ filters }) {
+    const { data, isLoading } = useReport('visual', filters);
+    if (isLoading || !data) {
+        return <LoadingBlock />;
+    }
+    const period = periodLabel(filters);
+    const zones = data.zones.by_state;
+    const parts = data.parts.by_part;
+    const maxParts = parts.length ? parts[0].quantity : 0;
+    const topParts = parts.filter((p) => p.quantity === maxParts).map((p) => p.name);
+
+    const zoneText = data.zones.atms
+        ? `${count(data.zones.atms, 'cajero activo', 'cajeros activos')} en ${count(zones.length, 'estado', 'estados')}; la mayor concentración está en ${zones[0].name} (${formatNumber(zones[0].atms)}). En el período se atendieron ${count(data.zones.attended, 'cajero', 'cajeros')}.`
+        : 'No hay cajeros activos con estos filtros.';
+    const statusText = data.reports
+        ? `Se atendieron un total de ${count(data.reports, 'reporte', 'reportes')}, quedando ${join(data.statuses.map((s) => `${s.name.toLowerCase()} ${formatNumber(s.total)}`))}.`
+        : null;
+    const faultText = data.reports
+        ? `Se registraron para ${period}: ${join(data.faults.map((f) => `${pct(f.pct)} ${f.name.toLowerCase()}`))}.`
+        : null;
+    const partText = data.parts.total
+        ? `Se utilizaron ${count(data.parts.total, 'repuesto', 'repuestos')}, ${topParts.length > 1 ? `siendo ${join(topParts)} los más utilizados (${formatNumber(maxParts)} cada uno)` : `siendo ${topParts[0]} el más utilizado (${formatNumber(maxParts)})`}.`
+        : 'No se registraron repuestos en el período.';
+
+    return (
+        <div className="visual-report space-y-5">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                    <p className="text-xs font-bold tracking-[0.16em] text-brand-600 uppercase">Informe visual</p>
+                    <h2 className="text-2xl font-extrabold">Resumen de reportes de atención a cajeros</h2>
+                    <p className="mt-1 text-sm text-muted capitalize-first">{data.bank ?? 'Todos los bancos'} · {period}</p>
+                </div>
+                <Button className="no-print" icon={Printer} onClick={() => window.print()}>Imprimir o guardar en PDF</Button>
+            </div>
+            {!data.reports && <Alert tone="info">No hay reportes atendidos en este período.</Alert>}
+
+            <VisualSection number="01" title="Zona de atención" sentence={zoneText}>
+                {zones.length > 0 && (
+                    <div className="grid gap-6 lg:grid-cols-5">
+                        <div className="lg:col-span-3"><HBarChart data={zones} labelKey="name" valueKey="atms" unit="Cajeros" /></div>
+                        <div className="lg:col-span-2">
+                            <ValueTable head={['Estado', 'Cajeros', 'Atendidos']} rows={[...zones.map((z) => [z.name, formatNumber(z.atms), formatNumber(z.attended)]), ['Total', formatNumber(data.zones.atms), formatNumber(data.zones.attended)]]} />
+                        </div>
+                    </div>
+                )}
+            </VisualSection>
+
+            <VisualSection number="02" title="Cantidad y estados de los reportes" sentence={statusText}>
+                {data.reports > 0 && (
+                    <div className="grid gap-6 lg:grid-cols-5">
+                        <div className="lg:col-span-3"><HBarChart data={data.statuses} labelKey="name" valueKey="total" unit="Reportes" /></div>
+                        <div className="lg:col-span-2">
+                            <ValueTable head={['Estatus final', 'Reportes', '%']} rows={[...data.statuses.map((s) => [s.name, formatNumber(s.total), pct(s.pct)]), ['Total', formatNumber(data.reports), '100 %']]} />
+                        </div>
+                    </div>
+                )}
+            </VisualSection>
+
+            <VisualSection number="03" title="Motivos de los reportes" sentence={faultText}>
+                {data.reports > 0 && (
+                    <div className="grid items-center gap-6 lg:grid-cols-5">
+                        <div className="lg:col-span-2"><DonutChart data={data.faults} /></div>
+                        <div className="lg:col-span-3">
+                            <Table compact>
+                                <thead><tr><Th>Motivo</Th><Th className="text-right">Reportes</Th><Th className="text-right">%</Th></tr></thead>
+                                <tbody>
+                                    {data.faults.map((f, i) => (
+                                        <tr key={f.name}>
+                                            <Td className="font-semibold text-ink">
+                                                <span className="mr-2 inline-block size-2.5 rounded-sm align-middle" style={{ background: donutColor(i, data.faults.length) }} />
+                                                {f.name}
+                                            </Td>
+                                            <Td className="text-right whitespace-nowrap tabular">{formatNumber(f.total)}</Td>
+                                            <Td className="text-right whitespace-nowrap tabular">{pct(f.pct)}</Td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </Table>
+                        </div>
+                    </div>
+                )}
+            </VisualSection>
+
+            <VisualSection number="04" title="Repuestos utilizados" sentence={partText}>
+                {parts.length > 0 && (
+                    <div className="grid gap-6 lg:grid-cols-5">
+                        <div className="lg:col-span-3"><HBarChart data={parts} labelKey="name" valueKey="quantity" unit="Unidades" /></div>
+                        <div className="lg:col-span-2">
+                            <ValueTable head={['Repuesto', 'Cantidad']} rows={[...parts.map((p) => [p.name, formatNumber(p.quantity)]), ['Total', formatNumber(data.parts.total)]]} />
+                        </div>
+                    </div>
+                )}
+            </VisualSection>
+        </div>
+    );
+}
+
 /* ---------------------------------------------------------------- Consolidado */
 
 function ConsolidadoTab({ filters }) {
@@ -484,6 +628,7 @@ export default function Reports() {
     const { filters, set, tab, setTab } = useReportFilters();
     const content = {
         resumen: <SummaryTab filters={filters} />,
+        visual: <VisualTab filters={filters} />,
         cajeros: <AtmsTab filters={filters} />,
         tecnicos: <TechniciansTab filters={filters} />,
         repuestos: <PartsTab filters={filters} />,
@@ -493,6 +638,7 @@ export default function Reports() {
 
     return (
         <>
+            <div className="no-print">
             <PageHeader title="Reportes y métricas" subtitle="Indicadores de atención, SLA, cajeros, técnicos y repuestos. Cada reporte se descarga en Excel." />
             <div className="-mx-4 mb-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
                 <div className="flex w-max gap-1 rounded-xl border border-line bg-white p-1">
@@ -512,6 +658,7 @@ export default function Reports() {
                 </div>
             </div>
             <Filters filters={filters} set={set} showTechnician={tab !== 'consolidado'} />
+            </div>
             {content[tab] ?? content.resumen}
         </>
     );

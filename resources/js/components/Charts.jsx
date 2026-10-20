@@ -1,5 +1,5 @@
 import {
-    Bar, BarChart, CartesianGrid, LabelList, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
+    Bar, BarChart, CartesianGrid, Cell, LabelList, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import { formatNumber } from '../lib/format';
 
@@ -62,8 +62,10 @@ export function HBarChart({ data, labelKey, valueKey, unit = '', color = SERIES.
     );
 }
 
-/* Paleta categórica validada (orden fijo) para series múltiples, p. ej. tendencia de repuestos. */
-export const CATEGORICAL = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4'];
+/* Paleta categórica validada (orden fijo, 8 lugares) para series múltiples, p. ej. tendencia de repuestos. */
+export const CATEGORICAL = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#6250d6', '#e34948'];
+/* Lo que no cabe en los 8 lugares se agrupa en «Otros», en gris neutro. */
+export const OTHER = '#a3acbf';
 
 const monthLabel = (ym) => new Date(`${ym}-01T00:00:00`).toLocaleDateString('es-VE', { month: 'short', year: '2-digit' });
 const weekLabel = (iso) => `Sem. ${new Date(`${iso}T00:00:00`).toLocaleDateString('es-VE', { day: '2-digit', month: 'short' })}`;
@@ -120,3 +122,28 @@ export function TrendChart({ months, series }) {
         </ResponsiveContainer>
     );
 }
+
+/**
+ * Reparto de un total (p. ej. motivos de los reportes). Hasta 8 porciones con
+ * color propio; si hay más, desde la octava se suman en «Otros». La tabla de al lado lleva todos los valores.
+ */
+export function DonutChart({ data, labelKey = 'name', valueKey = 'total', height = 260 }) {
+    const fits = data.length <= CATEGORICAL.length;
+    const top = fits ? data : data.slice(0, CATEGORICAL.length - 1);
+    const rest = fits ? 0 : data.slice(CATEGORICAL.length - 1).reduce((sum, d) => sum + d[valueKey], 0);
+    const slices = rest > 0 ? [...top, { [labelKey]: 'Otros', [valueKey]: rest, other: true }] : top;
+    return (
+        <ResponsiveContainer width="100%" height={height}>
+            <PieChart>
+                <Tooltip content={<TooltipBox />} />
+                <Pie data={slices} dataKey={valueKey} nameKey={labelKey} innerRadius="52%" outerRadius="88%" paddingAngle={1} stroke="#ffffff" strokeWidth={2} isAnimationActive={false}>
+                    {slices.map((d, i) => <Cell key={d[labelKey]} fill={d.other ? OTHER : CATEGORICAL[i]} />)}
+                </Pie>
+            </PieChart>
+        </ResponsiveContainer>
+    );
+}
+
+/** Color de cada porción, en el mismo orden que DonutChart, para la leyenda en tabla. */
+export const donutColor = (index, total) => (total <= CATEGORICAL.length || index < CATEGORICAL.length - 1 ? CATEGORICAL[index] : OTHER);
+

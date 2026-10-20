@@ -157,9 +157,9 @@ export default function Layout() {
     const location = useLocation();
 
     return (
-        <div className="min-h-dvh lg:pl-64">
+        <div className="min-h-dvh lg:pl-64 print:pl-0">
             {/* Barra lateral (escritorio) */}
-            <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-navy-900 lg:flex">
+            <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-navy-900 lg:flex print:hidden">
                 <div className="px-5 pt-6 pb-5">
                     <div className="flex items-center justify-between gap-2">
                         <Logo light subtitle={false} />
@@ -175,7 +175,7 @@ export default function Layout() {
             </aside>
 
             {/* Barra superior (teléfono / tablet) */}
-            <header className="sticky top-0 z-30 flex items-center justify-between bg-navy-900 px-4 pt-[env(safe-area-inset-top)] lg:hidden">
+            <header className="sticky top-0 z-30 flex items-center justify-between bg-navy-900 px-4 pt-[env(safe-area-inset-top)] lg:hidden print:hidden">
                 <div className="flex h-14 items-center">
                     <Logo light compact />
                 </div>

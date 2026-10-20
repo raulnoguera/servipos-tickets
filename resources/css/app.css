@@ -50,3 +50,27 @@
 @utility tabular {
     font-variant-numeric: tabular-nums;
 }
+
+/* Impresión del informe visual: solo el informe, cada sección sin cortarse entre páginas. */
+@media print {
+    @page {
+        size: letter;
+        margin: 12mm;
+    }
+    body {
+        background: #fff;
+    }
+    .no-print {
+        display: none !important;
+    }
+    .visual-page {
+        break-inside: avoid;
+    }
+}
+
+@utility capitalize-first {
+    &::first-letter {
+        text-transform: uppercase;
+    }
+}
+

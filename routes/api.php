@@ -65,6 +65,7 @@ Route::prefix('v1')->group(function () {
             Route::get('atms', [AtmController::class, 'index']);
             Route::get('atms/lookup/{number}', [AtmController::class, 'lookup']);
             Route::get('reports/summary', [ReportController::class, 'summary'])->middleware('throttle:heavy');
+            Route::get('reports/visual', [ReportController::class, 'visual'])->middleware('throttle:heavy');
             Route::get('reports/atms', [ReportController::class, 'atms'])->middleware('throttle:heavy');
             Route::get('reports/atms/{atm}', [ReportController::class, 'atm'])->middleware('throttle:heavy');
             Route::get('reports/technicians', [ReportController::class, 'technicians'])->middleware('throttle:heavy');
