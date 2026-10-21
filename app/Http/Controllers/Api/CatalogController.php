@@ -6,7 +6,10 @@ use App\Enums\Priority;
 use App\Enums\Role;
 use App\Enums\TicketStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Atm;
+use App\Models\AtmBrand;
 use App\Models\AtmCondition;
+use App\Models\AtmModel;
 use App\Models\Bank;
 use App\Models\FaultType;
 use App\Models\Part;
@@ -31,11 +34,13 @@ class CatalogController extends Controller
         'fault-types' => FaultType::class,
         'parts' => Part::class,
         'atm-conditions' => AtmCondition::class,
+        'brands' => AtmBrand::class,
+        'models' => AtmModel::class,
     ];
 
     private const LABELS = [
         'banks' => 'Bancos', 'states' => 'Estados', 'fault-types' => 'Tipos de falla',
-        'parts' => 'Repuestos', 'atm-conditions' => 'Estatus final',
+        'parts' => 'Repuestos', 'atm-conditions' => 'Estatus final', 'brands' => 'Marcas', 'models' => 'Modelos',
     ];
 
     /** Todo lo que necesitan los formularios, en una sola llamada (también sirve de caché offline). */
@@ -53,6 +58,7 @@ class CatalogController extends Controller
             'fault_types' => $list(FaultType::class),
             'parts' => $list(Part::class),
             'atm_conditions' => AtmCondition::orderBy('sort')->get(['id', 'name', 'resulting_ticket_status', 'active']),
+            'brands' => AtmBrand::with('models:id,atm_brand_id,name,active')->orderBy('name')->get(['id', 'name', 'active']),
             'technicians' => User::technicians()->where('active', true)->with('states:id')->orderBy('name')->get()
                 ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->name, 'phone' => $staff ? $u->phone : null, 'state_ids' => $u->states->pluck('id')]),
             'statuses' => collect(TicketStatus::cases())->map(fn ($s) => ['value' => $s->value, 'label' => $s->label()]),
@@ -73,12 +79,30 @@ class CatalogController extends Controller
     public function update(Request $request, string $type, int $id, AuditLogger $audit): JsonResponse
     {
         $record = $this->model($type)::findOrFail($id);
-        $record->update($this->validated($request, $type, $id));
+        $before = $record->name;
+        $record->update($this->validated($request, $type, $id, $record));
+        $this->renameOnAtms($record, $before);
         if ($record->wasChanged()) {
             $audit->record('catalog.updated', self::LABELS[$type].": se modificó \"{$record->name}\"", $record, ['cambios' => array_keys($record->getChanges())]);
         }
 
         return response()->json($record);
+    }
+
+    /**
+     * El cajero guarda el nombre de su marca y su modelo: al renombrarlos en el
+     * catálogo, se renombran también en los cajeros que los usan.
+     */
+    private function renameOnAtms(Model $record, string $before): void
+    {
+        if (! $record->wasChanged('name')) {
+            return;
+        }
+        if ($record instanceof AtmBrand) {
+            Atm::withoutGlobalScopes()->where('brand', $before)->update(['brand' => $record->name]);
+        } elseif ($record instanceof AtmModel) {
+            Atm::withoutGlobalScopes()->where('brand', $record->brand->name)->where('model', $before)->update(['model' => $record->name]);
+        }
     }
 
     /** @return class-string<Model> */
@@ -88,10 +112,24 @@ class CatalogController extends Controller
     }
 
     /** @return array<string, mixed> */
-    private function validated(Request $request, string $type, ?int $id = null): array
+    private function validated(Request $request, string $type, ?int $id = null, ?Model $record = null): array
     {
         $table = (new (self::TYPES[$type]))->getTable();
         $rules = ['name' => ['required', 'string', 'max:255', Rule::unique($table)->ignore($id)]];
+        if (in_array($type, ['parts', 'brands', 'models'], true)) {
+            $request->merge(['name' => mb_strtoupper(trim((string) $request->input('name')))]);
+        }
+        if ($type === 'brands') {
+            $rules['name'][2] = 'max:40';
+        }
+        if ($type === 'models') {
+            // El modelo pertenece a una marca: se indica al crearlo y no cambia después.
+            $brandId = $record?->atm_brand_id ?? (int) $request->input('atm_brand_id');
+            $rules['name'] = ['required', 'string', 'max:60', Rule::unique('atm_models')->where('atm_brand_id', $brandId)->ignore($id)];
+            if (! $record) {
+                $rules['atm_brand_id'] = ['required', 'integer', 'exists:atm_brands,id'];
+            }
+        }
         if ($type !== 'states') {
             $rules['active'] = ['boolean'];
         }
@@ -101,9 +139,6 @@ class CatalogController extends Controller
         if ($type === 'atm-conditions') {
             $rules['resulting_ticket_status'] = ['required', Rule::in([TicketStatus::Closed->value, TicketStatus::PendingPart->value, TicketStatus::PendingValidation->value])];
             $rules['sort'] = ['integer', 'min:0'];
-        }
-        if ($type === 'parts') {
-            $request->merge(['name' => mb_strtoupper(trim((string) $request->input('name')))]);
         }
 
         return $request->validate($rules);

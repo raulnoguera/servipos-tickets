@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, Pencil, Plus, X } from 'lucide-react';
+import { Check, ChevronRight, Pencil, Plus, X } from 'lucide-react';
 import { api } from '../lib/api';
 import { useCatalogs } from '../lib/queries';
 import { Badge, Button, Card, Input, LoadingBlock, PageHeader, Select, StatusBadge, Toggle, cx, toast } from '../components/ui';
@@ -11,6 +11,7 @@ const TABS = [
     { type: 'parts', key: 'parts', label: 'Repuestos', hint: 'Se guardan en MAYÚSCULAS para evitar duplicados' },
     { type: 'atm-conditions', key: 'atm_conditions', label: 'Estatus final', hint: 'Cómo queda el cajero y a qué estado lleva el ticket' },
     { type: 'banks', key: 'banks', label: 'Bancos', hint: 'Clientes bancarios' },
+    { type: 'brands', key: 'brands', label: 'Marcas y modelos', hint: 'Marcas de cajeros y sus modelos; se eligen en la ficha de cada cajero. Se guardan en MAYÚSCULAS.' },
     { type: 'states', key: 'states', label: 'Estados', hint: 'Estados y regiones de cobertura' },
     { type: 'sla', key: 'sla', label: 'SLA', hint: 'Metas de tiempo por prioridad' },
 ];
@@ -77,6 +78,73 @@ function SlaSettings() {
 }
 
 const RESULT_STATUSES = ['concluido', 'pendiente_repuesto', 'pendiente_validacion'];
+
+/** Formulario corto para agregar un elemento (una marca, o un modelo dentro de su marca). */
+function AddForm({ type, extra = {}, placeholder, compact = false }) {
+    const queryClient = useQueryClient();
+    const [name, setName] = useState('');
+    const add = useMutation({
+        mutationFn: () => api(`catalogs/${type}`, { method: 'POST', body: { name, ...extra } }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['catalogs'] });
+            setName('');
+            toast('Agregado');
+        },
+        onError: (e) => toast(e.field?.('name') || e.message, 'error'),
+    });
+    return (
+        <form className={cx('flex gap-2', compact ? 'py-2' : 'border-b border-line bg-surface/60 px-5 py-3')} onSubmit={(e) => { e.preventDefault(); add.mutate(); }}>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={placeholder} required className={compact ? 'h-9 text-sm' : ''} />
+            <Button type="submit" size={compact ? 'sm' : 'md'} variant={compact ? 'secondary' : 'primary'} icon={Plus} loading={add.isPending}>Agregar</Button>
+        </form>
+    );
+}
+
+/** Marcas de cajeros, cada una con sus modelos. */
+function BrandsPanel({ brands }) {
+    const [open, setOpen] = useState(null);
+    return (
+        <>
+            <AddForm type="brands" placeholder="Agregar una marca, p. ej. NCR…" />
+            {!brands.length ? (
+                <p className="px-5 py-6 text-sm text-muted">Todavía no hay marcas.</p>
+            ) : (
+                <ul className="divide-y divide-line">
+                    {brands.map((brand) => {
+                        const expanded = open === brand.id;
+                        return (
+                            <li key={brand.id}>
+                                <div className="flex items-center">
+                                    <button
+                                        type="button"
+                                        onClick={() => setOpen(expanded ? null : brand.id)}
+                                        className="flex shrink-0 items-center gap-1 py-3 pl-4 text-muted hover:text-ink"
+                                        aria-expanded={expanded}
+                                        aria-label={expanded ? `Ocultar modelos de ${brand.name}` : `Ver modelos de ${brand.name}`}
+                                    >
+                                        <ChevronRight className={cx('size-4 transition-transform', expanded && 'rotate-90')} />
+                                    </button>
+                                    <ul className="flex-1"><Row tab={{ type: 'brands' }} item={brand} /></ul>
+                                    <Badge className="mr-5">{brand.models.length} {brand.models.length === 1 ? 'modelo' : 'modelos'}</Badge>
+                                </div>
+                                {expanded && (
+                                    <div className="border-t border-line bg-surface/50 pr-5 pl-12">
+                                        <AddForm type="models" extra={{ atm_brand_id: brand.id }} placeholder={`Agregar un modelo de ${brand.name}…`} compact />
+                                        {brand.models.length > 0 && (
+                                            <ul className="divide-y divide-line border-t border-line">
+                                                {brand.models.map((m) => <Row key={m.id} tab={{ type: 'models' }} item={m} />)}
+                                            </ul>
+                                        )}
+                                    </div>
+                                )}
+                            </li>
+                        );
+                    })}
+                </ul>
+            )}
+        </>
+    );
+}
 
 function Row({ tab, item }) {
     const queryClient = useQueryClient();
@@ -161,7 +229,7 @@ export default function Catalogs() {
                         <h2 className="text-base font-bold">{tab.label}</h2>
                         <p className="text-sm text-muted">{tab.hint}</p>
                     </div>
-                    {tab.type === 'sla' ? <SlaSettings /> : (<>
+                    {tab.type === 'sla' ? <SlaSettings /> : tab.type === 'brands' ? (isLoading ? <LoadingBlock /> : <BrandsPanel brands={data?.brands ?? []} />) : (<>
                     <form className="flex gap-2 border-b border-line bg-surface/60 px-5 py-3" onSubmit={(e) => { e.preventDefault(); add.mutate(); }}>
                         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={`Agregar a ${tab.label.toLowerCase()}…`} required />
                         <Button type="submit" icon={Plus} loading={add.isPending}>Agregar</Button>

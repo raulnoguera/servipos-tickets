@@ -5,6 +5,7 @@ namespace App\Services\Import;
 use App\Enums\Role;
 use App\Enums\TicketStatus;
 use App\Models\Atm;
+use App\Models\AtmBrand;
 use App\Models\AtmCondition;
 use App\Models\Bank;
 use App\Models\FaultType;
@@ -188,6 +189,14 @@ class ExcelHistoryImporter
             $brand = Normalizer::text($get('Marca'));
             if ($brand === null) {
                 $this->report->warn($where, "ATM {$number}: sin marca.");
+            }
+
+            // Las marcas y modelos que traiga el Excel pasan al catálogo, para poder elegirlos después.
+            if ($brand) {
+                $catalogBrand = AtmBrand::firstOrCreate(['name' => Str::upper($brand)]);
+                if ($model) {
+                    $catalogBrand->models()->firstOrCreate(['name' => Str::upper($model)]);
+                }
             }
 
             $this->atms[$number] = Atm::create([

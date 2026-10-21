@@ -16,6 +16,8 @@ function AtmForm({ atm, onClose }) {
     const queryClient = useQueryClient();
     const [form, setForm] = useState(() => (atm ? Object.fromEntries(Object.keys(EMPTY).map((k) => [k, atm[k] ?? ''])) : EMPTY));
     const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+    const brands = catalogs?.brands ?? [];
+    const models = brands.find((b) => b.name === form.brand)?.models ?? [];
     const save = useMutation({
         mutationFn: () => api(atm ? `atms/${atm.id}` : 'atms', { method: atm ? 'PUT' : 'POST', body: { ...form, state_id: form.state_id || null, bank_id: form.bank_id || null } }),
         onSuccess: () => {
@@ -64,6 +66,22 @@ function AtmForm({ atm, onClose }) {
                 </Field>
                 {text('agency_code', 'Código de agencia')}
                 {text('agency_name', 'Nombre de agencia', { required: true })}
+                <Field label="Marca" error={err?.field?.('brand')}>
+                    {(id) => (
+                        <Select id={id} value={form.brand ?? ''} onChange={(e) => setForm((f) => ({ ...f, brand: e.target.value, model: '' }))}>
+                            <option value="">Sin marca</option>
+                            {brands.filter((b) => b.active || b.name === form.brand).map((b) => <option key={b.id} value={b.name}>{b.name}</option>)}
+                        </Select>
+                    )}
+                </Field>
+                <Field label="Modelo" error={err?.field?.('model')}>
+                    {(id) => (
+                        <Select id={id} value={form.model ?? ''} onChange={set('model')} disabled={!form.brand}>
+                            <option value="">{form.brand ? 'Sin modelo' : 'Elija primero la marca'}</option>
+                            {models.filter((m) => m.active || m.name === form.model).map((m) => <option key={m.id} value={m.name}>{m.name}</option>)}
+                        </Select>
+                    )}
+                </Field>
                 <Field label="Tipo de sitio">
                     {(id) => (
                         <Select id={id} value={form.site_type} onChange={set('site_type')}>
@@ -73,10 +91,10 @@ function AtmForm({ atm, onClose }) {
                         </Select>
                     )}
                 </Field>
-                {text('brand', 'Marca')}
-                {text('model', 'Modelo', { placeholder: 'OPTEVA 562' })}
+                <div className="flex items-end pb-2.5">
+                    <Toggle checked={!!form.active} onChange={(v) => setForm((f) => ({ ...f, active: v }))} label="Activo" />
+                </div>
                 <div className="sm:col-span-2">{text('address', 'Dirección / ubicación')}</div>
-                <Toggle checked={!!form.active} onChange={(v) => setForm((f) => ({ ...f, active: v }))} label="Activo" />
             </div>
             {err && !Object.keys(err.errors).length && <Alert className="mt-4">{err.message}</Alert>}
         </Modal>
