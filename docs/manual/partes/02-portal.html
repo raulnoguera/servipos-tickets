@@ -13,7 +13,7 @@
 <tr><td><b>Correos del banco</b></td><td>Reportes recibidos por correo y lo que el sistema hizo con cada uno.</td><td class="si">Sí</td><td class="si">Sí</td></tr>
 <tr><td><b>Reportes</b></td><td>Indicadores, detalle y descargas a Excel.</td><td class="si">Sí</td><td class="si">Sí</td></tr>
 <tr><td><b>Cajeros</b></td><td>Maestro de cajeros y hoja de vida de cada uno.</td><td class="si">Sí</td><td class="si">Consulta</td></tr>
-<tr><td><b>Catálogos</b></td><td>Listas de fallas, repuestos, estatus, bancos, estados y metas de SLA.</td><td class="si">Sí</td><td class="no">—</td></tr>
+<tr><td><b>Catálogos</b></td><td>Listas de fallas, repuestos, estatus, bancos, marcas y estados; metas de SLA, horario bancario y feriados.</td><td class="si">Sí</td><td class="no">—</td></tr>
 <tr><td><b>Usuarios y técnicos</b></td><td>Altas, cambios, accesos y bajas de usuarios.</td><td class="si">Sí</td><td class="no">—</td></tr>
 <tr><td><b>Importar Excel</b></td><td>Cargar el Libro Consolidado.</td><td class="si">Sí</td><td class="no">—</td></tr>
 <tr><td><b>Auditoría</b></td><td>Registro de acciones sensibles.</td><td class="si">Sí</td><td class="no">—</td></tr>
@@ -32,8 +32,8 @@
 <tr><td><b>Concluidos</b></td><td>Tickets concluidos en el período. Debajo: cuántos se abrieron en ese mismo período.</td></tr>
 <tr><td><b>Tiempo promedio</b></td><td>Promedio desde la apertura hasta el cierre, de los concluidos en el período.</td></tr>
 <tr><td><b>Franja verde azulada</b></td><td>Cuántos tickets atendidos esperan la confirmación del cierre. Aparece solo si hay alguno.</td></tr>
-<tr><td><b>Franja roja</b></td><td>Tickets en curso con el SLA vencido.</td></tr>
-<tr><td><b>Franja amarilla</b></td><td>Tickets por vencer (más del 80 % del tiempo consumido).</td></tr>
+<tr><td><b>Franja roja</b></td><td>Tickets en curso en crítica. Al tocarla se abre la lista.</td></tr>
+<tr><td><b>Franja naranja</b></td><td>Tickets en curso en naranja: todavía a tiempo, pero cerca de pasar a crítica.</td></tr>
 <tr><td><b>Tickets abiertos y concluidos</b></td><td>Gráfico de los últimos 30 días: cuántos se abrieron y cuántos se concluyeron cada día.</td></tr>
 <tr><td><b>Carga por técnico</b></td><td>Por cada técnico: tickets activos, pendientes y concluidos en el período.</td></tr>
 <tr><td><b>Repuestos más utilizados</b></td><td>Unidades usadas en el período, con acceso al reporte.</td></tr>
@@ -53,12 +53,11 @@
 <table>
 <thead><tr><th style="width:25%">Campo</th><th class="c" style="width:13%">Obligatorio</th><th>Descripción</th></tr></thead>
 <tr><td><b>Tipo de falla</b></td><td class="si">Sí</td><td>Motivo del reporte, de la lista de <b>Catálogos → Tipos de falla</b>.</td></tr>
-<tr><td><b>Prioridad</b></td><td class="no">No</td><td>Crítica (roja), Media (amarilla) o Baja (verde). Por defecto, Media. Define las metas de SLA del ticket.</td></tr>
 <tr><td><b>N° de caso del banco</b></td><td class="no">No</td><td>Número de caso o incidente del banco, si el correo lo trae. Sirve luego para buscar el ticket.</td></tr>
 <tr><td><b>Detalle del reporte</b></td><td class="no">No</td><td>Texto libre. Se recomienda copiar lo que indica el correo del banco.</td></tr>
 <tr><td><b>Asignar a técnico</b></td><td class="no">No</td><td>Técnico responsable. La lista muestra primero los que cubren el estado del cajero. Puede dejarse «Sin asignar por ahora».</td></tr>
 </table>
-<p>Al tocar <b>Crear ticket</b> el sistema asigna el número, registra la hora de apertura (desde ahí corre el reloj del SLA) y abre el ticket. Si eligió un técnico, este recibe el aviso de inmediato.</p>
+<p>Al tocar <b>Crear ticket</b> el sistema asigna el número, registra la hora de apertura (desde ahí corre el reloj del SLA, en horario bancario) y abre el ticket. No hay que elegir prioridad: el color del SLA sale de la zona del cajero, que aparece en su resumen. Si eligió un técnico, este recibe el aviso de inmediato.</p>
 
 <h2>4.4 Tickets</h2>
 <p>Es la bandeja de trabajo: todos los tickets, con pestañas, búsqueda y filtros. Se actualiza sola cada 30 segundos.</p>
@@ -71,16 +70,16 @@
 <tr><td><b>Pend. repuesto</b> · <b>Pend. validación</b></td><td>Los que quedaron pendientes después de una atención.</td></tr>
 <tr><td><b>Por confirmar</b></td><td>Atendidos por el técnico, en espera de la confirmación del administrador.</td></tr>
 <tr><td><b>Concluidos</b> · <b>Anulados</b></td><td>Los ya cerrados.</td></tr>
-<tr><td><b>SLA vencido</b> · <b>Por vencer</b></td><td>Tickets sin cerrar que superaron una meta, o que ya consumieron el 80 % de ella.</td></tr>
+<tr><td><b>En crítica</b> · <b>En naranja</b></td><td>Tickets sin cerrar que están en ese color del semáforo.</td></tr>
 <tr><td><b>Todos</b></td><td>Sin filtro de estado.</td></tr>
 </table>
 <h3>Búsqueda y filtros</h3>
 <ul>
 <li><b>Buscador:</b> por N° de ticket, N° de ATM, nombre de agencia o caso del banco.</li>
-<li><b>Técnico, banco y prioridad:</b> tres listas para acotar el resultado.</li>
+<li><b>Técnico, banco y semáforo:</b> tres listas para acotar el resultado. La de semáforo filtra por Verde, Naranja o Crítica.</li>
 </ul>
 <h3>Columnas</h3>
-<p>Cada fila muestra el número y la fecha de apertura (con la etiqueta de color de su prioridad), el ATM, la agencia y su estado, la falla, el técnico, el estado del ticket y el semáforo del SLA. Al hacer clic en una fila se abre el detalle. Para llevar la información a Excel, el botón <b>Exportar Excel</b> lleva a Reportes.</p>
+<p>Los tickets en curso se ordenan por urgencia: primero los que están en crítica o más cerca de llegar a ella. Cada fila muestra el número y la fecha de apertura, el ATM, la agencia y su estado, la falla, el técnico, el estado del ticket y el semáforo del SLA. Al hacer clic en una fila se abre el detalle. Para llevar la información a Excel, el botón <b>Exportar Excel</b> lleva a Reportes.</p>
 
 <h2>4.5 Detalle del ticket</h2>
 <p>Reúne toda la historia del caso. Es la misma pantalla para todos los roles; cambian los botones disponibles.</p>
@@ -88,10 +87,10 @@
 
 <h3>Encabezado</h3>
 <ul>
-<li><b>Número, estado, prioridad y semáforo del SLA.</b></li>
+<li><b>Número, estado y color del SLA.</b></li>
 <li><b>Línea de apertura:</b> fecha, hora, quién lo abrió y el caso del banco. En tickets concluidos, también quién confirmó el cierre y cuándo.</li>
 <li><b>Seguir:</b> al seguir un ticket recibirá los avisos de cada novedad. El número indica cuántas personas lo siguen.</li>
-<li><b>Editar:</b> cambiar prioridad, tipo de falla, caso del banco o detalle (operador y administrador).</li>
+<li><b>Editar:</b> cambiar tipo de falla, caso del banco o detalle (operador y administrador).</li>
 <li><b>Tiempo:</b> «Tiempo transcurrido» mientras está en curso; «Tiempo hasta la atención» cuando espera confirmación; «Tiempo total del ciclo» cuando concluyó.</li>
 </ul>
 
@@ -112,8 +111,8 @@
 
 <h3>Editar</h3>
 <figure class="media"><img src="capturas/d-ticket-editar.jpg" alt="Diálogo de edición"><figcaption>Edición de los datos del ticket.</figcaption></figure>
-<p>Permite corregir la <b>prioridad</b>, el <b>tipo de falla</b>, el <b>N° de caso del banco</b> y el <b>detalle</b>. Cada cambio queda anotado en la actividad del ticket, con el valor anterior y el nuevo.</p>
-<div class="aviso"><b>Atención</b><p>Cambiar la prioridad cambia las metas de SLA del ticket, y el semáforo se recalcula con las nuevas.</p></div>
+<p>Permite corregir el <b>tipo de falla</b>, el <b>N° de caso del banco</b> y el <b>detalle</b>. Cada cambio queda anotado en la actividad del ticket, con el valor anterior y el nuevo.</p>
+<div class="nota"><b>Nota</b><p>El color del SLA no se edita en el ticket: depende de la zona del cajero. Si la zona estaba mal, corríjala en la ficha del cajero y sus tickets en curso se recalculan.</p></div>
 
 <h3>Anular</h3>
 <figure class="media"><img src="capturas/d-ticket-anular.jpg" alt="Diálogo de anulación"><figcaption>La anulación exige un motivo.</figcaption></figure>
@@ -127,7 +126,7 @@
 <tr><td><b>Falla reportada</b></td><td>Tipo de falla y detalle registrado al abrir el ticket.</td></tr>
 <tr><td><b>Atenciones en sitio</b></td><td>Una tarjeta por cada visita, numerada: fecha y hora, estatus final, técnico, N° de constancia, falla atendida, trabajo realizado y repuestos con su cantidad. Si hay foto de la constancia, se abre al tocarla. Una visita enviada tarde por falta de señal lo indica con una nota amarilla.</td></tr>
 <tr><td><b>Actividad</b></td><td>Caja para escribir un comentario y, debajo, la línea de tiempo: comentarios, cambios de estado y ediciones, con fecha, hora y autor. Se puede filtrar por <b>Todo</b>, <b>Comentarios</b> o <b>Cambios</b>.</td></tr>
-<tr><td><b>SLA</b></td><td>Dos barras: <b>Llegada al sitio</b> y <b>Resolución</b>, cada una con su meta, el tiempo consumido y el semáforo.</td></tr>
+<tr><td><b>SLA</b></td><td>Los límites de la zona del cajero y una barra con el tramo verde, naranja y rojo. Indica el tiempo hábil consumido y cuándo cambia de color; al cerrar, el color con el que terminó.</td></tr>
 <tr><td><b>Cajero</b></td><td>Datos del ATM, enlace a su <b>Hoja de vida</b> y botón <b>Cómo llegar</b>, que abre el mapa.</td></tr>
 <tr><td><b>Técnico</b></td><td>Nombre, teléfono y fecha de asignación.</td></tr>
 </table>
@@ -154,10 +153,10 @@
 <figure><img src="capturas/tablero.jpg" alt="Tablero de tickets"><figcaption>Tablero por estado.</figcaption></figure>
 <ul>
 <li><b>Columnas:</b> Abierto, Asignado, En tránsito, En sitio, Pend. repuesto, Pend. validación, Por confirmar y Concluido (los concluidos de hoy). Si no caben, la pantalla se desplaza hacia la derecha.</li>
-<li><b>Orden:</b> dentro de cada columna, primero los de mayor prioridad y los más antiguos.</li>
-<li><b>Tarjeta:</b> número, prioridad, agencia, ATM y estado, falla, técnico, tiempo transcurrido y semáforo.</li>
-<li><b>Borde rojo:</b> el ticket tiene el SLA vencido.</li>
-<li><b>Filtros:</b> por técnico, por prioridad y el interruptor <b>Solo SLA vencido</b>.</li>
+<li><b>Orden:</b> dentro de cada columna, primero los de color más urgente (crítica, naranja, verde) y, entre ellos, los más antiguos.</li>
+<li><b>Tarjeta:</b> número, color del SLA, agencia, ATM y estado, falla, técnico y tiempo transcurrido.</li>
+<li><b>Borde rojo:</b> el ticket está en crítica.</li>
+<li><b>Filtros:</b> por técnico y por color del semáforo.</li>
 </ul>
 <p>Al hacer clic en una tarjeta se abre el ticket. El estado se cambia desde el ticket, no arrastrando la tarjeta.</p>
 
@@ -207,7 +206,7 @@
 <ol class="pasos">
 <li>Abra el correo y lea el texto y el motivo.</li>
 <li>Confirme el cajero propuesto, o toque <b>Cambiar</b> y búsquelo.</li>
-<li>Si lo desea, elija el <b>tipo de falla</b> y la <b>prioridad</b>.</li>
+<li>Si lo desea, elija el <b>tipo de falla</b>.</li>
 <li>Toque <b>Abrir ticket</b>. Si el correo no corresponde a una falla, toque <b>Descartar</b>.</li>
 </ol>
 
@@ -236,12 +235,12 @@
 <tr><td><b>Tiempo promedio de resolución</b></td><td>Promedio desde la apertura hasta el cierre, de los tickets concluidos en el período.</td></tr>
 <tr><td><b>Tiempo promedio de llegada</b></td><td>Promedio desde la apertura hasta la llegada del técnico al sitio.</td></tr>
 <tr><td><b>Resueltos en la 1.ª visita</b></td><td>Porcentaje de los concluidos que se resolvieron con una sola visita.</td></tr>
-<tr><td><b>SLA de resolución cumplido</b></td><td>Porcentaje de tickets resueltos dentro de su meta. Debajo, el de llegada.</td></tr>
-<tr><td><b>Tickets con SLA vencido</b></td><td>Tickets que superaron la meta de llegada o la de resolución.</td></tr>
+<tr><td><b>Cerrados en verde</b></td><td>De los tickets del período que ya cerraron (o cuyo cierre reportó el técnico), el porcentaje que cerró en verde.</td></tr>
+<tr><td><b>Tickets en crítica</b></td><td>Tickets del período en crítica: los en curso que pasaron el límite y los que cerraron después de él.</td></tr>
 <tr><td><b>Reincidencia</b></td><td>Porcentaje de tickets de cajeros que ya habían tenido otra falla en los 30 días anteriores.</td></tr>
 <tr><td><b>Pendientes hoy</b></td><td>Tickets sin cerrar en este momento, sin importar el período.</td></tr>
 </table>
-<p>Debajo hay cuatro gráficos: <b>Abiertos y concluidos por semana</b>, <b>Antigüedad de los pendientes</b> (menos de 4 h, de 4 a 24 h, de 1 a 3 días, más de 3 días), <b>Por estado actual</b> y <b>Por prioridad</b>.</p>
+<p>Debajo hay cuatro gráficos: <b>Abiertos y concluidos por semana</b>, <b>Antigüedad de los pendientes</b> (menos de 4 h, de 4 a 24 h, de 1 a 3 días, más de 3 días), <b>Por estado actual</b> y <b>Semáforo de SLA</b> (cuántos hay en verde, naranja y crítica).</p>
 <p>Cada tarjeta tiene el enlace <b>Ver detalle</b>, que abre la lista exacta de tickets que componen esa cifra.</p>
 
 <h3>Informe visual</h3>
@@ -269,7 +268,7 @@
 
 <h3>Técnicos</h3>
 <figure><img src="capturas/reportes-tecnicos.jpg" alt="Reporte por técnico"><figcaption>Desempeño por técnico.</figcaption></figure>
-<p>Por cada técnico: tickets asignados, concluidos, pendientes hoy, visitas, repuestos, tiempo promedio de llegada y de resolución, porcentaje resuelto en la primera visita y porcentaje de SLA cumplido. Al tocar un técnico se abre el detalle de sus atenciones.</p>
+<p>Por cada técnico: tickets asignados, concluidos, pendientes hoy, visitas, repuestos, tiempo promedio de llegada y de resolución, porcentaje resuelto en la primera visita y porcentaje cerrado en verde. Al tocar un técnico se abre el detalle de sus atenciones.</p>
 
 <h3>Repuestos</h3>
 <figure><img src="capturas/reportes-repuestos.jpg" alt="Reporte de repuestos"><figcaption>Consumo de repuestos.</figcaption></figure>
@@ -291,7 +290,7 @@
 <h2>4.10 Cajeros</h2>
 <p>Es el maestro de cajeros automáticos. Los operadores lo consultan; solo el administrador crea o modifica.</p>
 <figure><img src="capturas/cajeros.jpg" alt="Maestro de cajeros"><figcaption>Maestro de cajeros.</figcaption></figure>
-<p>La lista muestra N° de ATM, serial, agencia con su código y tipo, estado, modelo, banco y cuántos tickets abiertos tiene. Se busca por N° de ATM, serial, agencia o código, y se filtra por estado. Al tocar el número se abre la hoja de vida.</p>
+<p>La lista muestra N° de ATM, serial, agencia con su código, tipo y zona, estado, modelo, banco y cuántos tickets abiertos tiene. Se busca por N° de ATM, serial, agencia o código, y se filtra por estado. Al tocar el número se abre la hoja de vida.</p>
 <figure class="media"><img src="capturas/d-cajero-editar.jpg" alt="Formulario de cajero"><figcaption>Alta y edición de un cajero.</figcaption></figure>
 <table>
 <thead><tr><th style="width:26%">Campo</th><th class="c" style="width:13%">Obligatorio</th><th>Descripción</th></tr></thead>
@@ -302,13 +301,14 @@
 <tr><td><b>Código de agencia</b></td><td class="no">No</td><td>Código que el banco da a la agencia.</td></tr>
 <tr><td><b>Nombre de agencia</b></td><td class="si">Sí</td><td>Nombre con el que se conoce la ubicación.</td></tr>
 <tr><td><b>Tipo de sitio</b></td><td class="no">No</td><td>Agencia, Dirección general o Remoto.</td></tr>
+<tr><td><b>Zona</b></td><td class="no">No</td><td>Urbana o Extraurbana. Define los límites del semáforo del SLA (sección 2.4). Por defecto, Urbana. Al cambiarla, los tickets en curso del cajero se recalculan.</td></tr>
 <tr><td><b>Marca</b> · <b>Modelo</b></td><td class="no">No</td><td>Se eligen de listas: primero la marca y luego uno de sus modelos, por ejemplo DIEBOLD · OPTEVA 562. Las listas se administran en Catálogos → Marcas y modelos (sección 4.11).</td></tr>
 <tr><td><b>Dirección / ubicación</b></td><td class="no">No</td><td>Se usa en el botón «Cómo llegar» y en el mensaje de WhatsApp al técnico.</td></tr>
 <tr><td><b>Activo</b></td><td class="no">No</td><td>Un cajero inactivo deja de ofrecerse al crear tickets y no admite tickets nuevos, pero conserva su historial y sigue apareciendo en los reportes.</td></tr>
 </table>
 <h3>Hoja de vida del cajero</h3>
 <figure><img src="capturas/cajero-hoja.jpg" alt="Hoja de vida de un cajero"><figcaption>Hoja de vida de un cajero.</figcaption></figure>
-<p>Reúne todo el historial de un ATM: tickets totales, abiertos ahora, tickets de los últimos 90 días, visitas, repuestos usados y tiempo promedio de resolución; los gráficos de <b>fallas reportadas</b> y <b>repuestos cambiados</b>; y el <b>historial de tickets</b> con falla, prioridad, técnico, repuestos, estado y duración. Los botones <b>Mapa</b> y <b>Nuevo ticket</b> están arriba a la derecha. Sirve para detectar cajeros con fallas repetidas.</p>
+<p>Reúne todo el historial de un ATM: tickets totales, abiertos ahora, tickets de los últimos 90 días, visitas, repuestos usados y tiempo promedio de resolución; los gráficos de <b>fallas reportadas</b> y <b>repuestos cambiados</b>; y el <b>historial de tickets</b> con falla, color del SLA, técnico, repuestos, estado y duración. Los botones <b>Mapa</b> y <b>Nuevo ticket</b> están arriba a la derecha. Sirve para detectar cajeros con fallas repetidas.</p>
 
 <h2>4.11 Catálogos</h2>
 <p>Son las listas que alimentan los formularios. Solo el administrador las modifica.</p>
@@ -321,7 +321,7 @@
 <tr><td><b>Bancos</b></td><td>Clientes bancarios.</td></tr>
 <tr><td><b>Marcas y modelos</b></td><td>Marcas de cajeros y, dentro de cada una, sus modelos. Se eligen en la ficha de cada cajero.</td></tr>
 <tr><td><b>Estados</b></td><td>Estados y regiones de cobertura.</td></tr>
-<tr><td><b>SLA</b></td><td>Metas de tiempo por prioridad (sección 4.12).</td></tr>
+<tr><td><b>SLA</b></td><td>Límites del semáforo por zona, horario bancario y feriados (sección 4.12).</td></tr>
 </table>
 <p>En cualquiera de ellos: escriba el nombre y toque <b>Agregar</b> para crear un elemento; use el <b>lápiz</b> para cambiarle el nombre; y el <b>interruptor</b> para activarlo o desactivarlo. Los <b>Estados</b> no tienen interruptor: solo se agregan o se renombran.</p>
 <div class="regla"><b>Regla del sistema</b><p>Los elementos no se eliminan, se desactivan. Uno inactivo deja de ofrecerse en los formularios nuevos, pero los tickets y reportes anteriores lo conservan. No se admiten dos elementos con el mismo nombre.</p></div>
@@ -332,10 +332,17 @@
 <div class="regla"><b>Regla del sistema</b><p>El catálogo se llenó con las marcas y modelos que ya tenían los cajeros, y la importación del Excel agrega sola los que falten. Si se renombra una marca o un modelo, el cambio se aplica a todos los cajeros que lo usan.</p></div>
 <p>En <b>Estatus final</b>, además del nombre, se elige el estado al que pasa el ticket: Concluido, Pendiente por repuesto o Pendiente por validación. Los de tipo «Concluido» llevan primero el ticket a «Por confirmar» (sección 4.6).</p>
 
-<h2>4.12 Metas de SLA</h2>
-<figure><img src="capturas/catalogos-sla.jpg" alt="Metas de SLA"><figcaption>Metas de llegada y de resolución por prioridad.</figcaption></figure>
-<p>En <b>Catálogos → SLA</b> se definen, en horas, la meta de <b>llegada al sitio</b> y la de <b>resolución</b> para cada una de las tres prioridades: Crítica, Media y Baja. Admite decimales (1,5 es una hora y media). Si se deja una casilla vacía, esa meta no se mide. Toque <b>Guardar metas</b> para aplicar.</p>
-<div class="aviso"><b>Atención</b><p>El cambio aplica de inmediato a todos los tickets, también a los ya abiertos, y queda en la auditoría. Los valores con los que se entrega el sistema son de ejemplo.</p></div>
+<h2>4.12 SLA: semáforo, horario bancario y feriados</h2>
+<figure><img src="capturas/catalogos-sla.jpg" alt="Configuración del SLA"><figcaption>Límites por zona, horario bancario y feriados.</figcaption></figure>
+<p>En <b>Catálogos → SLA</b> se configuran las tres piezas con las que se calcula el color de cada ticket (sección 2.4):</p>
+<table>
+<tr><th style="width:24%">Sección</th><th>Qué se define</th></tr>
+<tr><td><b>Semáforo por zona</b></td><td>Para Urbana y Extraurbana: si se mide en <b>horas hábiles</b> o en <b>días hábiles</b>, hasta cuándo es <b>verde</b> y hasta cuándo es <b>naranja</b>. Después, el ticket pasa a crítica. Admite decimales (1,5 es una hora y media). El límite de naranja debe ser mayor que el de verde.</td></tr>
+<tr><td><b>Horario bancario</b></td><td>Hora de apertura y de cierre, y los días que cuentan. Un día hábil equivale a una jornada completa de este horario.</td></tr>
+<tr><td><b>Feriados</b></td><td>Fechas que no suman tiempo. Se agregan con la fecha y el motivo, y se quitan con la <b>X</b>. Se muestran los de hoy en adelante.</td></tr>
+</table>
+<p>Toque <b>Guardar metas y horario</b> para aplicar los cambios de las dos primeras secciones. Los feriados se guardan al agregarlos o quitarlos.</p>
+<div class="aviso"><b>Atención</b><p>Los cambios se aplican de inmediato a los tickets en curso; los cerrados conservan el color con el que cerraron. Todo queda en la auditoría. Se entregan cargados los feriados nacionales hasta fines de 2027: revíselos contra el calendario bancario oficial y agregue los que falten.</p></div>
 
 <h2>4.13 Usuarios y técnicos</h2>
 <figure><img src="capturas/usuarios.jpg" alt="Usuarios y técnicos"><figcaption>Lista de usuarios, con su último ingreso.</figcaption></figure>
@@ -379,7 +386,7 @@
 <h3>Qué se carga</h3>
 <table>
 <tr><th style="width:30%">De la pestaña…</th><th>Se crean…</th></tr>
-<tr><td><b>Tablas</b></td><td>Cajeros, estados, tipos de falla, repuestos, estatus finales y técnicos (solo su nombre).</td></tr>
+<tr><td><b>Tablas</b></td><td>Cajeros, estados, tipos de falla, repuestos, estatus finales y técnicos (solo su nombre). Si trae una columna <b>Zona</b> (Urbana o Extraurbana), se usa para los cajeros nuevos; si no, quedan como Urbana.</td></tr>
 <tr><td><b>Base General</b></td><td>Un ticket por cada falla atendida, sus visitas (fecha, técnico, constancia, trabajo, estatus final) y los repuestos usados.</td></tr>
 </table>
 <div class="regla"><b>Regla del sistema</b><p>El archivo se puede cargar las veces que haga falta: cada carga agrega <b>solo lo nuevo</b> y no modifica lo que ya existe.</p>

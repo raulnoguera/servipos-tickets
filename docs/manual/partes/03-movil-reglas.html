@@ -32,7 +32,7 @@
 <p>Al tocar una tarjeta se abre el ticket, con la falla reportada, los datos del cajero, las atenciones anteriores y la actividad.</p>
 <ol class="pasos">
 <li>Al salir hacia el cajero, toque <b>Voy en camino</b>. El ticket pasa a «En tránsito» y el Call Center recibe el aviso.</li>
-<li>Al llegar, toque <b>Llegué al sitio</b>. El ticket pasa a «En sitio» y se registra la hora de llegada, con la que se mide el SLA de llegada.</li>
+<li>Al llegar, toque <b>Llegué al sitio</b>. El ticket pasa a «En sitio» y se registra la hora de llegada, que se usa en los reportes de tiempo de llegada.</li>
 <li>Al terminar, toque <b>Registrar atención</b>.</li>
 </ol>
 <div class="regla"><b>Regla del sistema</b><p>La hora de cada paso es la del servidor en el momento en que usted toca el botón. No se puede indicar una hora anterior. Si no marcó «Voy en camino», puede tocar directamente «Llegué al sitio».</p></div>
@@ -138,15 +138,17 @@
 <h2>6.2 Tiempos y SLA</h2>
 <table>
 <tr><th style="width:30%">Regla</th><th>Detalle</th></tr>
-<tr><td><b>Inicio del reloj</b></td><td>La apertura del ticket. Las dos metas (llegada y resolución) se cuentan desde ese momento.</td></tr>
-<tr><td><b>Fin de «llegada»</b></td><td>Cuando el técnico marca «Llegué al sitio». Si registra la atención sin haberlo marcado, se toma la hora de la atención.</td></tr>
-<tr><td><b>Fin de «resolución»</b></td><td>Cuando el técnico registra la atención con el cajero operativo. No espera a la confirmación del administrador.</td></tr>
-<tr><td><b>El reloj no se detiene</b></td><td>Corre de forma continua: noches, fines de semana y mientras se espera un repuesto o una validación.</td></tr>
+<tr><td><b>Inicio del reloj</b></td><td>La apertura del ticket. En los tickets abiertos por correo, la hora en que el banco envió el reporte.</td></tr>
+<tr><td><b>Fin del reloj</b></td><td>Cuando el técnico registra la atención con el cajero operativo. No espera a la confirmación del administrador. Desde ahí el color queda fijo.</td></tr>
+<tr><td><b>Solo horario bancario</b></td><td>Suma tiempo de lunes a viernes, de 8:00 a. m. a 3:00 p. m., sin feriados. Lo que pasa fuera de ese horario no cuenta. Un día hábil es una jornada completa (7 horas).</td></tr>
+<tr><td><b>Límites por zona</b></td><td>Urbana: verde hasta 4 horas hábiles, naranja hasta 8, después crítica. Extraurbana: verde hasta 1 día hábil, naranja hasta 2, después crítica.</td></tr>
+<tr><td><b>Esperas</b></td><td>Dentro del horario bancario, el reloj sigue corriendo mientras se espera un repuesto o una validación.</td></tr>
+<tr><td><b>Hora de llegada</b></td><td>Se registra al marcar «Llegué al sitio» (o, si no se marcó, con la atención). Se usa para el tiempo de llegada de los reportes; no cambia el color del SLA.</td></tr>
 <tr><td><b>Hora del servidor</b></td><td>Con señal, la hora de cada paso es la del servidor. El teléfono no puede declarar una hora anterior.</td></tr>
 <tr><td><b>Hora sin señal</b></td><td>Solo en los envíos guardados sin señal se acepta la hora del teléfono, con límites: no puede ser futura, ni anterior a la apertura ni al paso previo, ni de hace más de 24 horas. El ticket muestra además cuándo llegó realmente.</td></tr>
-<tr><td><b>Por vencer</b></td><td>Se alerta al consumirse el 80 % de la meta.</td></tr>
+<tr><td><b>Naranja</b></td><td>Es el aviso: el ticket sigue a tiempo, pero se acerca al límite. El Monitor y la lista de tickets lo muestran aparte.</td></tr>
 <tr><td><b>Duración exacta</b></td><td>Los tiempos se guardan con precisión de milisegundos.</td></tr>
-<tr><td><b>Cambio de prioridad</b></td><td>Las metas siguen a la prioridad vigente del ticket.</td></tr>
+<tr><td><b>Cambios de configuración</b></td><td>Si cambian los límites, el horario, los feriados o la zona del cajero, los tickets en curso se recalculan; los cerrados conservan su color.</td></tr>
 <tr><td><b>Histórico del Excel</b></td><td>Los tickets importados no tienen horas: no miden duración ni SLA.</td></tr>
 </table>
 
@@ -197,7 +199,7 @@
 <tr><td><b>Tiempo de resolución</b></td><td>De la apertura al momento en que el técnico dejó el cajero operativo.</td></tr>
 <tr><td><b>Resuelto en 1.ª visita</b></td><td>Ticket concluido con una sola atención registrada.</td></tr>
 <tr><td><b>Reincidencia</b></td><td>Ticket de un cajero que tuvo otro ticket en los 30 días anteriores.</td></tr>
-<tr><td><b>SLA cumplido</b></td><td>La etapa terminó dentro de la meta de su prioridad.</td></tr>
+<tr><td><b>Cerrado en verde</b></td><td>El técnico dejó el cajero operativo dentro del límite verde de su zona, contado en horario bancario.</td></tr>
 <tr><td><b>Pendientes</b></td><td>Tickets que no están concluidos ni anulados.</td></tr>
 <tr><td><b>Consumo de repuestos</b></td><td>Suma de las cantidades indicadas en las atenciones del período.</td></tr>
 </table>

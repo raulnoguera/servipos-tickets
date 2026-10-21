@@ -258,7 +258,7 @@
      "path": "/catalogos",
      "wait": 3500,
      "w": 1440,
-     "h": 900,
+     "h": 1240,
      "js": "const setVal=(el,v)=>{const d=Object.getOwnPropertyDescriptor(el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:el.tagName==='SELECT'?HTMLSelectElement.prototype:HTMLInputElement.prototype,'value');d.set.call(el,v);el.dispatchEvent(new Event(el.tagName==='SELECT'?'change':'input',{bubbles:true}));};const wait=(ms)=>new Promise(r=>setTimeout(r,ms));const btn=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.trim()===t);const btnHas=(t,root=document)=>[...root.querySelectorAll('button,a')].find(e=>e.textContent.includes(t));const quieto=()=>document.querySelectorAll('*').forEach(e=>{e.style.transition='none'});quieto();btn('SLA').click();await wait(400);quieto();",
      "after": 1500
     },

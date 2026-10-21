@@ -84,7 +84,7 @@
 <tr><td><b>Notificaciones</b></td><td>Web Push (VAPID)</td><td>Avisos al dispositivo sin pasar por tiendas de apps.</td></tr>
 <tr><td><b>Correo entrante</b></td><td>IMAP · verificación DKIM</td><td>Lectura del buzón de reportes y comprobación de la firma del banco.</td></tr>
 <tr><td><b>Excel</b></td><td>PhpSpreadsheet</td><td>Importación del histórico y descargas con formato.</td></tr>
-<tr><td><b>Pruebas</b></td><td>PHPUnit</td><td>117 pruebas automáticas que se ejecutan antes de cada publicación.</td></tr>
+<tr><td><b>Pruebas</b></td><td>PHPUnit</td><td>119 pruebas automáticas que se ejecutan antes de cada publicación.</td></tr>
 </table>
 
 <h2>8.2 Infraestructura</h2>
@@ -205,7 +205,7 @@
 <tr><td><b>Revisar la Auditoría</b> periódicamente</td><td>Las etiquetas «Bloqueo» y «Denegado» son la primera señal de un intento de abuso.</td></tr>
 <tr><td><b>Dar de baja</b> a quien deja la empresa el mismo día</td><td>Basta con desactivar al usuario; el efecto es inmediato.</td></tr>
 <tr><td><b>No compartir usuarios</b></td><td>Cada persona debe tener el suyo: de eso dependen la trazabilidad y los indicadores por técnico.</td></tr>
-<tr><td><b>Mantener las metas de SLA</b> al día</td><td>Los valores iniciales son de ejemplo y deben reflejar lo acordado con cada banco.</td></tr>
+<tr><td><b>Mantener el SLA</b> al día</td><td>Revisar los feriados de cada año, el horario bancario y la zona de cada cajero nuevo.</td></tr>
 <tr><td><b>Mantenimiento periódico</b></td><td>Aplicar las actualizaciones de seguridad de las librerías cada uno o dos meses.</td></tr>
 </table>
 
@@ -214,7 +214,7 @@
 
 <h2>10.1 Puesta en marcha: lista de verificación</h2>
 <ol class="pasos">
-<li><b>Ajustar las metas de SLA</b> a lo acordado con los bancos (Catálogos → SLA).</li>
+<li><b>Marcar los cajeros extraurbanos</b> y revisar los feriados del año (Catálogos → SLA).</li>
 <li><b>Revisar los catálogos:</b> tipos de falla, repuestos, estatus finales, bancos y estados.</li>
 <li><b>Importar el Excel histórico</b> (Importar Excel), simulando primero.</li>
 <li><b>Completar los cajeros:</b> banco, dirección y modelo de los que falten.</li>
@@ -259,14 +259,16 @@
 <tr><td><b>Atención o visita</b></td><td>Cada vez que un técnico va al cajero y registra lo que hizo.</td></tr>
 <tr><td><b>Constancia</b></td><td>Planilla de servicio que firma el banco al terminar la visita.</td></tr>
 <tr><td><b>Estatus final</b></td><td>Cómo quedó el cajero después de la atención.</td></tr>
-<tr><td><b>SLA</b></td><td>Acuerdo de nivel de servicio: las metas de tiempo de llegada y de resolución.</td></tr>
+<tr><td><b>SLA</b></td><td>Acuerdo de nivel de servicio: el tiempo máximo para dejar el cajero operativo, según su zona.</td></tr>
 <tr><td><b>Reincidencia</b></td><td>Nueva falla de un cajero dentro de los 30 días siguientes a otra.</td></tr>
 <tr><td><b>Seguir</b></td><td>Suscribirse a los avisos de un ticket.</td></tr>
 <tr><td><b>Enlace de acceso</b></td><td>Enlace de un solo uso con el que un usuario crea su contraseña.</td></tr>
 <tr><td><b>Por revisar</b></td><td>Correo del banco que el sistema no pudo resolver solo y espera una decisión.</td></tr>
 <tr><td><b>Firma digital (DKIM)</b></td><td>Prueba de que un correo salió realmente del dominio del banco y no fue alterado.</td></tr>
 <tr><td><b>Informe visual</b></td><td>Resumen mensual para el banco (zona, estados, motivos y repuestos) que se descarga en PDF con formato de presentación.</td></tr>
-<tr><td><b>Prioridad</b></td><td>Urgencia del ticket: Crítica (roja), Media (amarilla) o Baja (verde). Define sus metas de SLA.</td></tr>
+<tr><td><b>Semáforo del SLA</b></td><td>Color del ticket según el tiempo hábil transcurrido y la zona del cajero: Verde, Naranja o Crítica.</td></tr>
+<tr><td><b>Zona</b></td><td>Urbana o Extraurbana. Se indica en la ficha del cajero y define los límites del semáforo.</td></tr>
+<tr><td><b>Horario bancario</b></td><td>Lunes a viernes de 8:00 a. m. a 3:00 p. m., sin feriados. Solo en ese horario suma tiempo el SLA.</td></tr>
 <tr><td><b>Bandeja de envíos</b></td><td>Lo que el teléfono guarda mientras no hay señal, para enviarlo después.</td></tr>
 <tr><td><b>PWA</b></td><td>Aplicación web que se instala en el teléfono sin pasar por una tienda.</td></tr>
 <tr><td><b>Auditoría</b></td><td>Registro de quién hizo qué y cuándo en las funciones sensibles.</td></tr>

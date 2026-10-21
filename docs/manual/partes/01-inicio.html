@@ -38,7 +38,7 @@
 <tr><th>Documento</th><td>Manual de usuario · Sistema de Monitoreo de Tickets ATM</td></tr>
 <tr><th>Cliente</th><td>ServiPos 2019, C.A.</td></tr>
 <tr><th>Desarrollado por</th><td>GT Consulting</td></tr>
-<tr><th>Versión del manual</th><td>1.2 · octubre de 2026</td></tr>
+<tr><th>Versión del manual</th><td>1.3 · octubre de 2026</td></tr>
 <tr><th>Versión del sistema descrita</th><td><!--VERSION--></td></tr>
 <tr><th>Dirección de producción</th><td>https://intra.servipos2019.com</td></tr>
 </table>
@@ -53,7 +53,7 @@
 <tr><th style="width:50%">Antes</th><th>Con el sistema</th></tr>
 <tr><td>Los reportes de los bancos llegaban por correo y se seguían por llamadas y WhatsApp.</td><td>El correo del banco abre el ticket automáticamente, con número propio, responsable, estado e historial.</td></tr>
 <tr><td>El «Libro Consolidado» en Excel se armaba a mano.</td><td>El consolidado y los demás reportes se descargan en Excel en segundos.</td></tr>
-<tr><td>No se medían los tiempos de llegada ni de resolución.</td><td>El sistema calcula los tiempos y el cumplimiento de las metas (SLA) automáticamente.</td></tr>
+<tr><td>No se medían los tiempos de llegada ni de resolución.</td><td>El sistema calcula los tiempos y el semáforo del SLA automáticamente, en horario bancario.</td></tr>
 <tr><td>Las constancias de servicio quedaban en papel.</td><td>El técnico adjunta la foto de la constancia al ticket desde su teléfono.</td></tr>
 <tr><td>Saber «por dónde va» un técnico requería llamarlo.</td><td>El Call Center recibe un aviso en cada avance y lo ve en pantalla.</td></tr>
 </table>
@@ -75,7 +75,7 @@
 
 <h1><span class="cap">Capítulo 2</span>2. Conceptos básicos</h1>
 
-<p class="entrada">Antes de recorrer las pantallas conviene conocer cinco conceptos que aparecen en todo el sistema: los roles, el ticket, sus estados, la prioridad con sus metas de tiempo y el estatus final del cajero.</p>
+<p class="entrada">Antes de recorrer las pantallas conviene conocer cinco conceptos que aparecen en todo el sistema: los roles, el ticket, sus estados, el semáforo del SLA y el estatus final del cajero.</p>
 
 <h2>2.1 Roles de usuario</h2>
 <p>Cada usuario tiene un rol, y el rol define qué ve y qué puede hacer. Existen tres:</p>
@@ -93,7 +93,7 @@
 <tr><td>Abrir un ticket nuevo</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
 <tr><td>Revisar los correos del banco y abrir sus tickets</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
 <tr><td>Asignar o reasignar un técnico</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
-<tr><td>Editar prioridad, falla, detalle o caso del banco</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
+<tr><td>Editar falla, detalle o caso del banco</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
 <tr><td>Anular un ticket</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
 <tr><td>Ver tickets</td><td class="si">Todos</td><td class="si">Todos</td><td class="si">Los suyos</td></tr>
 <tr><td>Marcar «Voy en camino» y «Llegué al sitio»</td><td class="si">Sí</td><td class="si">Sí</td><td class="si">En los suyos</td></tr>
@@ -104,7 +104,7 @@
 <tr><td>Generar el informe visual para el banco (PDF)</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
 <tr><td>Consultar cajeros y su hoja de vida</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
 <tr><td>Crear y editar cajeros</td><td class="si">Sí</td><td class="no">—</td><td class="no">—</td></tr>
-<tr><td>Administrar catálogos y metas de SLA</td><td class="si">Sí</td><td class="no">—</td><td class="no">—</td></tr>
+<tr><td>Administrar catálogos, metas de SLA, horario y feriados</td><td class="si">Sí</td><td class="no">—</td><td class="no">—</td></tr>
 <tr><td>Administrar usuarios y enviar accesos</td><td class="si">Sí</td><td class="no">—</td><td class="no">—</td></tr>
 <tr><td>Asignar a cada operador los bancos que atiende</td><td class="si">Sí</td><td class="no">—</td><td class="no">—</td></tr>
 <tr><td>Importar el Excel histórico</td><td class="si">Sí</td><td class="no">—</td><td class="no">—</td></tr>
@@ -114,7 +114,7 @@
 <div class="regla"><b>Regla del sistema</b><p>Los permisos se comprueban en el servidor en cada operación. Que una opción no aparezca en el menú no es la única protección: aunque alguien intente la operación por otra vía, el sistema la rechaza y deja el intento registrado en la auditoría.</p></div>
 
 <h2>2.2 El ticket</h2>
-<p>Un ticket representa <b>una falla de un cajero</b>, desde que se reporta hasta que se resuelve. Reúne en un solo lugar el cajero, la falla, la prioridad, el técnico responsable, las visitas realizadas, los repuestos usados, la foto de la constancia, los comentarios y el historial de todo lo ocurrido.</p>
+<p>Un ticket representa <b>una falla de un cajero</b>, desde que se reporta hasta que se resuelve. Reúne en un solo lugar el cajero, la falla, el semáforo del SLA, el técnico responsable, las visitas realizadas, los repuestos usados, la foto de la constancia, los comentarios y el historial de todo lo ocurrido.</p>
 <p>Un ticket nace de dos maneras: lo abre el sistema al leer el correo del banco (sección 4.8), o lo registra el Call Center a mano (sección 4.3).</p>
 <p>Cada ticket recibe un número único con este formato:</p>
 <p style="text-align:center;font-family:'Urbanist';font-size:18pt;font-weight:800;color:#00194C;margin:4pt 0 2pt">TK-2026-00193</p>
@@ -150,28 +150,23 @@
 <tr><td><span class="et e-anulado">Anulado</span></td><td>Se canceló (reporte duplicado, el banco desistió, etc.), con el motivo anotado.</td><td>Botón «Anular».</td></tr>
 </table>
 
-<h2>2.4 Prioridad y metas de tiempo (SLA)</h2>
-<p>Cada ticket tiene una de tres prioridades, cada una con su color: <span class="et" style="background:#DC2626;color:#fff">Crítica</span> en rojo, <span class="et" style="background:#FACC15;color:#422006">Media</span> en amarillo y <span class="et" style="background:#059669;color:#fff">Baja</span> en verde. La prioridad determina dos metas de tiempo, contadas siempre desde la apertura del ticket:</p>
-<ul>
-<li><b>Llegada al sitio:</b> tiempo máximo hasta que el técnico marca «Llegué al sitio».</li>
-<li><b>Resolución:</b> tiempo máximo hasta que el cajero queda operativo.</li>
-</ul>
-<table class="estrecha" style="min-width:70%">
-<tr><th>Prioridad</th><th class="c">Meta de llegada</th><th class="c">Meta de resolución</th></tr>
-<tr><td>Crítica</td><td class="c">2 horas</td><td class="c">4 horas</td></tr>
-<tr><td>Media</td><td class="c">8 horas</td><td class="c">24 horas</td></tr>
-<tr><td>Baja</td><td class="c">24 horas</td><td class="c">48 horas</td></tr>
+<h2>2.4 Semáforo del SLA: zona del cajero y horario bancario</h2>
+<p>El SLA mide cuánto tarda la atención, desde que se abre el ticket hasta que el técnico reporta que el cajero quedó operativo. El resultado se muestra como un semáforo de tres colores: <span class="et" style="background:#059669;color:#fff">Verde</span>, <span class="et" style="background:#F97316;color:#fff">Naranja</span> y <span class="et" style="background:#DC2626;color:#fff">Crítica</span>. Los límites dependen de la <b>zona del cajero</b>, que se indica en su ficha (sección 4.10):</p>
+<table class="estrecha" style="min-width:80%">
+<tr><th>Zona</th><th class="c"><span class="et" style="background:#059669;color:#fff">Verde</span></th><th class="c"><span class="et" style="background:#F97316;color:#fff">Naranja</span></th><th class="c"><span class="et" style="background:#DC2626;color:#fff">Crítica</span></th></tr>
+<tr><td><b>Urbana</b></td><td class="c">Hasta 4 horas hábiles</td><td class="c">Hasta 8 horas hábiles</td><td class="c">Más de 8 horas hábiles</td></tr>
+<tr><td><b>Extraurbana</b></td><td class="c">Hasta 1 día hábil</td><td class="c">Hasta 2 días hábiles</td><td class="c">Más de 2 días hábiles</td></tr>
 </table>
-<div class="aviso"><b>Atención</b><p>Estos son los valores iniciales de ejemplo con los que se entrega el sistema. El administrador debe ajustarlos a lo acordado con cada banco en <b>Catálogos → SLA</b> (sección 4.12).</p></div>
-<p>Con esas metas, cada ticket muestra un semáforo para la llegada y otro para la resolución:</p>
-<table class="estrecha" style="min-width:70%">
-<tr><th>Semáforo</th><th>Significado</th></tr>
-<tr><td><b style="color:#0B5F8A">En tiempo</b></td><td>Ha transcurrido menos del 80 % de la meta.</td></tr>
-<tr><td><b style="color:#8A5A00">Por vencer</b></td><td>Ha transcurrido el 80 % o más de la meta y aún no se cumple.</td></tr>
-<tr><td><b style="color:#A32020">Vencido</b></td><td>Se superó la meta.</td></tr>
-<tr><td><b style="color:#136C34">Cumplido</b></td><td>La etapa terminó dentro de la meta.</td></tr>
+<p>Solo cuenta el <b>horario bancario</b>: de lunes a viernes, de 8:00 a. m. a 3:00 p. m., sin contar los feriados. Un día hábil es una jornada completa de ese horario (7 horas).</p>
+<table class="estrecha" style="min-width:80%">
+<tr><th>Ejemplo (cajero urbano)</th><th>Resultado</th></tr>
+<tr><td>El reporte llega el lunes a las 2:00 p. m.</td><td>Ese día suma 1 hora. El martes sigue desde las 8:00 a. m.</td></tr>
+<tr><td>Martes a las 11:00 a. m. (4 horas hábiles)</td><td>Pasa de verde a naranja.</td></tr>
+<tr><td>Martes a las 3:00 p. m. (8 horas hábiles)</td><td>Si sigue abierto, pasa a crítica.</td></tr>
+<tr><td>El reporte llega el viernes a las 5:00 p. m.</td><td>No suma nada hasta el lunes a las 8:00 a. m.</td></tr>
 </table>
-<div class="regla"><b>Regla del sistema</b><p>El reloj corre de forma continua desde la apertura: no se detiene de noche, en fines de semana ni mientras el ticket espera un repuesto. Solo se detiene cuando el técnico registra que el cajero quedó operativo, o cuando el ticket se anula.</p></div>
+<div class="regla"><b>Regla del sistema</b><p>Dentro del horario bancario el reloj no se detiene mientras el ticket espera un repuesto. Se detiene cuando el técnico registra que el cajero quedó operativo, y desde ese momento el color queda fijo. Los tickets anulados y los del histórico importado no se miden.</p></div>
+<div class="aviso"><b>Atención</b><p>Los límites de cada zona, el horario y la lista de feriados se ajustan en <b>Catálogos → SLA</b> (sección 4.12). Al cambiarlos, los tickets en curso se recalculan de inmediato; los cerrados conservan el color con el que cerraron.</p></div>
 
 <h2>2.5 Estatus final del cajero</h2>
 <p>Al registrar una atención, el técnico indica cómo quedó el cajero. Esa respuesta decide el estado del ticket:</p>
