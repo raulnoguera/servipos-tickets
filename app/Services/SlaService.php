@@ -63,13 +63,47 @@ class SlaService
         return [(int) round($policy->green * $unit), (int) round($policy->orange * $unit)];
     }
 
+    /** Zona con la que se mide el ticket: la elegida para él o, si no, la de su cajero. */
     public function zoneOf(Ticket $ticket): Zone
+    {
+        if ($chosen = Zone::tryFrom((string) $ticket->sla_zone)) {
+            return $chosen;
+        }
+
+        return $this->atmZone($ticket);
+    }
+
+    public function atmZone(Ticket $ticket): Zone
     {
         $atm = $ticket->relationLoaded('atm') && $ticket->atm?->id === $ticket->atm_id
             ? $ticket->atm
             : Atm::withoutGlobalScopes()->find($ticket->atm_id);
 
         return Zone::tryFrom((string) $atm?->zone) ?? Zone::Urban;
+    }
+
+    /**
+     * Valor a guardar en el ticket: null si coincide con la zona del cajero, para
+     * que siga a su cajero; la zona elegida si es distinta.
+     */
+    public function chosenZone(?string $zone, Ticket $ticket): ?string
+    {
+        $chosen = Zone::tryFrom((string) $zone);
+
+        return $chosen && $chosen !== $this->atmZone($ticket) ? $chosen->value : null;
+    }
+
+    /** «verde hasta 4 h hábiles, naranja hasta 8 h» (para mostrar junto a la zona). */
+    public function rule(Zone $zone): ?string
+    {
+        $p = $this->policies()->get($zone->value);
+        if (! $p) {
+            return null;
+        }
+        $n = fn (float $v) => str_replace('.', ',', rtrim(rtrim(number_format($v, 2, '.', ''), '0'), '.'));
+        $unit = fn (float $v) => $p->unit === SlaPolicy::DAYS ? ($v == 1 ? 'día hábil' : 'días hábiles') : ($v == 1 ? 'hora hábil' : 'horas hábiles');
+
+        return "verde hasta {$n($p->green)} {$unit($p->green)}, naranja hasta {$n($p->orange)} {$unit($p->orange)}";
     }
 
     /** Calcula (sin guardar) cuándo pasa el ticket a naranja y a crítica. */
@@ -136,6 +170,7 @@ class SlaService
             'label' => $level?->label(),
             'zone' => $zone->value,
             'zone_label' => $zone->label(),
+            'zone_from_atm' => Zone::tryFrom((string) $ticket->sla_zone) === null,
             'running' => $level !== null && ! $ticket->status->clockStopped(),
             'elapsed_minutes' => $level ? $this->calendar()->minutesBetween($ticket->opened_at, $end) : null,
             'day_minutes' => $this->calendar()->dayMinutes(),

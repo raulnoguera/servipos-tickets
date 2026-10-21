@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\Zone;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\TicketResource;
 use App\Models\Atm;
@@ -59,13 +60,14 @@ class InboundEmailController extends Controller
         $data = $request->validate([
             'atm_id' => ['required', 'integer', Rule::exists('atms', 'id')->where('active', true)->where(fn ($q) => BankScope::banks() === null ? $q : $q->whereIn('bank_id', BankScope::banks()))],
             'fault_type_id' => ['nullable', 'integer', Rule::exists('fault_types', 'id')->where('active', true)],
+            'sla_zone' => ['nullable', Rule::enum(Zone::class)],
         ], ['atm_id.exists' => 'El cajero no existe, está inactivo o es de un banco que usted no atiende.'], ['atm_id' => 'cajero', 'fault_type_id' => 'tipo de falla']);
 
         $ticket = DB::transaction(function () use ($email, $data, $processor, $request) {
             $email = InboundEmail::whereKey($email->id)->lockForUpdate()->firstOrFail();
             $this->ensurePending($email);
 
-            $ticket = $processor->openTicket($email, Atm::findOrFail($data['atm_id']), $request->user(), $data['fault_type_id'] ?? null);
+            $ticket = $processor->openTicket($email, Atm::findOrFail($data['atm_id']), $request->user(), $data['fault_type_id'] ?? null, $data['sla_zone'] ?? null);
             $email->update([
                 'status' => InboundEmail::TICKET, 'atm_id' => $ticket->atm_id, 'ticket_id' => $ticket->id,
                 'handled_by' => $request->user()->id, 'handled_at' => now(),
@@ -118,7 +120,7 @@ class InboundEmailController extends Controller
             'parsed' => $email->parsed,
             'atm' => $email->atm ? [
                 'id' => $email->atm->id, 'atm_number' => $email->atm->atm_number, 'agency_name' => $email->atm->agency_name,
-                'serial' => $email->atm->serial, 'active' => $email->atm->active,
+                'serial' => $email->atm->serial, 'active' => $email->atm->active, 'zone' => $email->atm->zone,
             ] : null,
             'ticket' => $email->ticket ? ['id' => $email->ticket->id, 'number' => $email->ticket->number, 'status' => $email->ticket->status] : null,
             'handled_by' => $email->handler?->name,

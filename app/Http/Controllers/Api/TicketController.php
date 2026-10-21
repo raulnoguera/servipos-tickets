@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Enums\Role;
 use App\Enums\SlaLevel;
 use App\Enums\TicketStatus;
+use App\Enums\Zone;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTicketRequest;
 use App\Http\Resources\TicketResource;
@@ -157,12 +158,13 @@ class TicketController extends Controller
         ]);
     }
 
-    /** Editar falla, detalle o caso del banco (queda en el historial). */
+    /** Editar falla, tipo de SLA, detalle o caso del banco (queda en el historial). */
     public function update(Request $request, Ticket $ticket): TicketResource
     {
         Gate::authorize('manage', $ticket);
         $data = $request->validate([
             'fault_type_id' => ['sometimes', 'nullable', 'integer', 'exists:fault_types,id'],
+            'sla_zone' => ['sometimes', 'nullable', Rule::enum(Zone::class)],
             'description' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'bank_reference' => ['sometimes', 'nullable', 'string', 'max:60'],
         ]);

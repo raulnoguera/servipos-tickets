@@ -1,6 +1,6 @@
 import { CheckCircle2, Clock3, Flame } from 'lucide-react';
 import { formatDateTime } from '../lib/format';
-import { cx } from './ui';
+import { Field, Select, cx } from './ui';
 
 /** Semáforo del SLA: el color depende de la zona del cajero y de las horas hábiles transcurridas. */
 export const SLA_LEVEL = {
@@ -8,6 +8,31 @@ export const SLA_LEVEL = {
     naranja: { label: 'Naranja', className: 'bg-orange-500 text-white ring-orange-500', bar: 'bg-orange-500', icon: Clock3 },
     critica: { label: 'Crítica', className: 'bg-red-600 text-white ring-red-600', bar: 'bg-red-600', icon: Flame },
 };
+
+const ZONES = [{ value: 'urbana', label: 'Urbana' }, { value: 'extraurbana', label: 'Extraurbana' }];
+
+/**
+ * Tipo de SLA del ticket (urbana o extraurbana). Viene con la zona del cajero
+ * y se puede cambiar solo para este ticket.
+ */
+export function SlaZoneField({ value, onChange, atmZone, zones, error, className }) {
+    const list = zones?.length ? zones : ZONES;
+    const current = list.find((z) => z.value === value);
+    const atmLabel = list.find((z) => z.value === atmZone)?.label;
+    const hint = [
+        current?.rule && `${current.rule.charAt(0).toUpperCase()}${current.rule.slice(1)}.`,
+        atmLabel && (value === atmZone ? `Es la zona del cajero (${atmLabel.toLowerCase()}).` : `Distinto de la zona del cajero (${atmLabel.toLowerCase()}): solo para este ticket.`),
+    ].filter(Boolean).join(' ');
+    return (
+        <Field label="Tipo de SLA" hint={hint} error={error} className={className}>
+            {(id) => (
+                <Select id={id} value={value} onChange={(e) => onChange(e.target.value)}>
+                    {list.map((z) => <option key={z.value} value={z.value}>{z.label}</option>)}
+                </Select>
+            )}
+        </Field>
+    );
+}
 
 /** Orden para listar: lo más urgente primero. */
 export const LEVEL_WEIGHT = { critica: 3, naranja: 2, verde: 1 };

@@ -84,7 +84,7 @@
 <tr><td><b>Notificaciones</b></td><td>Web Push (VAPID)</td><td>Avisos al dispositivo sin pasar por tiendas de apps.</td></tr>
 <tr><td><b>Correo entrante</b></td><td>IMAP · verificación DKIM</td><td>Lectura del buzón de reportes y comprobación de la firma del banco.</td></tr>
 <tr><td><b>Excel</b></td><td>PhpSpreadsheet</td><td>Importación del histórico y descargas con formato.</td></tr>
-<tr><td><b>Pruebas</b></td><td>PHPUnit</td><td>119 pruebas automáticas que se ejecutan antes de cada publicación.</td></tr>
+<tr><td><b>Pruebas</b></td><td>PHPUnit</td><td>120 pruebas automáticas que se ejecutan antes de cada publicación.</td></tr>
 </table>
 
 <h2>8.2 Infraestructura</h2>
@@ -267,7 +267,7 @@
 <tr><td><b>Firma digital (DKIM)</b></td><td>Prueba de que un correo salió realmente del dominio del banco y no fue alterado.</td></tr>
 <tr><td><b>Informe visual</b></td><td>Resumen mensual para el banco (zona, estados, motivos y repuestos) que se descarga en PDF con formato de presentación.</td></tr>
 <tr><td><b>Semáforo del SLA</b></td><td>Color del ticket según el tiempo hábil transcurrido y la zona del cajero: Verde, Naranja o Crítica.</td></tr>
-<tr><td><b>Zona</b></td><td>Urbana o Extraurbana. Se indica en la ficha del cajero y define los límites del semáforo.</td></tr>
+<tr><td><b>Zona</b> · <b>Tipo de SLA</b></td><td>Urbana o Extraurbana. La zona se indica en la ficha del cajero; el tipo de SLA del ticket la toma por defecto y se puede cambiar para un caso.</td></tr>
 <tr><td><b>Horario bancario</b></td><td>Lunes a viernes de 8:00 a. m. a 3:00 p. m., sin feriados. Solo en ese horario suma tiempo el SLA.</td></tr>
 <tr><td><b>Bandeja de envíos</b></td><td>Lo que el teléfono guarda mientras no hay señal, para enviarlo después.</td></tr>
 <tr><td><b>PWA</b></td><td>Aplicación web que se instala en el teléfono sin pasar por una tienda.</td></tr>

@@ -120,6 +120,35 @@ class TicketTrackingTest extends TestCase
         $this->getJson("/api/v1/tickets/{$ticket['id']}")->assertJsonPath('data.sla.level', 'verde')->assertJsonPath('data.sla.zone_label', 'Extraurbana');
     }
 
+    public function test_the_sla_type_can_be_chosen_when_opening_and_editing_a_ticket(): void
+    {
+        $this->travelTo($this->monday());
+        $atm = Atm::factory()->create(); // urbana
+        $ticket = $this->actingAs($this->operator)->postJson('/api/v1/tickets', [
+            'atm_id' => $atm->id,
+            'fault_type_id' => FaultType::firstOrCreate(['name' => 'Falla de Dispensación'])->id,
+            'sla_zone' => 'extraurbana',
+        ])->assertCreated()
+            ->assertJsonPath('data.sla.zone', 'extraurbana')
+            ->assertJsonPath('data.sla.zone_from_atm', false)
+            ->assertJsonPath('data.sla.orange_at', $this->monday()->addDay()->toIso8601String())
+            ->json('data');
+
+        // Lo elegido para el ticket se mantiene aunque cambie la zona del cajero.
+        $atm->update(['zone' => 'urbana']);
+        $this->getJson("/api/v1/tickets/{$ticket['id']}")->assertJsonPath('data.sla.zone', 'extraurbana');
+
+        // Volver a la zona del cajero: el ticket la sigue de nuevo y queda en el historial.
+        $this->patchJson("/api/v1/tickets/{$ticket['id']}", ['sla_zone' => 'urbana'])
+            ->assertOk()->assertJsonPath('data.sla.zone', 'urbana')->assertJsonPath('data.sla.zone_from_atm', true);
+        $this->assertNull(Ticket::find($ticket['id'])->sla_zone);
+        $this->assertStringContainsString('Tipo de SLA: Extraurbana → Urbana', Ticket::find($ticket['id'])->events()->pluck('note')->implode(' | '));
+
+        $this->postJson('/api/v1/tickets', ['atm_id' => $atm->id, 'fault_type_id' => FaultType::first()->id, 'sla_zone' => 'rural'])
+            ->assertStatus(422)->assertJsonValidationErrors('sla_zone');
+        $this->getJson('/api/v1/catalogs')->assertJsonPath('zones.1.rule', 'verde hasta 1 día hábil, naranja hasta 2 días hábiles');
+    }
+
     public function test_editing_a_ticket_is_logged_in_the_history(): void
     {
         $ticket = $this->open();

@@ -16,6 +16,7 @@ use App\Models\Part;
 use App\Models\State;
 use App\Models\User;
 use App\Services\AuditLogger;
+use App\Services\SlaService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -62,7 +63,7 @@ class CatalogController extends Controller
             'technicians' => User::technicians()->where('active', true)->with('states:id')->orderBy('name')->get()
                 ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->name, 'phone' => $staff ? $u->phone : null, 'state_ids' => $u->states->pluck('id')]),
             'statuses' => collect(TicketStatus::cases())->map(fn ($s) => ['value' => $s->value, 'label' => $s->label()]),
-            'zones' => collect(Zone::cases())->map(fn ($z) => ['value' => $z->value, 'label' => $z->label()]),
+            'zones' => collect(Zone::cases())->map(fn ($z) => ['value' => $z->value, 'label' => $z->label(), 'rule' => app(SlaService::class)->rule($z)]),
             'roles' => collect(Role::cases())->map(fn ($r) => ['value' => $r->value, 'label' => $r->label()]),
         ]);
     }

@@ -5,7 +5,7 @@ import { api } from '../lib/api';
 import { useCatalogs } from '../lib/queries';
 import { formatDateTime, formatDuration, initials } from '../lib/format';
 import { Alert, Button, Card, CardHeader, Field, Input, Modal, Select, STATUS, Textarea, cx, toast } from './ui';
-import { SlaMeter, slaRule } from './Sla';
+import { SlaMeter, SlaZoneField, slaRule } from './Sla';
 
 function useTicketUpdate(ticketId) {
     const queryClient = useQueryClient();
@@ -63,12 +63,13 @@ export function WatchButton({ ticket }) {
     );
 }
 
-/** Editar falla, detalle y caso del banco (queda en el historial). */
+/** Editar falla, tipo de SLA, detalle y caso del banco (queda en el historial). */
 export function EditTicketModal({ ticket, open, onClose }) {
     const { data: catalogs } = useCatalogs();
     const update = useTicketUpdate(ticket.id);
     const [form, setForm] = useState({
         fault_type_id: ticket.fault_type_id ? String(ticket.fault_type_id) : '',
+        sla_zone: ticket.sla?.zone ?? ticket.atm?.zone ?? 'urbana',
         description: ticket.description ?? '',
         bank_reference: ticket.bank_reference ?? '',
     });
@@ -104,6 +105,7 @@ export function EditTicketModal({ ticket, open, onClose }) {
                         </Select>
                     )}
                 </Field>
+                <SlaZoneField value={form.sla_zone} onChange={(v) => setForm((f) => ({ ...f, sla_zone: v }))} atmZone={ticket.atm?.zone || 'urbana'} zones={catalogs?.zones} error={err?.field?.('sla_zone')} />
                 <Field label="N° de caso del banco" error={err?.field?.('bank_reference')}>
                     {(id) => <Input id={id} value={form.bank_reference} onChange={set('bank_reference')} maxLength={60} />}
                 </Field>

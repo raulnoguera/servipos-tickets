@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\Role;
 use App\Enums\TicketStatus;
+use App\Enums\Zone;
 use App\Models\Atm;
 use App\Models\AtmCondition;
 use App\Models\FaultType;
@@ -44,7 +45,7 @@ class TicketService
     /**
      * Abre un ticket (RF-2.1/2.2) y, si se indica, lo asigna al técnico.
      *
-     * @param  array{atm_id: int, fault_type_id?: int|null, description?: string|null, bank_reference?: string|null, assigned_to?: int|null}  $data
+     * @param  array{atm_id: int, fault_type_id?: int|null, sla_zone?: string|null, description?: string|null, bank_reference?: string|null, assigned_to?: int|null}  $data
      */
     public function open(array $data, User $operator): Ticket
     {
@@ -60,6 +61,7 @@ class TicketService
                 'description' => $data['description'] ?? null,
                 'bank_reference' => $data['bank_reference'] ?? null,
                 'status' => TicketStatus::Open,
+                'sla_zone' => Zone::tryFrom((string) ($data['sla_zone'] ?? '')) !== Zone::tryFrom((string) $atm->zone) ? ($data['sla_zone'] ?? null) : null,
                 'source' => 'manual',
                 'opened_by' => $operator->id,
                 'opened_at' => $now,
@@ -78,7 +80,7 @@ class TicketService
      * Abre un ticket a partir de un correo del banco. El reloj del SLA corre desde
      * que el banco envió el reporte, no desde que el sistema lo leyó.
      *
-     * @param  array{fault_type_id?: int|null, description?: string|null}  $data
+     * @param  array{fault_type_id?: int|null, sla_zone?: string|null, description?: string|null}  $data
      * @param  User|null  $by  quien lo abrió desde la bandeja de correos; null si lo abrió el sistema
      */
     public function openFromEmail(Atm $atm, array $data, CarbonImmutable $sentAt, ?User $by = null): Ticket
@@ -94,6 +96,7 @@ class TicketService
                 'fault_type_id' => $data['fault_type_id'] ?? null,
                 'description' => $data['description'] ?? null,
                 'status' => TicketStatus::Open,
+                'sla_zone' => Zone::tryFrom((string) ($data['sla_zone'] ?? '')) !== Zone::tryFrom((string) $atm->zone) ? ($data['sla_zone'] ?? null) : null,
                 'source' => 'email',
                 'opened_by' => $by?->id,
                 'opened_at' => $openedAt,
@@ -322,10 +325,16 @@ class TicketService
     public function edit(Ticket $ticket, array $data, User $by): Ticket
     {
         $labels = ['fault_type_id' => 'Falla', 'description' => 'Detalle', 'bank_reference' => 'Caso del banco'];
+        $sla = app(SlaService::class);
+        $zoneBefore = $sla->zoneOf($ticket);
+        if (array_key_exists('sla_zone', $data)) {
+            $data['sla_zone'] = $sla->chosenZone($data['sla_zone'], $ticket);
+        }
         $ticket->fill($data);
         $changes = [];
         foreach (array_keys($ticket->getDirty()) as $field) {
             $changes[] = match ($field) {
+                'sla_zone' => 'Tipo de SLA: '.$zoneBefore->label().' → '.$sla->zoneOf($ticket)->label(),
                 'fault_type_id' => 'Falla: '.(FaultType::find($ticket->getOriginal('fault_type_id'))?->name ?? '—').' → '.(FaultType::find($ticket->fault_type_id)?->name ?? '—'),
                 default => ($labels[$field] ?? $field).' actualizado',
             };

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Building2, CheckCircle2, MapPin, MessageCircle, Plus } from 'lucide-react';
@@ -6,6 +6,7 @@ import { api } from '../lib/api';
 import { useCatalogs } from '../lib/queries';
 import { mapsUrl } from '../lib/format';
 import { Alert, Button, Card, CardHeader, Field, Input, PageHeader, Select, Textarea, toast } from '../components/ui';
+import { SlaZoneField } from '../components/Sla';
 import AtmSearch from '../components/AtmSearch';
 
 function AtmCard({ atm }) {
@@ -51,7 +52,12 @@ export default function TicketNew() {
     const [atm, setAtm] = useState(null);
     const [lookupError, setLookupError] = useState(null);
     const [searchKey, setSearchKey] = useState(0);
-    const [form, setForm] = useState({ fault_type_id: '', bank_reference: '', description: '', assigned_to: '' });
+    const [form, setForm] = useState({ fault_type_id: '', sla_zone: 'urbana', bank_reference: '', description: '', assigned_to: '' });
+
+    // Al elegir el cajero, el tipo de SLA toma su zona (se puede cambiar).
+    useEffect(() => {
+        setForm((f) => ({ ...f, sla_zone: atm?.zone || 'urbana' }));
+    }, [atm?.id, atm?.zone]);
     const [created, setCreated] = useState(null);
 
     const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -84,7 +90,7 @@ export default function TicketNew() {
         setAtm(null);
         setLookupError(null);
         setSearchKey((k) => k + 1);
-        setForm({ fault_type_id: '', bank_reference: '', description: '', assigned_to: '' });
+        setForm({ fault_type_id: '', sla_zone: 'urbana', bank_reference: '', description: '', assigned_to: '' });
         create.reset();
     }
 
@@ -162,6 +168,7 @@ export default function TicketNew() {
                                 </Select>
                             )}
                         </Field>
+                        <SlaZoneField value={form.sla_zone} onChange={(v) => setForm((f) => ({ ...f, sla_zone: v }))} atmZone={atm?.zone || 'urbana'} zones={catalogs?.zones} error={err?.field?.('sla_zone')} />
                         <Field label="N° de caso del banco" hint="Opcional, si el correo lo trae" error={err?.field?.('bank_reference')}>
                             {(id) => <Input id={id} value={form.bank_reference} onChange={set('bank_reference')} maxLength={60} />}
                         </Field>

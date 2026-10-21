@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
-    'number', 'atm_id', 'bank_id', 'fault_type_id', 'description', 'bank_reference', 'status', 'source',
+    'number', 'atm_id', 'bank_id', 'fault_type_id', 'description', 'bank_reference', 'status', 'sla_zone', 'source',
     'assigned_to', 'opened_by', 'opened_at', 'assigned_at', 'responded_at', 'closed_at', 'confirmed_at', 'confirmed_by', 'duration_ms', 'sla_orange_at', 'sla_critical_at',
 ])]
 #[ScopedBy(BankScope::class)]
@@ -43,7 +43,7 @@ class Ticket extends Model
     {
         // Cada vez que cambia la apertura o el cajero, se recalcula cuándo pasa a naranja y a crítica.
         static::saving(function (Ticket $ticket) {
-            if ($ticket->isDirty(['opened_at', 'atm_id', 'source']) || ($ticket->source !== 'import' && ! $ticket->sla_critical_at)) {
+            if ($ticket->isDirty(['opened_at', 'atm_id', 'source', 'sla_zone']) || ($ticket->source !== 'import' && ! $ticket->sla_critical_at)) {
                 app(SlaService::class)->stamp($ticket);
             }
         });

@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\Role;
+use App\Enums\Zone;
 use App\Models\Scopes\BankScope;
 use App\Models\Ticket;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -24,6 +25,7 @@ class StoreTicketRequest extends FormRequest
         return [
             'atm_id' => ['required', 'integer', Rule::exists('atms', 'id')->where('active', true)->where(fn ($q) => BankScope::banks() === null ? $q : $q->whereIn('bank_id', BankScope::banks()))],
             'fault_type_id' => ['required', 'integer', 'exists:fault_types,id'],
+            'sla_zone' => ['nullable', Rule::enum(Zone::class)],
             'description' => ['nullable', 'string', 'max:2000'],
             'bank_reference' => ['nullable', 'string', 'max:60'],
             'assigned_to' => ['nullable', 'integer', Rule::exists('users', 'id')->where('role', Role::Technician->value)->where('active', true)],
@@ -43,6 +45,6 @@ class StoreTicketRequest extends FormRequest
      */
     public function attributes(): array
     {
-        return ['atm_id' => 'cajero', 'fault_type_id' => 'tipo de falla', 'assigned_to' => 'técnico'];
+        return ['atm_id' => 'cajero', 'fault_type_id' => 'tipo de falla', 'assigned_to' => 'técnico', 'sla_zone' => 'tipo de SLA'];
     }
 }

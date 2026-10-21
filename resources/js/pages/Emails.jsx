@@ -7,6 +7,7 @@ import { formatDateTime } from '../lib/format';
 import { useCatalogs } from '../lib/queries';
 import AtmSearch from '../components/AtmSearch';
 import { Alert, Badge, Button, Card, EmptyState, Field, Input, LoadingBlock, Modal, PageHeader, Pagination, Segmented, Select, Table, Td, Th, toast } from '../components/ui';
+import { SlaZoneField } from '../components/Sla';
 
 const STATUS = {
     revisar: { label: 'Por revisar', tone: 'warn' },
@@ -76,12 +77,18 @@ function EmailModal({ email, onClose }) {
     const [atm, setAtm] = useState(null);
     const [notFound, setNotFound] = useState(null);
     const [faultTypeId, setFaultTypeId] = useState('');
+    const [slaZone, setSlaZone] = useState('urbana');
 
     useEffect(() => {
         setAtm(email?.atm?.active ? email.atm : null);
         setNotFound(null);
         setFaultTypeId('');
     }, [email?.id]);
+
+    // El tipo de SLA toma la zona del cajero elegido (se puede cambiar).
+    useEffect(() => {
+        setSlaZone(atm?.zone || 'urbana');
+    }, [atm?.id, atm?.zone]);
 
     const done = (message) => {
         queryClient.invalidateQueries({ queryKey: ['emails'] });
@@ -91,7 +98,7 @@ function EmailModal({ email, onClose }) {
         onClose();
     };
     const open = useMutation({
-        mutationFn: () => api(`inbound-emails/${email.id}/ticket`, { method: 'POST', body: { atm_id: atm.id, fault_type_id: faultTypeId || null } }),
+        mutationFn: () => api(`inbound-emails/${email.id}/ticket`, { method: 'POST', body: { atm_id: atm.id, fault_type_id: faultTypeId || null, sla_zone: slaZone } }),
         onSuccess: (res) => done(`Ticket ${res.data.number} abierto`),
     });
     const ignore = useMutation({
@@ -160,6 +167,7 @@ function EmailModal({ email, onClose }) {
                                         </Select>
                                     )}
                                 </Field>
+                                <SlaZoneField value={slaZone} onChange={setSlaZone} atmZone={atm?.zone || 'urbana'} zones={catalogs?.zones} />
                             </div>
                             <p className="text-xs text-muted">El SLA se cuenta desde que el banco envió el correo, en horario bancario, según la zona del cajero.</p>
                             {error && <Alert>{error.message}</Alert>}
