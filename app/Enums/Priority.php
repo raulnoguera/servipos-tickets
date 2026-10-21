@@ -6,7 +6,6 @@ enum Priority: string
 {
     case Low = 'baja';
     case Medium = 'media';
-    case High = 'alta';
     case Critical = 'critica';
 
     public function label(): string
@@ -14,7 +13,6 @@ enum Priority: string
         return match ($this) {
             self::Low => 'Baja',
             self::Medium => 'Media',
-            self::High => 'Alta',
             self::Critical => 'Crítica',
         };
     }
@@ -23,8 +21,7 @@ enum Priority: string
     public function weight(): int
     {
         return match ($this) {
-            self::Critical => 4,
-            self::High => 3,
+            self::Critical => 3,
             self::Medium => 2,
             self::Low => 1,
         };

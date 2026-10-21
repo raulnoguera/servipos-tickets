@@ -12,7 +12,7 @@ const COLUMN_ACCENT = {
     abierto: 'bg-slate-400', asignado: 'bg-brand-500', en_transito: 'bg-violet-500', en_sitio: 'bg-sky-500',
     pendiente_repuesto: 'bg-amber-500', pendiente_validacion: 'bg-orange-500', por_confirmar: 'bg-teal-500', concluido: 'bg-emerald-500',
 };
-const WEIGHT = { critica: 4, alta: 3, media: 2, baja: 1 };
+const WEIGHT = { critica: 3, media: 2, baja: 1 };
 
 function TicketCard({ t }) {
     const breached = worstSla(t.sla) === 'breached';

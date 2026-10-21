@@ -1,12 +1,11 @@
-import { AlertOctagon, CheckCircle2, Clock3, Flame, Minus, TimerOff } from 'lucide-react';
+import { ArrowDown, CheckCircle2, Clock3, Flame, Minus, TimerOff } from 'lucide-react';
 import { formatDuration } from '../lib/format';
 import { cx } from './ui';
 
 export const PRIORITY = {
     critica: { label: 'Crítica', className: 'bg-red-600 text-white ring-red-600', icon: Flame },
-    alta: { label: 'Alta', className: 'bg-orange-50 text-orange-800 ring-orange-200', icon: AlertOctagon },
-    media: { label: 'Media', className: 'bg-slate-50 text-slate-700 ring-slate-200', icon: Minus },
-    baja: { label: 'Baja', className: 'bg-white text-slate-500 ring-slate-200', icon: Minus },
+    media: { label: 'Media', className: 'bg-yellow-100 text-yellow-900 ring-yellow-400', icon: Minus },
+    baja: { label: 'Baja', className: 'bg-emerald-100 text-emerald-800 ring-emerald-400', icon: ArrowDown },
 };
 
 export function PriorityBadge({ priority = 'media', size = 'md' }) {

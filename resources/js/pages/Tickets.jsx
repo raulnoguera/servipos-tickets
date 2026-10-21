@@ -125,7 +125,7 @@ export default function Tickets() {
                                 {data.data.map((t) => (
                                     <tr key={t.id} onClick={() => navigate(`/tickets/${t.id}`)} className="cursor-pointer hover:bg-brand-50/50">
                                         <Td className="whitespace-nowrap">
-                                            <div className="flex items-center gap-1.5"><span className="font-semibold text-brand-600 tabular">{t.number}</span>{['alta', 'critica'].includes(t.priority) && <PriorityBadge priority={t.priority} size="sm" />}</div>
+                                            <div className="flex items-center gap-1.5"><span className="font-semibold text-brand-600 tabular">{t.number}</span><PriorityBadge priority={t.priority} size="sm" /></div>
                                             <div className="text-xs text-muted">{formatDateTime(t.opened_at)}</div>
                                         </Td>
                                         <Td className="font-medium text-ink tabular">{t.atm.atm_number}</Td>

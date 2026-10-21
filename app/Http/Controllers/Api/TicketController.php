@@ -68,7 +68,7 @@ class TicketController extends Controller
                 ->orWhere('bank_reference', 'like', "%{$term}%")
                 ->orWhereHas('atm', fn ($a) => $a->where('atm_number', 'like', "%{$term}%")->orWhere('agency_name', 'like', "%{$term}%"))))
             ->when($request->boolean('history'), fn ($q) => $q->orderByRaw('coalesce(closed_at, opened_at) desc'))
-            ->when($request->query('sort') === 'priority', fn ($q) => $q->orderByRaw("case priority when 'critica' then 4 when 'alta' then 3 when 'media' then 2 else 1 end desc"))
+            ->when($request->query('sort') === 'priority', fn ($q) => $q->orderByRaw("case priority when 'critica' then 3 when 'media' then 2 else 1 end desc"))
             ->orderByDesc('opened_at')
             ->orderByDesc('id')
             ->paginate(max(1, min(200, (int) $request->query('per_page', 25))));

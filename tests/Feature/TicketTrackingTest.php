@@ -55,16 +55,16 @@ class TicketTrackingTest extends TestCase
     public function test_arrival_and_closing_are_measured_against_sla(): void
     {
         $this->travelTo(now()->setTime(8, 0));
-        $ticket = Ticket::findOrFail($this->open('alta')['id']);
+        $ticket = Ticket::findOrFail($this->open('critica')['id']);
 
-        $this->travel(3)->hours();
+        $this->travel(1)->hours();
         $this->actingAs($this->technician)->postJson("/api/v1/tickets/{$ticket->id}/status", ['status' => 'en_sitio'])->assertOk();
         $this->travel(6)->hours();
         $this->actingAs($this->technician)->postJson("/api/v1/tickets/{$ticket->id}/visits", [
             'work_done' => 'Listo', 'atm_condition_id' => AtmCondition::firstWhere('name', 'Operativo')->id, 'parts_changed' => false,
         ])->assertOk()
-            ->assertJsonPath('data.sla.response.status', 'met', 'llegó a las 3 h (meta 4 h)')
-            ->assertJsonPath('data.sla.resolution.status', 'breached', 'cerró a las 9 h (meta 8 h)');
+            ->assertJsonPath('data.sla.response.status', 'met', 'llegó a la 1 h (meta 2 h)')
+            ->assertJsonPath('data.sla.resolution.status', 'breached', 'cerró a las 7 h (meta 4 h)');
     }
 
     public function test_breached_and_at_risk_filters(): void
@@ -85,13 +85,13 @@ class TicketTrackingTest extends TestCase
         $ticket = $this->open('media');
         $other = FaultType::create(['name' => 'Comunicación']);
 
-        $this->patchJson("/api/v1/tickets/{$ticket['id']}", ['priority' => 'alta', 'fault_type_id' => $other->id])
+        $this->patchJson("/api/v1/tickets/{$ticket['id']}", ['priority' => 'critica', 'fault_type_id' => $other->id])
             ->assertOk()
-            ->assertJsonPath('data.priority', 'alta')
+            ->assertJsonPath('data.priority', 'critica')
             ->assertJsonPath('data.fault_type', 'Comunicación');
 
         $notes = Ticket::find($ticket['id'])->events()->pluck('note')->implode(' | ');
-        $this->assertStringContainsString('Prioridad: Media → Alta', $notes);
+        $this->assertStringContainsString('Prioridad: Media → Crítica', $notes);
         $this->assertStringContainsString('Falla: Falla de Dispensación → Comunicación', $notes);
 
         $this->actingAs($this->technician)->patchJson("/api/v1/tickets/{$ticket['id']}", ['priority' => 'baja'])->assertForbidden();
