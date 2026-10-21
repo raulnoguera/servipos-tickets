@@ -102,15 +102,15 @@ export default function Dashboard() {
                         </Link>
                     )}
 
-                    {(k.sla_breached > 0 || k.sla_at_risk > 0) && (
+                    {(k.sla_critical > 0 || k.sla_orange > 0) && (
                         <div className="grid gap-4 sm:grid-cols-2">
                             <Link to="/tickets?filtro=vencidos" className="flex items-center gap-4 rounded-xl border border-red-200 bg-red-50 p-4 transition hover:shadow-md">
                                 <span className="grid size-10 place-items-center rounded-lg bg-red-600 text-white"><TimerOff className="size-5" /></span>
-                                <span><span className="block font-display text-2xl font-extrabold text-red-700 tabular">{k.sla_breached}</span><span className="text-sm font-semibold text-red-800">tickets en curso con SLA vencido</span></span>
+                                <span><span className="block font-display text-2xl font-extrabold text-red-700 tabular">{k.sla_critical}</span><span className="text-sm font-semibold text-red-800">tickets en curso en crítica</span></span>
                             </Link>
-                            <Link to="/tickets?filtro=por_vencer" className="flex items-center gap-4 rounded-xl border border-amber-200 bg-amber-50 p-4 transition hover:shadow-md">
-                                <span className="grid size-10 place-items-center rounded-lg bg-amber-500 text-white"><Clock3 className="size-5" /></span>
-                                <span><span className="block font-display text-2xl font-extrabold text-amber-800 tabular">{k.sla_at_risk}</span><span className="text-sm font-semibold text-amber-900">tickets por vencer (más del 80 % del tiempo)</span></span>
+                            <Link to="/tickets?filtro=por_vencer" className="flex items-center gap-4 rounded-xl border border-orange-200 bg-orange-50 p-4 transition hover:shadow-md">
+                                <span className="grid size-10 place-items-center rounded-lg bg-orange-500 text-white"><Clock3 className="size-5" /></span>
+                                <span><span className="block font-display text-2xl font-extrabold text-orange-700 tabular">{k.sla_orange}</span><span className="text-sm font-semibold text-orange-900">tickets en curso en naranja</span></span>
                             </Link>
                         </div>
                     )}

@@ -2,20 +2,27 @@
 
 namespace App\Models;
 
-use App\Enums\Priority;
+use App\Enums\Zone;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 
-/** Metas de SLA por prioridad, en minutos (null = sin meta). */
-#[Fillable(['priority', 'response_minutes', 'resolution_minutes'])]
+/**
+ * Metas de SLA por zona: el ticket está en verde hasta «green» y en naranja hasta
+ * «orange»; después pasa a crítica. «unit» indica si son horas o días hábiles.
+ */
+#[Fillable(['zone', 'unit', 'green', 'orange'])]
 class SlaPolicy extends Model
 {
+    public const HOURS = 'hours';
+
+    public const DAYS = 'days';
+
     protected function casts(): array
     {
         return [
-            'priority' => Priority::class,
-            'response_minutes' => 'integer',
-            'resolution_minutes' => 'integer',
+            'zone' => Zone::class,
+            'green' => 'float',
+            'orange' => 'float',
         ];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Services\Reports;
 
+use App\Enums\SlaLevel;
 use App\Enums\TicketStatus;
 use App\Models\Atm;
 use App\Models\Ticket;
@@ -54,7 +55,7 @@ class ReportService
         $backlog = $this->scoped($f, withDates: false)->whereNotIn('status', [TicketStatus::Closed, TicketStatus::Cancelled])->get();
 
         $timed = $closed->where('source', '!=', 'import');
-        $slaRows = $opened->where('source', '!=', 'import')->map(fn (Ticket $t) => $this->sla->evaluate($t));
+        $levels = $this->levels($opened);
 
         return [
             'kpis' => [
@@ -65,14 +66,14 @@ class ReportService
                 'mtta_ms' => $this->avg($opened->where('source', '!=', 'import')->filter(fn ($t) => $t->responded_at)
                     ->map(fn (Ticket $t) => $t->opened_at->diffInMilliseconds($t->responded_at))),
                 'first_visit_rate' => $this->rate($closed->filter(fn (Ticket $t) => $t->visits->count() === 1)->count(), $closed->count()),
-                'sla_resolution_rate' => $this->slaRate($slaRows, 'resolution'),
-                'sla_response_rate' => $this->slaRate($slaRows, 'response'),
-                'sla_breached' => $slaRows->filter(fn ($s) => $s['resolution']['status'] === 'breached' || $s['response']['status'] === 'breached')->count(),
+                'sla_green_rate' => $this->greenRate($opened),
+                'sla_critical' => $levels->filter(fn ($l) => $l === SlaLevel::Critical)->count(),
                 'reincidence_rate' => $this->rate($this->reincidentCount($opened), $opened->count()),
             ],
             'backlog_aging' => $this->aging($backlog),
             'by_status' => $opened->countBy(fn (Ticket $t) => $t->status->label())->sortDesc()->map(fn ($n, $k) => ['name' => $k, 'total' => $n])->values(),
-            'by_priority' => $opened->countBy(fn (Ticket $t) => $t->priority?->label() ?? 'Media')->map(fn ($n, $k) => ['name' => $k, 'total' => $n])->values(),
+            // Semáforo actual de los tickets del período (los cerrados, según cómo cerraron).
+            'by_sla' => collect(SlaLevel::cases())->map(fn (SlaLevel $l) => ['level' => $l->value, 'name' => $l->label(), 'total' => $levels->filter(fn ($x) => $x === $l)->count()])->values(),
             'weekly' => $this->weekly($opened, $closed, $f),
         ];
     }
@@ -134,7 +135,7 @@ class ReportService
                 'id' => $t->id,
                 'number' => $t->number,
                 'status' => $t->status->value,
-                'priority' => $t->priority?->value,
+                'sla' => $this->sla->level($t)?->value,
                 'opened_at' => $t->opened_at->toIso8601String(),
                 'closed_at' => $t->closed_at?->toIso8601String(),
                 'duration_ms' => $t->duration_ms,
@@ -167,7 +168,6 @@ class ReportService
             $done = $closed->get($tech->id, collect());
             $timedDone = $done->where('source', '!=', 'import');
             $timedMine = $mine->where('source', '!=', 'import');
-            $slaRows = $timedMine->map(fn (Ticket $t) => $this->sla->evaluate($t));
             $techVisits = $visits->get($tech->id, collect());
 
             return [
@@ -182,7 +182,7 @@ class ReportService
                 'mtta_ms' => $this->avg($timedMine->filter(fn ($t) => $t->responded_at)->map(fn (Ticket $t) => $t->opened_at->diffInMilliseconds($t->responded_at))),
                 'mttr_ms' => $this->avg($timedDone->pluck('duration_ms')),
                 'first_visit_rate' => $this->rate($done->filter(fn (Ticket $t) => $t->visits->count() === 1)->count(), $done->count()),
-                'sla_resolution_rate' => $this->slaRate($slaRows, 'resolution'),
+                'sla_green_rate' => $this->greenRate($timedMine),
             ];
         })->sortByDesc(fn ($r) => [$r['closed'], $r['assigned']])->values();
     }
@@ -263,8 +263,8 @@ class ReportService
         'mttr' => 'Tiempo de resolución por ticket',
         'mtta' => 'Tiempo de llegada al sitio por ticket',
         'first_visit' => 'Concluidos: visitas por ticket',
-        'sla' => 'Cumplimiento de SLA por ticket',
-        'sla_breached' => 'Tickets con SLA vencido',
+        'sla' => 'Semáforo de SLA por ticket',
+        'sla_critical' => 'Tickets en crítica',
         'reincidence' => 'Tickets de cajeros reincidentes',
         'fault' => 'Tickets por tipo de falla',
     ];
@@ -294,17 +294,13 @@ class ReportService
                 ->sortByDesc(fn (Ticket $t) => $t->opened_at->diffInSeconds($t->responded_at)),
             'first_visit' => $tickets->sortBy(fn (Ticket $t) => $t->visits->count()),
             'sla' => $tickets->where('source', '!=', 'import'),
-            'sla_breached' => $tickets->where('source', '!=', 'import')->filter(function (Ticket $t) {
-                $sla = $this->sla->evaluate($t);
-
-                return $sla['response']['status'] === 'breached' || $sla['resolution']['status'] === 'breached';
-            }),
+            'sla_critical' => $tickets->filter(fn (Ticket $t) => $this->sla->level($t) === SlaLevel::Critical),
             'reincidence' => $this->reincidents($tickets),
             default => $tickets,
         };
 
         return $tickets->values()->map(function (Ticket $t) {
-            $sla = $t->source === 'import' ? null : $this->sla->evaluate($t);
+            $level = $this->sla->level($t);
             $parts = $t->visits->flatMap->parts;
 
             return [
@@ -312,8 +308,7 @@ class ReportService
                 'number' => $t->number,
                 'status' => $t->status->value,
                 'status_label' => $t->status->label(),
-                'priority' => $t->priority?->value,
-                'priority_label' => $t->priority?->label(),
+                'zone' => $this->sla->zoneOf($t)->label(),
                 'opened_at' => $t->opened_at->toIso8601String(),
                 'closed_at' => $t->closed_at?->toIso8601String(),
                 'atm_id' => $t->atm_id,
@@ -325,8 +320,8 @@ class ReportService
                 'visits' => $t->visits->count(),
                 'arrival_ms' => $t->source !== 'import' && $t->responded_at ? (int) $t->opened_at->diffInMilliseconds($t->responded_at) : null,
                 'duration_ms' => $t->duration_ms,
-                'sla_response' => $sla['response']['status'] ?? 'none',
-                'sla_resolution' => $sla['resolution']['status'] ?? 'none',
+                'sla' => $level?->value,
+                'sla_label' => $level?->label(),
                 'parts' => $parts->map(fn ($p) => "{$p->name} x{$p->pivot->quantity}")->implode(', '),
                 'parts_units' => (int) $parts->sum('pivot.quantity'),
             ];
@@ -546,11 +541,19 @@ class ReportService
         return array_values($weeks);
     }
 
-    private function slaRate(Collection $rows, string $kind): ?float
+    /** @return Collection<int, SlaLevel|null> */
+    private function levels(Collection $tickets): Collection
     {
-        $evaluated = $rows->filter(fn ($s) => in_array($s[$kind]['status'], ['met', 'breached'], true));
+        return $tickets->map(fn (Ticket $t) => $this->sla->level($t));
+    }
 
-        return $this->rate($evaluated->where("{$kind}.status", 'met')->count(), $evaluated->count());
+    /** % de los tickets ya cerrados (o con cierre reportado) que cerraron en verde. */
+    private function greenRate(Collection $tickets): ?float
+    {
+        $done = $tickets->filter(fn (Ticket $t) => in_array($t->status, [TicketStatus::Closed, TicketStatus::PendingClosure], true))
+            ->map(fn (Ticket $t) => $this->sla->level($t))->filter();
+
+        return $this->rate($done->filter(fn ($l) => $l === SlaLevel::Green)->count(), $done->count());
     }
 
     private function avg(Collection $values): ?int

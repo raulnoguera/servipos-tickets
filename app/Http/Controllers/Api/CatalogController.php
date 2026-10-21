@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\Priority;
 use App\Enums\Role;
 use App\Enums\TicketStatus;
+use App\Enums\Zone;
 use App\Http\Controllers\Controller;
 use App\Models\Atm;
 use App\Models\AtmBrand;
@@ -62,7 +62,7 @@ class CatalogController extends Controller
             'technicians' => User::technicians()->where('active', true)->with('states:id')->orderBy('name')->get()
                 ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->name, 'phone' => $staff ? $u->phone : null, 'state_ids' => $u->states->pluck('id')]),
             'statuses' => collect(TicketStatus::cases())->map(fn ($s) => ['value' => $s->value, 'label' => $s->label()]),
-            'priorities' => collect(Priority::cases())->sortByDesc(fn (Priority $p) => $p->weight())->map(fn ($p) => ['value' => $p->value, 'label' => $p->label()])->values(),
+            'zones' => collect(Zone::cases())->map(fn ($z) => ['value' => $z->value, 'label' => $z->label()]),
             'roles' => collect(Role::cases())->map(fn ($r) => ['value' => $r->value, 'label' => $r->label()]),
         ]);
     }

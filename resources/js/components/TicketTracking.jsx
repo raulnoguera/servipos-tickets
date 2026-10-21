@@ -5,7 +5,7 @@ import { api } from '../lib/api';
 import { useCatalogs } from '../lib/queries';
 import { formatDateTime, formatDuration, initials } from '../lib/format';
 import { Alert, Button, Card, CardHeader, Field, Input, Modal, Select, STATUS, Textarea, cx, toast } from './ui';
-import { SlaMeter } from './Sla';
+import { SlaMeter, slaRule } from './Sla';
 
 function useTicketUpdate(ticketId) {
     const queryClient = useQueryClient();
@@ -16,22 +16,21 @@ function useTicketUpdate(ticketId) {
     };
 }
 
-/** Metas de SLA del ticket: llegada al sitio y resolución. */
+/** Semáforo del SLA del ticket: según la zona del cajero, contando solo el horario bancario. */
 export function SlaCard({ ticket }) {
-    const noTargets = !ticket.sla?.response?.target_minutes && !ticket.sla?.resolution?.target_minutes;
+    const sla = ticket.sla;
     return (
         <Card>
-            <CardHeader title="SLA" subtitle={`Metas de prioridad ${ticket.priority_label.toLowerCase()}`} actions={<Gauge className="size-5 text-muted" />} />
-            <div className="space-y-5 p-5">
+            <CardHeader title="SLA" subtitle={sla?.green != null ? slaRule(sla) : undefined} actions={<Gauge className="size-5 text-muted" />} />
+            <div className="space-y-4 p-5">
                 {ticket.source === 'import' ? (
                     <p className="text-sm text-muted">Ticket del histórico importado: no tiene horas, no se mide SLA.</p>
-                ) : noTargets ? (
-                    <p className="text-sm text-muted">No hay metas de SLA configuradas para esta prioridad.</p>
+                ) : !sla?.level ? (
+                    <p className="text-sm text-muted">{ticket.status === 'anulado' ? 'Ticket anulado: no se mide SLA.' : 'No hay metas de SLA configuradas para esta zona.'}</p>
                 ) : (
                     <>
-                        <SlaMeter label="Llegada al sitio" clock={ticket.sla.response} />
-                        <SlaMeter label="Resolución" clock={ticket.sla.resolution} />
-                        <p className="text-xs text-muted">El reloj corre desde la apertura y no se detiene mientras espera repuesto.</p>
+                        <SlaMeter sla={sla} />
+                        <p className="text-xs text-muted">Solo cuenta el horario bancario de los días hábiles. El reloj corre hasta que el técnico reporta el cierre y no se detiene mientras espera repuesto.</p>
                     </>
                 )}
             </div>
@@ -64,12 +63,11 @@ export function WatchButton({ ticket }) {
     );
 }
 
-/** Editar prioridad, falla, detalle y caso del banco (queda en el historial). */
+/** Editar falla, detalle y caso del banco (queda en el historial). */
 export function EditTicketModal({ ticket, open, onClose }) {
     const { data: catalogs } = useCatalogs();
     const update = useTicketUpdate(ticket.id);
     const [form, setForm] = useState({
-        priority: ticket.priority,
         fault_type_id: ticket.fault_type_id ? String(ticket.fault_type_id) : '',
         description: ticket.description ?? '',
         bank_reference: ticket.bank_reference ?? '',
@@ -98,13 +96,6 @@ export function EditTicketModal({ ticket, open, onClose }) {
             }
         >
             <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Prioridad" hint="Define las metas de SLA del ticket" error={err?.field?.('priority')}>
-                    {(id) => (
-                        <Select id={id} value={form.priority} onChange={set('priority')}>
-                            {catalogs?.priorities?.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
-                        </Select>
-                    )}
-                </Field>
                 <Field label="Tipo de falla" error={err?.field?.('fault_type_id')}>
                     {(id) => (
                         <Select id={id} value={form.fault_type_id} onChange={set('fault_type_id')}>

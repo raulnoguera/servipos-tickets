@@ -86,9 +86,9 @@ class ReportController extends Controller
             return $this->excel->download('Reporte por técnico', $this->describe($f), [
                 'name' => 'Técnico', 'assigned' => 'Asignados', 'closed' => 'Concluidos', 'pending_now' => 'Pendientes hoy',
                 'visits' => 'Visitas', 'parts_units' => 'Repuestos (unid.)', 'mtta' => 'Tiempo prom. llegada', 'mttr' => 'Tiempo prom. resolución',
-                'first_visit_rate' => '% resuelto 1.ª visita', 'sla_resolution_rate' => '% SLA resolución',
+                'first_visit_rate' => '% resuelto 1.ª visita', 'sla_green_rate' => '% cerrados en verde',
             ], $rows->map(fn ($r) => $r + ['mtta' => $this->excelDuration($r['mtta_ms']), 'mttr' => $this->excelDuration($r['mttr_ms'])]),
-                $this->fileName('tecnicos', $f), ['mtta' => self::HOURS, 'mttr' => self::HOURS, 'first_visit_rate' => self::PERCENT, 'sla_resolution_rate' => self::PERCENT]);
+                $this->fileName('tecnicos', $f), ['mtta' => self::HOURS, 'mttr' => self::HOURS, 'first_visit_rate' => self::PERCENT, 'sla_green_rate' => self::PERCENT]);
         }
 
         return response()->json(['data' => $rows, 'filters' => $this->describe($f)]);
@@ -166,20 +166,17 @@ class ReportController extends Controller
         $rows = $this->reports->ticketDetail($f, $metric, $extra);
         $title = ReportService::TICKET_METRICS[$metric].($fault ? ": {$fault}" : '');
         if ($request->query('format') === 'xlsx') {
-            $sla = ['met' => 'Cumplido', 'breached' => 'Vencido', 'at_risk' => 'Por vencer', 'on_track' => 'En tiempo', 'none' => '—'];
-
             return $this->excel->download($title, $this->describe($f), [
-                'number' => 'N° Ticket', 'opened' => 'Apertura', 'closed' => 'Cierre', 'status_label' => 'Estado', 'priority_label' => 'Prioridad',
+                'number' => 'N° Ticket', 'opened' => 'Apertura', 'closed' => 'Cierre', 'status_label' => 'Estado', 'zone' => 'Zona',
                 'atm_number' => 'N° ATM', 'agency_name' => 'Agencia', 'state' => 'Estado (región)', 'fault_type' => 'Falla', 'technician' => 'Técnico',
-                'visits' => 'Visitas', 'arrival' => 'Llegada', 'duration' => 'Resolución', 'sla_response_label' => 'SLA llegada',
-                'sla_resolution_label' => 'SLA resolución', 'parts' => 'Repuestos',
+                'visits' => 'Visitas', 'arrival' => 'Llegada', 'duration' => 'Resolución', 'sla_label' => 'SLA',
+                'parts' => 'Repuestos',
             ], $rows->map(fn ($r) => $r + [
                 'opened' => $this->excelDate($r['opened_at']),
                 'closed' => $this->excelDate($r['closed_at']),
                 'arrival' => $this->excelDuration($r['arrival_ms']),
                 'duration' => $this->excelDuration($r['duration_ms']),
-                'sla_response_label' => $sla[$r['sla_response']],
-                'sla_resolution_label' => $sla[$r['sla_resolution']],
+                'sla_label' => $r['sla_label'] ?? '—',
             ]), $this->fileName('detalle', $f), [
                 'opened' => self::DATETIME, 'closed' => self::DATETIME, 'arrival' => self::HOURS, 'duration' => self::HOURS,
             ]);

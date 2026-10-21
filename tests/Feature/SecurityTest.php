@@ -328,7 +328,7 @@ class SecurityTest extends TestCase
 
         // Un registro inexistente no revela clases ni ids; filtros con forma de lista no provocan un error 500.
         $this->actingAs($admin)->getJson('/api/v1/tickets/999999')->assertNotFound()->assertExactJson(['message' => 'No se encontró lo solicitado.']);
-        $this->actingAs($admin)->getJson('/api/v1/tickets?q[]=a&priority[]=x')->assertStatus(422);
+        $this->actingAs($admin)->getJson('/api/v1/tickets?q[]=a&sla[]=x')->assertStatus(422);
         $this->actingAs($admin)->getJson('/api/v1/atms?q[]=a')->assertStatus(422);
     }
 

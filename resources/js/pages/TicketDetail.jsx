@@ -14,7 +14,7 @@ import {
     Alert, Badge, Button, Card, CardHeader, Elapsed, EmptyState, Field, Input, LoadingBlock, Modal, Select, StatusBadge, Textarea, toast,
 } from '../components/ui';
 import VisitForm from '../components/VisitForm';
-import { PriorityBadge, SlaBadge } from '../components/Sla';
+import { SlaBadge } from '../components/Sla';
 import { ActivityCard, EditButton, EditTicketModal, LateNote, SlaCard, WatchButton } from '../components/TicketTracking';
 
 function Info({ label, children }) {
@@ -300,8 +300,7 @@ export default function TicketDetail() {
                     <div className="flex flex-wrap items-center gap-3">
                         <h1 className="font-display text-3xl font-extrabold tracking-tight tabular">{t.number}</h1>
                         <StatusBadge status={t.status} />
-                        <PriorityBadge priority={t.priority} />
-                        {!finished && <SlaBadge sla={t.sla} />}
+                        <SlaBadge sla={t.sla} />
                     </div>
                     <p className="mt-1 text-sm text-muted">
                         Abierto {formatDateTime(t.opened_at)}{t.opened_by && ` por ${t.opened_by}`}

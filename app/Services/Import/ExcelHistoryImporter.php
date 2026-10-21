@@ -4,6 +4,7 @@ namespace App\Services\Import;
 
 use App\Enums\Role;
 use App\Enums\TicketStatus;
+use App\Enums\Zone;
 use App\Models\Atm;
 use App\Models\AtmBrand;
 use App\Models\AtmCondition;
@@ -207,6 +208,8 @@ class ExcelHistoryImporter
                 'agency_code' => $agencyCode,
                 'agency_name' => Normalizer::text($get('Nombre de Agencia')),
                 'site_type' => Normalizer::text($get('Tipo')),
+                // Columna opcional «Zona» (Urbana / Extraurbana); sin ella, urbana.
+                'zone' => (isset($cols[Normalizer::key('Zona')]) ? Zone::fromText(Normalizer::text($get('Zona'))) : null)?->value ?? Zone::Urban->value,
                 'brand' => $brand ? Str::upper($brand) : null,
                 'model' => $model,
                 'address' => Normalizer::text($get('Direccion')),

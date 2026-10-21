@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\Priority;
 use App\Enums\Role;
+use App\Enums\SlaLevel;
 use App\Enums\TicketStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTicketRequest;
@@ -29,7 +29,6 @@ class TicketController extends Controller
         $request->validate([
             'q' => ['nullable', 'string', 'max:100'],
             'status' => ['nullable', 'string', 'max:200'],
-            'priority' => ['nullable', 'string', 'max:60'],
             'open' => ['nullable', 'string', 'max:5'],
             'history' => ['nullable', 'string', 'max:5'],
             'sla' => ['nullable', 'string', 'max:20'],
@@ -56,11 +55,9 @@ class TicketController extends Controller
             ->when($request->query('open'), fn ($q) => $q->whereNotIn('status', [TicketStatus::Closed, TicketStatus::Cancelled]))
             ->when($request->query('bank_id'), fn ($q, $v) => $q->where('bank_id', $v))
             ->when($request->query('technician_id'), fn ($q, $v) => $q->where('assigned_to', $v))
-            ->when($request->query('priority'), fn ($q, $v) => $q->whereIn('priority', explode(',', $v)))
             ->when($request->query('atm_id'), fn ($q, $v) => $q->where('atm_id', $v))
             ->when($request->query('closed_from'), fn ($q, $v) => $q->whereDate('closed_at', '>=', $v))
-            ->when($request->query('sla') === 'breached', fn ($q) => $q->sla('breached'))
-            ->when($request->query('sla') === 'at_risk', fn ($q) => $q->sla('at_risk')->whereNot(fn ($n) => $n->sla('breached')))
+            ->when(SlaLevel::tryFrom((string) $request->query('sla')), fn ($q, $level) => $q->slaLevel($level))
             ->when($request->query('from'), fn ($q, $v) => $q->whereDate('opened_at', '>=', $v))
             ->when($request->query('to'), fn ($q, $v) => $q->whereDate('opened_at', '<=', $v))
             ->when($term !== '', fn ($q) => $q->where(fn ($w) => $w
@@ -68,7 +65,8 @@ class TicketController extends Controller
                 ->orWhere('bank_reference', 'like', "%{$term}%")
                 ->orWhereHas('atm', fn ($a) => $a->where('atm_number', 'like', "%{$term}%")->orWhere('agency_name', 'like', "%{$term}%"))))
             ->when($request->boolean('history'), fn ($q) => $q->orderByRaw('coalesce(closed_at, opened_at) desc'))
-            ->when($request->query('sort') === 'priority', fn ($q) => $q->orderByRaw("case priority when 'critica' then 3 when 'media' then 2 else 1 end desc"))
+            // Los más urgentes primero: los que antes pasan (o pasaron) a crítica.
+            ->when($request->query('sort') === 'sla', fn ($q) => $q->orderByRaw('sla_critical_at is null')->orderBy('sla_critical_at'))
             ->orderByDesc('opened_at')
             ->orderByDesc('id')
             ->paginate(max(1, min(200, (int) $request->query('per_page', 25))));
@@ -159,12 +157,11 @@ class TicketController extends Controller
         ]);
     }
 
-    /** Editar prioridad, falla, detalle o caso del banco (queda en el historial). */
+    /** Editar falla, detalle o caso del banco (queda en el historial). */
     public function update(Request $request, Ticket $ticket): TicketResource
     {
         Gate::authorize('manage', $ticket);
         $data = $request->validate([
-            'priority' => ['sometimes', Rule::enum(Priority::class)],
             'fault_type_id' => ['sometimes', 'nullable', 'integer', 'exists:fault_types,id'],
             'description' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'bank_reference' => ['sometimes', 'nullable', 'string', 'max:60'],

@@ -4,29 +4,28 @@ import { useQuery } from '@tanstack/react-query';
 import { Plus, RefreshCw, UserX } from 'lucide-react';
 import { api } from '../lib/api';
 import { useCatalogs } from '../lib/queries';
-import { Button, Elapsed, LoadingBlock, PageHeader, Select, STATUS, Toggle, cx } from '../components/ui';
-import { PriorityBadge, SlaBadge, worstSla } from '../components/Sla';
+import { Button, Elapsed, LoadingBlock, PageHeader, Select, STATUS, cx } from '../components/ui';
+import { LEVEL_WEIGHT, SLA_LEVEL, SlaBadge } from '../components/Sla';
 
 const COLUMNS = ['abierto', 'asignado', 'en_transito', 'en_sitio', 'pendiente_repuesto', 'pendiente_validacion', 'por_confirmar', 'concluido'];
 const COLUMN_ACCENT = {
     abierto: 'bg-slate-400', asignado: 'bg-brand-500', en_transito: 'bg-violet-500', en_sitio: 'bg-sky-500',
     pendiente_repuesto: 'bg-amber-500', pendiente_validacion: 'bg-orange-500', por_confirmar: 'bg-teal-500', concluido: 'bg-emerald-500',
 };
-const WEIGHT = { critica: 3, media: 2, baja: 1 };
 
 function TicketCard({ t }) {
-    const breached = worstSla(t.sla) === 'breached';
+    const critical = t.sla?.level === 'critica';
     return (
         <Link
             to={`/tickets/${t.id}`}
             className={cx(
                 'block rounded-xl border bg-white p-3 shadow-[0_1px_2px_rgba(0,25,76,0.05)] transition hover:border-brand-300 hover:shadow-md',
-                breached ? 'border-red-300' : 'border-line',
+                critical ? 'border-red-300' : 'border-line',
             )}
         >
             <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-bold text-brand-600 tabular">{t.number}</span>
-                <PriorityBadge priority={t.priority} size="sm" />
+                <SlaBadge sla={t.sla} size="sm" />
             </div>
             <p className="mt-1.5 truncate text-sm font-semibold text-ink" title={t.atm.agency_name}>{t.atm.agency_name}</p>
             <p className="truncate text-xs text-muted">ATM {t.atm.atm_number}{t.atm.state && ` · ${t.atm.state}`}</p>
@@ -38,7 +37,6 @@ function TicketCard({ t }) {
                 </span>
                 <Elapsed ticket={t} className="shrink-0 text-muted" />
             </div>
-            {t.status !== 'concluido' && <div className="mt-2"><SlaBadge sla={t.sla} size="sm" /></div>}
         </Link>
     );
 }
@@ -47,12 +45,11 @@ function TicketCard({ t }) {
 export default function Board() {
     const { data: catalogs } = useCatalogs();
     const [technician, setTechnician] = useState('');
-    const [priority, setPriority] = useState('');
-    const [onlyBreached, setOnlyBreached] = useState(false);
+    const [level, setLevel] = useState('');
     const today = new Date();
     const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-    const query = { technician_id: technician, priority, sla: onlyBreached ? 'breached' : '', per_page: 200 };
+    const query = { technician_id: technician, sla: level, per_page: 200 };
     const open = useQuery({ queryKey: ['board', 'open', query], queryFn: () => api('tickets', { query: { ...query, open: 1 } }), refetchInterval: 30000 });
     const done = useQuery({
         queryKey: ['board', 'done', query, todayIso],
@@ -63,14 +60,14 @@ export default function Board() {
     const tickets = [...(open.data?.data ?? []), ...(done.data?.data ?? []).filter((t) => t.closed_at?.slice(0, 10) === todayIso)];
     const byColumn = Object.fromEntries(COLUMNS.map((c) => [
         c,
-        tickets.filter((t) => t.status === c).sort((a, b) => (WEIGHT[b.priority] - WEIGHT[a.priority]) || (new Date(a.opened_at) - new Date(b.opened_at))),
+        tickets.filter((t) => t.status === c).sort((a, b) => ((LEVEL_WEIGHT[b.sla?.level] ?? 0) - (LEVEL_WEIGHT[a.sla?.level] ?? 0)) || (new Date(a.opened_at) - new Date(b.opened_at))),
     ]));
 
     return (
         <>
             <PageHeader
                 title="Tablero"
-                subtitle="Todos los tickets en curso por estado. Los más urgentes y antiguos arriba; borde rojo = SLA vencido."
+                subtitle="Todos los tickets en curso por estado. Los más urgentes y antiguos arriba; borde rojo = SLA en crítica."
                 actions={
                     <>
                         <Button variant="secondary" icon={RefreshCw} loading={open.isFetching} onClick={() => { open.refetch(); done.refetch(); }} className="px-3" aria-label="Actualizar" />
@@ -86,12 +83,11 @@ export default function Board() {
                     </Select>
                 </div>
                 <div className="w-full sm:w-44">
-                    <Select value={priority} onChange={(e) => setPriority(e.target.value)} aria-label="Prioridad">
-                        <option value="">Toda prioridad</option>
-                        {catalogs?.priorities?.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+                    <Select value={level} onChange={(e) => setLevel(e.target.value)} aria-label="Semáforo de SLA">
+                        <option value="">Todo el semáforo</option>
+                        {Object.entries(SLA_LEVEL).map(([value, l]) => <option key={value} value={value}>{l.label}</option>)}
                     </Select>
                 </div>
-                <Toggle checked={onlyBreached} onChange={setOnlyBreached} label="Solo SLA vencido" />
             </div>
 
             {open.isLoading ? (

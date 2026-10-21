@@ -58,7 +58,6 @@ class BankScopeTest extends TestCase
             'atm_id' => $atm->id,
             'bank_id' => $atm->bank_id,
             'status' => TicketStatus::Open,
-            'priority' => 'media',
             'opened_at' => now()->subHour(),
         ]);
     }

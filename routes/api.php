@@ -90,6 +90,8 @@ Route::prefix('v1')->group(function () {
             Route::post('users/{user}/access-link', [AccessLinkController::class, 'create']);
             Route::post('import/excel', ImportController::class)->middleware('throttle:heavy');
             Route::put('sla-policies', [SlaPolicyController::class, 'update']);
+            Route::post('holidays', [SlaPolicyController::class, 'addHoliday']);
+            Route::delete('holidays/{holiday}', [SlaPolicyController::class, 'removeHoliday']);
             Route::get('audit', AuditController::class);
         });
     });

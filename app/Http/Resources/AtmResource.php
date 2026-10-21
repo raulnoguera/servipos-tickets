@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\Zone;
 use App\Models\Atm;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -25,6 +26,8 @@ class AtmResource extends JsonResource
             'agency_code' => $this->agency_code,
             'agency_name' => $this->agency_name,
             'site_type' => $this->site_type,
+            'zone' => $this->zone,
+            'zone_label' => Zone::tryFrom((string) $this->zone)?->label(),
             'brand' => $this->brand,
             'model' => $this->model,
             'address' => $this->address,

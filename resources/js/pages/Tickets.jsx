@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Download, Plus, Search } from 'lucide-react';
 import { api } from '../lib/api';
-import { PriorityBadge, SlaBadge } from '../components/Sla';
+import { SLA_LEVEL, SlaBadge } from '../components/Sla';
 import { useCatalogs } from '../lib/queries';
 import { formatDateTime } from '../lib/format';
 import {
@@ -17,8 +17,8 @@ const TABS = [
     { value: 'pendiente_validacion', label: 'Pend. validación', query: { status: 'pendiente_validacion' } },
     { value: 'por_confirmar', label: 'Por confirmar', query: { status: 'por_confirmar' } },
     { value: 'concluido', label: 'Concluidos', query: { status: 'concluido' } },
-    { value: 'vencidos', label: 'SLA vencido', query: { sla: 'breached', open: 1 } },
-    { value: 'por_vencer', label: 'Por vencer', query: { sla: 'at_risk', open: 1 } },
+    { value: 'vencidos', label: 'En crítica', query: { sla: 'critica', open: 1 } },
+    { value: 'por_vencer', label: 'En naranja', query: { sla: 'naranja', open: 1 } },
     { value: 'anulado', label: 'Anulados', query: { status: 'anulado' } },
     { value: 'todos', label: 'Todos', query: {} },
 ];
@@ -32,7 +32,6 @@ export default function Tickets() {
     const [debounced, setDebounced] = useState(q);
     const technician = params.get('tecnico') || '';
     const bank = params.get('banco') || '';
-    const priority = params.get('prioridad') || '';
     const slaParam = params.get('sla') || '';
     const page = Number(params.get('pagina') || 1);
 
@@ -51,8 +50,8 @@ export default function Tickets() {
     };
 
     const { data, isLoading } = useQuery({
-        queryKey: ['tickets', tab.value, debounced, technician, bank, priority, slaParam, page],
-        queryFn: () => api('tickets', { query: { ...tab.query, ...(slaParam ? { sla: slaParam } : {}), q: debounced, technician_id: technician, bank_id: bank, priority, sort: priority ? undefined : 'priority', page } }),
+        queryKey: ['tickets', tab.value, debounced, technician, bank, slaParam, page],
+        queryFn: () => api('tickets', { query: { ...tab.query, ...(slaParam ? { sla: slaParam } : {}), q: debounced, technician_id: technician, bank_id: bank, sort: ['concluido', 'anulado', 'todos'].includes(tab.value) ? undefined : 'sla', page } }),
         placeholderData: keepPreviousData,
         refetchInterval: 30000,
     });
@@ -102,9 +101,9 @@ export default function Tickets() {
                         <option value="">Todos los bancos</option>
                         {catalogs?.banks.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
                     </Select>
-                    <Select value={priority} onChange={(e) => set('prioridad', e.target.value)} aria-label="Prioridad">
-                        <option value="">Toda prioridad</option>
-                        {catalogs?.priorities?.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+                    <Select value={slaParam} onChange={(e) => set('sla', e.target.value)} aria-label="Semáforo de SLA">
+                        <option value="">Todo el semáforo</option>
+                        {Object.entries(SLA_LEVEL).map(([value, l]) => <option key={value} value={value}>{l.label}</option>)}
                     </Select>
                 </div>
 
@@ -125,7 +124,7 @@ export default function Tickets() {
                                 {data.data.map((t) => (
                                     <tr key={t.id} onClick={() => navigate(`/tickets/${t.id}`)} className="cursor-pointer hover:bg-brand-50/50">
                                         <Td className="whitespace-nowrap">
-                                            <div className="flex items-center gap-1.5"><span className="font-semibold text-brand-600 tabular">{t.number}</span><PriorityBadge priority={t.priority} size="sm" /></div>
+                                            <div className="flex items-center gap-1.5"><span className="font-semibold text-brand-600 tabular">{t.number}</span></div>
                                             <div className="text-xs text-muted">{formatDateTime(t.opened_at)}</div>
                                         </Td>
                                         <Td className="font-medium text-ink tabular">{t.atm.atm_number}</Td>
@@ -149,7 +148,7 @@ export default function Tickets() {
                                 <li key={t.id}>
                                     <Link to={`/tickets/${t.id}`} className="block px-4 py-3.5 active:bg-surface">
                                         <div className="flex items-center justify-between gap-2">
-                                            <span className="flex items-center gap-1.5"><span className="font-semibold text-brand-600 tabular">{t.number}</span><PriorityBadge priority={t.priority} size="sm" /></span>
+                                            <span className="flex items-center gap-1.5"><span className="font-semibold text-brand-600 tabular">{t.number}</span><SlaBadge sla={t.sla} size="sm" /></span>
                                             <StatusBadge status={t.status} size="sm" />
                                         </div>
                                         <p className="mt-1 truncate text-sm font-medium text-ink">{t.atm.atm_number} · {t.atm.agency_name}</p>

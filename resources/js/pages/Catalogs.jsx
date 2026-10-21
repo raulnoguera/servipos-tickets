@@ -4,7 +4,8 @@ import { Check, ChevronRight, Pencil, Plus, X } from 'lucide-react';
 import { api } from '../lib/api';
 import { useCatalogs } from '../lib/queries';
 import { Badge, Button, Card, Input, LoadingBlock, PageHeader, Select, StatusBadge, Toggle, cx, toast } from '../components/ui';
-import { PriorityBadge } from '../components/Sla';
+import { LevelBadge } from '../components/Sla';
+import { formatDate } from '../lib/format';
 
 const TABS = [
     { type: 'fault-types', key: 'fault_types', label: 'Tipos de falla', hint: 'Motivos de visita (Dispensación, Impresora, Comunicación…)' },
@@ -13,66 +14,165 @@ const TABS = [
     { type: 'banks', key: 'banks', label: 'Bancos', hint: 'Clientes bancarios' },
     { type: 'brands', key: 'brands', label: 'Marcas y modelos', hint: 'Marcas de cajeros y sus modelos; se eligen en la ficha de cada cajero. Se guardan en MAYÚSCULAS.' },
     { type: 'states', key: 'states', label: 'Estados', hint: 'Estados y regiones de cobertura' },
-    { type: 'sla', key: 'sla', label: 'SLA', hint: 'Metas de tiempo por prioridad' },
+    { type: 'sla', key: 'sla', label: 'SLA', hint: 'Semáforo por zona, horario bancario y feriados' },
 ];
 
-const toHours = (minutes) => (minutes ? String(Math.round((minutes / 60) * 100) / 100).replace('.', ',') : '');
-const toMinutes = (hours) => {
-    const n = parseFloat(String(hours).replace(',', '.'));
-    return Number.isFinite(n) && n > 0 ? Math.round(n * 60) : null;
+const DAYS = [[1, 'Lun'], [2, 'Mar'], [3, 'Mié'], [4, 'Jue'], [5, 'Vie'], [6, 'Sáb'], [7, 'Dom']];
+const toText = (n) => (n == null ? '' : String(n).replace('.', ','));
+const toNumber = (text) => {
+    const n = parseFloat(String(text).replace(',', '.'));
+    return Number.isFinite(n) ? n : null;
 };
 
-/** Metas de SLA por prioridad (en horas en pantalla; minutos en el servidor). */
+/** Metas del semáforo por zona, horario bancario y feriados. */
 function SlaSettings() {
     const queryClient = useQueryClient();
     const { data, isLoading } = useQuery({ queryKey: ['sla-policies'], queryFn: () => api('sla-policies') });
-    const [rows, setRows] = useState(null);
-    const current = rows ?? data?.data.map((p) => ({ ...p, response: toHours(p.response_minutes), resolution: toHours(p.resolution_minutes) }));
+    const [draft, setDraft] = useState(null);
+    const [holiday, setHoliday] = useState({ date: '', name: '' });
+    const server = data?.data;
+    const current = draft ?? (server && {
+        policies: server.policies.map((p) => ({ ...p, green: toText(p.green), orange: toText(p.orange) })),
+        schedule: { start: server.schedule.start, end: server.schedule.end, days: server.schedule.days },
+    });
+    const applied = (r, message) => {
+        queryClient.setQueryData(['sla-policies'], r);
+        queryClient.invalidateQueries({ queryKey: ['tickets'] });
+        queryClient.invalidateQueries({ queryKey: ['board'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+        toast(message);
+    };
     const save = useMutation({
         mutationFn: () => api('sla-policies', {
             method: 'PUT',
-            body: { policies: current.map((p) => ({ priority: p.priority, response_minutes: toMinutes(p.response), resolution_minutes: toMinutes(p.resolution) })) },
+            body: {
+                policies: current.policies.map((p) => ({ zone: p.zone, unit: p.unit, green: toNumber(p.green), orange: toNumber(p.orange) })),
+                schedule: current.schedule,
+            },
         }),
         onSuccess: (r) => {
-            queryClient.setQueryData(['sla-policies'], r);
-            queryClient.invalidateQueries({ queryKey: ['tickets'] });
-            setRows(null);
-            toast('Metas de SLA guardadas');
+            setDraft(null);
+            applied(r, 'Metas y horario guardados; los tickets en curso ya los usan');
         },
+        onError: (e) => toast(Object.values(e.errors ?? {})[0]?.[0] ?? e.message, 'error'),
+    });
+    const addHoliday = useMutation({
+        mutationFn: () => api('holidays', { method: 'POST', body: holiday }),
+        onSuccess: (r) => {
+            setHoliday({ date: '', name: '' });
+            applied(r, 'Feriado agregado');
+        },
+        onError: (e) => toast(Object.values(e.errors ?? {})[0]?.[0] ?? e.message, 'error'),
+    });
+    const removeHoliday = useMutation({
+        mutationFn: (id) => api(`holidays/${id}`, { method: 'DELETE' }),
+        onSuccess: (r) => applied(r, 'Feriado eliminado'),
         onError: (e) => toast(e.message, 'error'),
     });
     if (isLoading || !current) {
         return <LoadingBlock />;
     }
-    const setField = (i, key) => (e) => setRows(current.map((r, j) => (j === i ? { ...r, [key]: e.target.value } : r)));
+    const setPolicy = (i, key) => (e) => setDraft({ ...current, policies: current.policies.map((r, j) => (j === i ? { ...r, [key]: e.target.value } : r)) });
+    const setSchedule = (key, value) => setDraft({ ...current, schedule: { ...current.schedule, [key]: value } });
+    const toggleDay = (d) => setSchedule('days', current.schedule.days.includes(d) ? current.schedule.days.filter((x) => x !== d) : [...current.schedule.days, d].sort());
+    const unitLabel = (unit, n) => (unit === 'days' ? (toNumber(n) === 1 ? 'día hábil' : 'días hábiles') : (toNumber(n) === 1 ? 'hora hábil' : 'horas hábiles'));
 
     return (
-        <div className="p-5">
-            <div className="overflow-x-auto">
-                <table className="w-full min-w-[480px] text-sm">
-                    <thead>
-                        <tr className="text-left text-xs font-bold tracking-wide text-muted uppercase">
-                            <th className="pb-2">Prioridad</th><th className="pb-2">Llegada al sitio (horas)</th><th className="pb-2">Resolución (horas)</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-line">
-                        {current.map((p, i) => (
-                            <tr key={p.priority}>
-                                <td className="py-2.5 pr-3"><PriorityBadge priority={p.priority} /></td>
-                                <td className="py-2.5 pr-3"><Input value={p.response} onChange={setField(i, 'response')} inputMode="decimal" placeholder="Sin meta" className="w-36 tabular" aria-label={`Llegada ${p.label}`} /></td>
-                                <td className="py-2.5"><Input value={p.resolution} onChange={setField(i, 'resolution')} inputMode="decimal" placeholder="Sin meta" className="w-36 tabular" aria-label={`Resolución ${p.label}`} /></td>
+        <div className="divide-y divide-line">
+            <section className="p-5">
+                <h3 className="font-display text-base font-bold text-ink">Semáforo por zona</h3>
+                <p className="mt-1 text-sm text-muted">El color del ticket depende de la zona del cajero y del tiempo hábil que lleva abierto, hasta que el técnico reporta el cierre.</p>
+                <div className="mt-4 overflow-x-auto">
+                    <table className="w-full min-w-[620px] text-sm">
+                        <thead>
+                            <tr className="text-left text-xs font-bold tracking-wide text-muted uppercase">
+                                <th className="pb-2">Zona</th><th className="pb-2">Se mide en</th><th className="pb-2">Verde hasta</th><th className="pb-2">Naranja hasta</th><th className="pb-2">Después</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-            <p className="mt-3 text-xs text-muted">
-                Ejemplo: 1,5 = 1 hora 30 minutos. Deje vacío para no medir esa meta. El reloj corre desde la apertura del ticket y no se detiene mientras espera repuesto.
-                Los valores iniciales son de ejemplo: ajústelos a lo acordado con cada banco.
-            </p>
-            <div className="mt-4 flex justify-end">
-                <Button loading={save.isPending} disabled={!rows} onClick={() => save.mutate()}>Guardar metas</Button>
-            </div>
+                        </thead>
+                        <tbody className="divide-y divide-line">
+                            {current.policies.map((p, i) => (
+                                <tr key={p.zone}>
+                                    <td className="py-2.5 pr-3 font-semibold text-ink">{p.label}</td>
+                                    <td className="py-2.5 pr-3">
+                                        <Select value={p.unit} onChange={setPolicy(i, 'unit')} className="w-40" aria-label={`Unidad ${p.label}`}>
+                                            <option value="hours">Horas hábiles</option>
+                                            <option value="days">Días hábiles</option>
+                                        </Select>
+                                    </td>
+                                    <td className="py-2.5 pr-3"><Input value={p.green} onChange={setPolicy(i, 'green')} inputMode="decimal" className="w-28 border-emerald-300 tabular" aria-label={`Verde hasta, ${p.label}`} /></td>
+                                    <td className="py-2.5 pr-3"><Input value={p.orange} onChange={setPolicy(i, 'orange')} inputMode="decimal" className="w-28 border-orange-300 tabular" aria-label={`Naranja hasta, ${p.label}`} /></td>
+                                    <td className="py-2.5"><LevelBadge level="critica" /></td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+                <ul className="mt-3 space-y-1 text-xs text-muted">
+                    {current.policies.map((p) => (
+                        <li key={p.zone}><b className="text-body">{p.label}:</b> verde hasta {p.green} {unitLabel(p.unit, p.green)}, naranja hasta {p.orange} {unitLabel(p.unit, p.orange)}; después, crítica.</li>
+                    ))}
+                </ul>
+            </section>
+
+            <section className="p-5">
+                <h3 className="font-display text-base font-bold text-ink">Horario bancario</h3>
+                <p className="mt-1 text-sm text-muted">Solo este horario suma tiempo. Un día hábil equivale a una jornada completa (hoy, {Math.round((server.schedule.day_minutes / 60) * 10) / 10} h).</p>
+                <div className="mt-4 flex flex-wrap items-end gap-4">
+                    <label className="text-sm font-semibold text-ink">Desde
+                        <Input type="time" value={current.schedule.start} onChange={(e) => setSchedule('start', e.target.value)} className="mt-1 w-32 tabular" />
+                    </label>
+                    <label className="text-sm font-semibold text-ink">Hasta
+                        <Input type="time" value={current.schedule.end} onChange={(e) => setSchedule('end', e.target.value)} className="mt-1 w-32 tabular" />
+                    </label>
+                    <div>
+                        <p className="text-sm font-semibold text-ink">Días</p>
+                        <div className="mt-1 flex flex-wrap gap-1.5">
+                            {DAYS.map(([d, label]) => (
+                                <button
+                                    key={d}
+                                    type="button"
+                                    onClick={() => toggleDay(d)}
+                                    aria-pressed={current.schedule.days.includes(d)}
+                                    className={cx('h-10 w-12 rounded-lg border text-sm font-semibold transition', current.schedule.days.includes(d) ? 'border-brand-500 bg-brand-500 text-white' : 'border-line bg-white text-muted hover:border-brand-300')}
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+                <div className="mt-5 flex items-center justify-end gap-3">
+                    {draft && <Button variant="secondary" onClick={() => setDraft(null)}>Descartar</Button>}
+                    <Button loading={save.isPending} disabled={!draft} onClick={() => save.mutate()}>Guardar metas y horario</Button>
+                </div>
+            </section>
+
+            <section className="p-5">
+                <h3 className="font-display text-base font-bold text-ink">Feriados</h3>
+                <p className="mt-1 text-sm text-muted">Estos días no suman tiempo. Agregue los feriados bancarios del año.</p>
+                <form
+                    className="mt-4 flex flex-wrap items-end gap-3"
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        addHoliday.mutate();
+                    }}
+                >
+                    <Input type="date" required value={holiday.date} onChange={(e) => setHoliday({ ...holiday, date: e.target.value })} className="w-44 tabular" aria-label="Fecha del feriado" />
+                    <Input required maxLength={80} value={holiday.name} onChange={(e) => setHoliday({ ...holiday, name: e.target.value })} placeholder="Motivo (p. ej. Carnaval)" className="w-64" aria-label="Motivo del feriado" />
+                    <Button type="submit" icon={Plus} loading={addHoliday.isPending}>Agregar</Button>
+                </form>
+                <ul className="mt-4 divide-y divide-line rounded-xl border border-line">
+                    {server.holidays.length === 0 && <li className="px-4 py-3 text-sm text-muted">No hay feriados cargados.</li>}
+                    {server.holidays.map((h) => (
+                        <li key={h.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
+                            <span><b className="tabular text-ink">{formatDate(h.date)}</b> <span className="text-body">· {h.name}</span></span>
+                            <button type="button" onClick={() => removeHoliday.mutate(h.id)} className="rounded-lg p-1.5 text-faint hover:bg-red-50 hover:text-red-600" aria-label={`Quitar ${h.name}`} title="Quitar">
+                                <X className="size-4" />
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            </section>
         </div>
     );
 }

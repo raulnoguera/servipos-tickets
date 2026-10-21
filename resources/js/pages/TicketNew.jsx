@@ -15,6 +15,7 @@ function AtmCard({ atm }) {
         ['Estado', atm.state],
         ['Marca / modelo', [atm.brand, atm.model].filter(Boolean).join(' ') || null],
         ['Tipo', atm.site_type],
+        ['Zona (SLA)', atm.zone_label],
         ['Banco', atm.bank],
     ];
     return (
@@ -50,7 +51,7 @@ export default function TicketNew() {
     const [atm, setAtm] = useState(null);
     const [lookupError, setLookupError] = useState(null);
     const [searchKey, setSearchKey] = useState(0);
-    const [form, setForm] = useState({ fault_type_id: '', priority: 'media', bank_reference: '', description: '', assigned_to: '' });
+    const [form, setForm] = useState({ fault_type_id: '', bank_reference: '', description: '', assigned_to: '' });
     const [created, setCreated] = useState(null);
 
     const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
@@ -83,7 +84,7 @@ export default function TicketNew() {
         setAtm(null);
         setLookupError(null);
         setSearchKey((k) => k + 1);
-        setForm({ fault_type_id: '', priority: 'media', bank_reference: '', description: '', assigned_to: '' });
+        setForm({ fault_type_id: '', bank_reference: '', description: '', assigned_to: '' });
         create.reset();
     }
 
@@ -158,13 +159,6 @@ export default function TicketNew() {
                                 <Select id={id} value={form.fault_type_id} onChange={set('fault_type_id')} required>
                                     <option value="">Seleccione…</option>
                                     {catalogs?.fault_types.filter((f) => f.active).map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
-                                </Select>
-                            )}
-                        </Field>
-                        <Field label="Prioridad" hint="Define las metas de SLA" error={err?.field?.('priority')}>
-                            {(id) => (
-                                <Select id={id} value={form.priority} onChange={set('priority')}>
-                                    {catalogs?.priorities?.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                                 </Select>
                             )}
                         </Field>

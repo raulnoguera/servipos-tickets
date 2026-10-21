@@ -76,13 +76,11 @@ function EmailModal({ email, onClose }) {
     const [atm, setAtm] = useState(null);
     const [notFound, setNotFound] = useState(null);
     const [faultTypeId, setFaultTypeId] = useState('');
-    const [priority, setPriority] = useState('media');
 
     useEffect(() => {
         setAtm(email?.atm?.active ? email.atm : null);
         setNotFound(null);
         setFaultTypeId('');
-        setPriority('media');
     }, [email?.id]);
 
     const done = (message) => {
@@ -93,7 +91,7 @@ function EmailModal({ email, onClose }) {
         onClose();
     };
     const open = useMutation({
-        mutationFn: () => api(`inbound-emails/${email.id}/ticket`, { method: 'POST', body: { atm_id: atm.id, fault_type_id: faultTypeId || null, priority } }),
+        mutationFn: () => api(`inbound-emails/${email.id}/ticket`, { method: 'POST', body: { atm_id: atm.id, fault_type_id: faultTypeId || null } }),
         onSuccess: (res) => done(`Ticket ${res.data.number} abierto`),
     });
     const ignore = useMutation({
@@ -162,15 +160,8 @@ function EmailModal({ email, onClose }) {
                                         </Select>
                                     )}
                                 </Field>
-                                <Field label="Prioridad">
-                                    {(id) => (
-                                        <Select id={id} value={priority} onChange={(e) => setPriority(e.target.value)}>
-                                            {catalogs?.priorities?.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
-                                        </Select>
-                                    )}
-                                </Field>
                             </div>
-                            <p className="text-xs text-muted">El tiempo del ticket se cuenta desde que el banco envió el correo.</p>
+                            <p className="text-xs text-muted">El SLA se cuenta desde que el banco envió el correo, en horario bancario, según la zona del cajero.</p>
                             {error && <Alert>{error.message}</Alert>}
                         </div>
                     )}

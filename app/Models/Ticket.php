@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\Priority;
+use App\Enums\SlaLevel;
 use App\Enums\TicketStatus;
 use App\Models\Scopes\BankScope;
 use App\Services\SlaService;
@@ -15,8 +15,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
-    'number', 'atm_id', 'bank_id', 'fault_type_id', 'description', 'bank_reference', 'status', 'priority', 'source',
-    'assigned_to', 'opened_by', 'opened_at', 'assigned_at', 'responded_at', 'closed_at', 'confirmed_at', 'confirmed_by', 'duration_ms',
+    'number', 'atm_id', 'bank_id', 'fault_type_id', 'description', 'bank_reference', 'status', 'source',
+    'assigned_to', 'opened_by', 'opened_at', 'assigned_at', 'responded_at', 'closed_at', 'confirmed_at', 'confirmed_by', 'duration_ms', 'sla_orange_at', 'sla_critical_at',
 ])]
 #[ScopedBy(BankScope::class)]
 class Ticket extends Model
@@ -28,43 +28,48 @@ class Ticket extends Model
     {
         return [
             'status' => TicketStatus::class,
-            'priority' => Priority::class,
             'opened_at' => 'datetime',
             'assigned_at' => 'datetime',
             'responded_at' => 'datetime',
             'closed_at' => 'datetime',
             'confirmed_at' => 'datetime',
             'duration_ms' => 'integer',
+            'sla_orange_at' => 'datetime',
+            'sla_critical_at' => 'datetime',
         ];
     }
 
-    /**
-     * Tickets con SLA vencido (llegada o resolución) o, con $atRisk, por vencer (≥ 80 %).
-     * Se arma con las metas vigentes de cada prioridad para poder filtrar en la base de datos.
-     */
-    public function scopeSla(Builder $query, string $state): void
+    protected static function booted(): void
     {
-        $now = now();
-        $ratio = $state === 'at_risk' ? SlaService::AT_RISK_RATIO : 1;
-        $query->where('source', '!=', 'import')->where(function (Builder $any) use ($now, $ratio, $state) {
-            foreach (app(SlaService::class)->policies() as $priority => $policy) {
-                $any->orWhere(function (Builder $q) use ($priority, $policy, $now, $ratio, $state) {
-                    $q->where('priority', $priority)->where(function (Builder $breach) use ($policy, $now, $ratio, $state) {
-                        if ($policy->resolution_minutes) {
-                            $limit = (int) round($policy->resolution_minutes * $ratio);
-                            $breach->orWhere(fn ($r) => $r->whereNotIn('status', TicketStatus::stopped())->where('opened_at', '<', $now->copy()->subMinutes($limit)));
-                            if ($state === 'breached') {
-                                $breach->orWhere(fn ($r) => $r->whereIn('status', [TicketStatus::Closed, TicketStatus::PendingClosure])->where('duration_ms', '>', $policy->resolution_minutes * 60000));
-                            }
-                        }
-                        if ($policy->response_minutes) {
-                            $limit = (int) round($policy->response_minutes * $ratio);
-                            $breach->orWhere(fn ($r) => $r->whereNull('responded_at')->whereNotIn('status', TicketStatus::stopped())->where('opened_at', '<', $now->copy()->subMinutes($limit)));
-                        }
-                    });
-                });
+        // Cada vez que cambia la apertura o el cajero, se recalcula cuándo pasa a naranja y a crítica.
+        static::saving(function (Ticket $ticket) {
+            if ($ticket->isDirty(['opened_at', 'atm_id', 'source']) || ($ticket->source !== 'import' && ! $ticket->sla_critical_at)) {
+                app(SlaService::class)->stamp($ticket);
             }
         });
+    }
+
+    /** Tickets en un color del semáforo: los en curso según la hora actual; los cerrados, según su cierre. */
+    public function scopeSlaLevel(Builder $query, SlaLevel $level): void
+    {
+        $now = now();
+        $query->where('source', '!=', 'import')->whereNotNull('sla_critical_at')->where(fn (Builder $any) => $any
+            ->where(function (Builder $running) use ($level, $now) {
+                $running->whereNotIn('status', TicketStatus::stopped());
+                match ($level) {
+                    SlaLevel::Green => $running->where('sla_orange_at', '>=', $now),
+                    SlaLevel::Orange => $running->where('sla_orange_at', '<', $now)->where('sla_critical_at', '>=', $now),
+                    SlaLevel::Critical => $running->where('sla_critical_at', '<', $now),
+                };
+            })
+            ->orWhere(function (Builder $done) use ($level) {
+                $done->whereIn('status', [TicketStatus::Closed, TicketStatus::PendingClosure])->whereNotNull('closed_at');
+                match ($level) {
+                    SlaLevel::Green => $done->whereColumn('closed_at', '<=', 'sla_orange_at'),
+                    SlaLevel::Orange => $done->whereColumn('closed_at', '>', 'sla_orange_at')->whereColumn('closed_at', '<=', 'sla_critical_at'),
+                    SlaLevel::Critical => $done->whereColumn('closed_at', '>', 'sla_critical_at'),
+                };
+            }));
     }
 
     /** Tickets de un técnico: asignados a él o en los que registró alguna atención. */

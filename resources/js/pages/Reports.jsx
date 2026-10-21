@@ -13,6 +13,27 @@ import {
 import { CATEGORICAL, ColumnChart, DonutChart, HBarChart, TrendChart, WeeklyChart, donutColor } from '../components/Charts';
 import InformePrint from '../components/InformePrint';
 import { detailUrl } from './ReportDetail';
+import { SLA_LEVEL } from '../components/Sla';
+
+/** Barras del semáforo (verde, naranja y crítica) con su cantidad. */
+function SlaBars({ rows }) {
+    const total = rows.reduce((n, r) => n + r.total, 0);
+    if (!total) {
+        return <EmptyState title="Sin datos" />;
+    }
+    return (
+        <ul className="space-y-3 py-1">
+            {rows.map((r) => (
+                <li key={r.level}>
+                    <div className="mb-1 flex justify-between text-sm"><span className="font-semibold text-ink">{r.name}</span><span className="tabular text-muted">{formatNumber(r.total)} · {formatPct((r.total / total) * 100)}</span></div>
+                    <div className="h-2.5 overflow-hidden rounded-full bg-surface ring-1 ring-line ring-inset">
+                        <div className={`h-full rounded-full ${SLA_LEVEL[r.level].bar}`} style={{ width: `${(r.total / total) * 100}%` }} />
+                    </div>
+                </li>
+            ))}
+        </ul>
+    );
+}
 
 const TABS = [
     { key: 'resumen', label: 'Resumen', icon: Gauge },
@@ -188,8 +209,8 @@ function SummaryTab({ filters }) {
                 <Kpi icon={Timer} tone="navy" label="Tiempo promedio de resolución" value={k.mttr_ms ? formatDuration(k.mttr_ms) : '—'} detail="De la apertura al cierre" to={link({ metrica: 'mttr' })} />
                 <Kpi icon={Clock3} label="Tiempo promedio de llegada" value={k.mtta_ms ? formatDuration(k.mtta_ms) : '—'} detail="De la apertura a la llegada al sitio" to={link({ metrica: 'mtta' })} />
                 <Kpi icon={CheckCircle2} tone="ok" label="Resueltos en la 1.ª visita" value={formatPct(k.first_visit_rate)} detail="Sobre los concluidos del período" to={link({ metrica: 'first_visit' })} />
-                <Kpi icon={Gauge} tone={k.sla_resolution_rate !== null && k.sla_resolution_rate < 80 ? 'warn' : 'ok'} label="SLA de resolución cumplido" value={formatPct(k.sla_resolution_rate)} detail={`Llegada: ${formatPct(k.sla_response_rate)}`} to={link({ metrica: 'sla' })} />
-                <Kpi icon={AlertTriangle} tone="danger" label="Tickets con SLA vencido" value={formatNumber(k.sla_breached)} detail="Llegada o resolución fuera de meta" to={link({ metrica: 'sla_breached' })} />
+                <Kpi icon={Gauge} tone={k.sla_green_rate !== null && k.sla_green_rate < 80 ? 'warn' : 'ok'} label="Cerrados en verde" value={formatPct(k.sla_green_rate)} detail="Sobre los cerrados, en horario bancario" to={link({ metrica: 'sla' })} />
+                <Kpi icon={AlertTriangle} tone="danger" label="Tickets en crítica" value={formatNumber(k.sla_critical)} detail="En curso o cerrados en crítica" to={link({ metrica: 'sla_critical' })} />
                 <Kpi icon={Repeat2} tone="warn" label="Reincidencia" value={formatPct(k.reincidence_rate)} detail="Cajero con otra falla en los 30 días previos" to={link({ metrica: 'reincidence' })} />
                 <Kpi icon={Wrench} label="Pendientes hoy" value={formatNumber(k.backlog)} detail="Sin cerrar, según antigüedad abajo" to={link({ metrica: 'backlog' })} />
             </div>
@@ -209,8 +230,8 @@ function SummaryTab({ filters }) {
                     <div className="px-4 py-3">{data.by_status.length ? <HBarChart data={data.by_status} labelKey="name" valueKey="total" unit="Tickets" /> : <EmptyState title="Sin datos" />}</div>
                 </Card>
                 <Card>
-                    <CardHeader title="Por prioridad" />
-                    <div className="px-4 py-3">{data.by_priority.length ? <HBarChart data={data.by_priority} labelKey="name" valueKey="total" unit="Tickets" /> : <EmptyState title="Sin datos" />}</div>
+                    <CardHeader title="Semáforo de SLA" subtitle="Tickets del período: los cerrados, según cómo cerraron" />
+                    <div className="px-4 py-3"><SlaBars rows={data.by_sla} /></div>
                 </Card>
             </div>
         </div>
@@ -279,7 +300,7 @@ function TechniciansTab({ filters }) {
                 ) : (
                     <Table>
                         <thead>
-                            <tr><Th>Técnico</Th><Th className="text-right">Asignados</Th><Th className="text-right">Concluidos</Th><Th className="text-right">Pend. hoy</Th><Th className="text-right">Visitas</Th><Th className="text-right">Repuestos</Th><Th className="text-right">Llegada prom.</Th><Th className="text-right">Resolución prom.</Th><Th className="text-right">1.ª visita</Th><Th className="text-right">SLA</Th></tr>
+                            <tr><Th>Técnico</Th><Th className="text-right">Asignados</Th><Th className="text-right">Concluidos</Th><Th className="text-right">Pend. hoy</Th><Th className="text-right">Visitas</Th><Th className="text-right">Repuestos</Th><Th className="text-right">Llegada prom.</Th><Th className="text-right">Resolución prom.</Th><Th className="text-right">1.ª visita</Th><Th className="text-right">En verde</Th></tr>
                         </thead>
                         <tbody>
                             {data.data.map((r) => (
@@ -293,7 +314,7 @@ function TechniciansTab({ filters }) {
                                     <Td className="text-right tabular">{r.mtta_ms ? formatDuration(r.mtta_ms) : '—'}</Td>
                                     <Td className="text-right tabular">{r.mttr_ms ? formatDuration(r.mttr_ms) : '—'}</Td>
                                     <Td className="text-right tabular">{formatPct(r.first_visit_rate)}</Td>
-                                    <Td className={cx('text-right font-semibold tabular', r.sla_resolution_rate !== null && r.sla_resolution_rate < 80 ? 'text-amber-700' : 'text-emerald-700')}>{formatPct(r.sla_resolution_rate)}</Td>
+                                    <Td className={cx('text-right font-semibold tabular', r.sla_green_rate !== null && r.sla_green_rate < 80 ? 'text-amber-700' : 'text-emerald-700')}>{formatPct(r.sla_green_rate)}</Td>
                                 </tr>
                             ))}
                         </tbody>

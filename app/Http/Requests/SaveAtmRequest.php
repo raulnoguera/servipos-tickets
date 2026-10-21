@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\Zone;
 use App\Models\AtmModel;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
@@ -28,6 +29,7 @@ class SaveAtmRequest extends FormRequest
             'agency_code' => ['nullable', 'string', 'max:30'],
             'agency_name' => ['required', 'string', 'max:255'],
             'site_type' => ['nullable', 'string', 'max:40'],
+            'zone' => ['sometimes', Rule::enum(Zone::class)], // sin indicar: urbana
             // Marca y modelo salen del catálogo (Catálogos → Marcas y modelos).
             'brand' => ['nullable', 'string', 'max:40', Rule::exists('atm_brands', 'name')],
             'model' => ['nullable', 'string', 'max:60', function (string $attribute, mixed $value, Closure $fail) {

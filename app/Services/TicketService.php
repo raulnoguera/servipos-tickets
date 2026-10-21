@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Enums\Priority;
 use App\Enums\Role;
 use App\Enums\TicketStatus;
 use App\Models\Atm;
@@ -45,7 +44,7 @@ class TicketService
     /**
      * Abre un ticket (RF-2.1/2.2) y, si se indica, lo asigna al técnico.
      *
-     * @param  array{atm_id: int, fault_type_id?: int|null, priority?: string|null, description?: string|null, bank_reference?: string|null, assigned_to?: int|null}  $data
+     * @param  array{atm_id: int, fault_type_id?: int|null, description?: string|null, bank_reference?: string|null, assigned_to?: int|null}  $data
      */
     public function open(array $data, User $operator): Ticket
     {
@@ -61,7 +60,6 @@ class TicketService
                 'description' => $data['description'] ?? null,
                 'bank_reference' => $data['bank_reference'] ?? null,
                 'status' => TicketStatus::Open,
-                'priority' => $data['priority'] ?? Priority::Medium->value,
                 'source' => 'manual',
                 'opened_by' => $operator->id,
                 'opened_at' => $now,
@@ -80,7 +78,7 @@ class TicketService
      * Abre un ticket a partir de un correo del banco. El reloj del SLA corre desde
      * que el banco envió el reporte, no desde que el sistema lo leyó.
      *
-     * @param  array{fault_type_id?: int|null, priority?: string|null, description?: string|null}  $data
+     * @param  array{fault_type_id?: int|null, description?: string|null}  $data
      * @param  User|null  $by  quien lo abrió desde la bandeja de correos; null si lo abrió el sistema
      */
     public function openFromEmail(Atm $atm, array $data, CarbonImmutable $sentAt, ?User $by = null): Ticket
@@ -96,7 +94,6 @@ class TicketService
                 'fault_type_id' => $data['fault_type_id'] ?? null,
                 'description' => $data['description'] ?? null,
                 'status' => TicketStatus::Open,
-                'priority' => $data['priority'] ?? Priority::Medium->value,
                 'source' => 'email',
                 'opened_by' => $by?->id,
                 'opened_at' => $openedAt,
@@ -320,16 +317,15 @@ class TicketService
     /**
      * Edita datos del ticket y deja constancia de cada cambio en el historial.
      *
-     * @param  array{priority?: string, fault_type_id?: int|null, description?: string|null, bank_reference?: string|null}  $data
+     * @param  array{fault_type_id?: int|null, description?: string|null, bank_reference?: string|null}  $data
      */
     public function edit(Ticket $ticket, array $data, User $by): Ticket
     {
-        $labels = ['priority' => 'Prioridad', 'fault_type_id' => 'Falla', 'description' => 'Detalle', 'bank_reference' => 'Caso del banco'];
+        $labels = ['fault_type_id' => 'Falla', 'description' => 'Detalle', 'bank_reference' => 'Caso del banco'];
         $ticket->fill($data);
         $changes = [];
         foreach (array_keys($ticket->getDirty()) as $field) {
             $changes[] = match ($field) {
-                'priority' => 'Prioridad: '.($ticket->getOriginal('priority') ?? Priority::Medium)->label().' → '.$ticket->priority->label(),
                 'fault_type_id' => 'Falla: '.(FaultType::find($ticket->getOriginal('fault_type_id'))?->name ?? '—').' → '.(FaultType::find($ticket->fault_type_id)?->name ?? '—'),
                 default => ($labels[$field] ?? $field).' actualizado',
             };

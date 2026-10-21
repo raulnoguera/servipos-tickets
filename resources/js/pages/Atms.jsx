@@ -9,7 +9,7 @@ import {
     Alert, Badge, Button, Card, EmptyState, Field, Input, LoadingBlock, Modal, PageHeader, Pagination, Select, Table, Td, Th, Toggle, toast,
 } from '../components/ui';
 
-const EMPTY = { atm_number: '', serial: '', bank_id: '', state_id: '', agency_code: '', agency_name: '', site_type: 'AGENCIA', brand: 'DIEBOLD', model: '', address: '', active: true };
+const EMPTY = { atm_number: '', serial: '', bank_id: '', state_id: '', agency_code: '', agency_name: '', site_type: 'AGENCIA', zone: 'urbana', brand: 'DIEBOLD', model: '', address: '', active: true };
 
 function AtmForm({ atm, onClose }) {
     const { data: catalogs } = useCatalogs();
@@ -91,10 +91,17 @@ function AtmForm({ atm, onClose }) {
                         </Select>
                     )}
                 </Field>
-                <div className="flex items-end pb-2.5">
+                <Field label="Zona" hint="Define el semáforo del SLA" error={err?.field?.('zone')}>
+                    {(id) => (
+                        <Select id={id} value={form.zone || 'urbana'} onChange={set('zone')}>
+                            {(catalogs?.zones ?? [{ value: 'urbana', label: 'Urbana' }, { value: 'extraurbana', label: 'Extraurbana' }]).map((z) => <option key={z.value} value={z.value}>{z.label}</option>)}
+                        </Select>
+                    )}
+                </Field>
+                <div className="sm:col-span-2">{text('address', 'Dirección / ubicación')}</div>
+                <div>
                     <Toggle checked={!!form.active} onChange={(v) => setForm((f) => ({ ...f, active: v }))} label="Activo" />
                 </div>
-                <div className="sm:col-span-2">{text('address', 'Dirección / ubicación')}</div>
             </div>
             {err && !Object.keys(err.errors).length && <Alert className="mt-4">{err.message}</Alert>}
         </Modal>
@@ -160,7 +167,7 @@ export default function Atms() {
                                         <Td className="text-muted tabular">{a.serial ?? '—'}</Td>
                                         <Td className="max-w-[260px]">
                                             <div className="truncate text-ink">{a.agency_name}</div>
-                                            <div className="text-xs text-muted">{a.agency_code ? `Cód. ${a.agency_code}` : 'Sin código'} · {a.site_type ?? '—'}</div>
+                                            <div className="text-xs text-muted">{a.agency_code ? `Cód. ${a.agency_code}` : 'Sin código'} · {a.site_type ?? '—'} · {a.zone_label ?? 'Urbana'}</div>
                                         </Td>
                                         <Td>{a.state ?? '—'}</Td>
                                         <Td>{a.model ?? <span className="text-faint">Sin dato</span>}</Td>
