@@ -9,7 +9,7 @@ import { useAuth } from '../lib/auth';
 import { initials } from '../lib/format';
 import { Alert, Button, Field, Input, LoadingBlock, Modal, cx, toast } from './ui';
 import { NewPasswordFields, passwordOk } from './PasswordFields';
-import { Logo } from './Logo';
+import { DevelopedBy, Logo } from './Logo';
 import { ConnectivityBar, OutboxSync } from './Offline';
 import NotificationBell, { PushListener } from './NotificationBell';
 import { UpdateButton } from './AppUpdate';
@@ -171,7 +171,8 @@ export default function Layout() {
                     <NavItems role={user.role} />
                 </div>
                 <UpdateButton />
-                        <UserCard user={user} onLogout={logout} />
+                <UserCard user={user} onLogout={logout} />
+                <DevelopedBy light className="-mt-1 px-5 pb-4" />
             </aside>
 
             {/* Barra superior (teléfono / tablet) */}
@@ -202,6 +203,7 @@ export default function Layout() {
                         </div>
                         <UpdateButton />
                         <UserCard user={user} onLogout={logout} />
+                        <DevelopedBy light className="-mt-1 px-5 pb-[max(1rem,env(safe-area-inset-bottom))]" />
                     </div>
                 </div>
             )}

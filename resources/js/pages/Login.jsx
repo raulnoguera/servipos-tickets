@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ArrowRight, BarChart3, Camera, Clock3, Lock, UserRound } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { Alert, Button, Field, Input } from '../components/ui';
-import { Logo } from '../components/Logo';
+import { DevelopedBy, Logo } from '../components/Logo';
 
 const FEATURES = [
     { icon: Clock3, title: 'Tiempos de atención medidos', text: 'Cada ticket registra su ciclo exacto, de la apertura al cierre.' },
@@ -56,7 +56,7 @@ export default function Login() {
                         ))}
                     </ul>
                 </div>
-                <p className="relative text-xs text-white/40">© {new Date().getFullYear()} ServiPos 2019, C.A.</p>
+                <p className="relative text-xs text-white/40">© {new Date().getFullYear()} ServiPos 2019, C.A. · Desarrollado por <span className="font-semibold text-white/60">GT Consulting</span></p>
             </section>
 
             <section className="flex items-center justify-center px-5 py-12 sm:px-10">
@@ -94,6 +94,7 @@ export default function Login() {
                         </Button>
                         <p className="text-center text-xs text-muted">¿Olvidó su contraseña? Pida al administrador un enlace de acceso nuevo.</p>
                     </form>
+                    <DevelopedBy className="mt-12 text-center lg:hidden" />
                 </div>
             </section>
         </div>

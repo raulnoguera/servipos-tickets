@@ -4,7 +4,7 @@ import { ArrowRight, KeyRound } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { Alert, Button, LoadingBlock } from '../components/ui';
-import { Logo } from '../components/Logo';
+import { DevelopedBy, Logo } from '../components/Logo';
 import { NewPasswordFields, passwordOk } from '../components/PasswordFields';
 
 /**
@@ -82,6 +82,7 @@ export default function Access() {
                         </form>
                     </>
                 )}
+                <DevelopedBy className="mt-12 text-center" />
             </div>
         </div>
     );

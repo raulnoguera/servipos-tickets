@@ -15,6 +15,15 @@ function useSignatureTaps() {
     };
 }
 
+/** Crédito de la empresa desarrolladora, al pie del login y del menú. */
+export function DevelopedBy({ light = false, className = '' }) {
+    return (
+        <p className={`text-[11px] ${light ? 'text-white/40' : 'text-faint'} ${className}`}>
+            Desarrollado por <span className={`font-semibold ${light ? 'text-white/60' : 'text-muted'}`}>GT Consulting</span>
+        </p>
+    );
+}
+
 /** Símbolo "SP" del logo corporativo de ServiPos 2019 (sobre fondo claro). */
 export function LogoMark({ className = 'h-10' }) {
     return <img src="/brand/mark.png" alt="ServiPos 2019" className={`w-auto select-none ${className}`} draggable="false" />;
