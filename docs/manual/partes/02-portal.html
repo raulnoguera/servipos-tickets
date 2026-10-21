@@ -53,7 +53,7 @@
 <table>
 <thead><tr><th style="width:25%">Campo</th><th class="c" style="width:13%">Obligatorio</th><th>Descripción</th></tr></thead>
 <tr><td><b>Tipo de falla</b></td><td class="si">Sí</td><td>Motivo del reporte, de la lista de <b>Catálogos → Tipos de falla</b>.</td></tr>
-<tr><td><b>Prioridad</b></td><td class="no">No</td><td>Crítica, Alta, Media o Baja. Por defecto, Media. Define las metas de SLA del ticket.</td></tr>
+<tr><td><b>Prioridad</b></td><td class="no">No</td><td>Crítica (roja), Media (amarilla) o Baja (verde). Por defecto, Media. Define las metas de SLA del ticket.</td></tr>
 <tr><td><b>N° de caso del banco</b></td><td class="no">No</td><td>Número de caso o incidente del banco, si el correo lo trae. Sirve luego para buscar el ticket.</td></tr>
 <tr><td><b>Detalle del reporte</b></td><td class="no">No</td><td>Texto libre. Se recomienda copiar lo que indica el correo del banco.</td></tr>
 <tr><td><b>Asignar a técnico</b></td><td class="no">No</td><td>Técnico responsable. La lista muestra primero los que cubren el estado del cajero. Puede dejarse «Sin asignar por ahora».</td></tr>
@@ -80,7 +80,7 @@
 <li><b>Técnico, banco y prioridad:</b> tres listas para acotar el resultado.</li>
 </ul>
 <h3>Columnas</h3>
-<p>Cada fila muestra el número y la fecha de apertura (con la etiqueta de prioridad si es Alta o Crítica), el ATM, la agencia y su estado, la falla, el técnico, el estado del ticket y el semáforo del SLA. Al hacer clic en una fila se abre el detalle. Para llevar la información a Excel, el botón <b>Exportar Excel</b> lleva a Reportes.</p>
+<p>Cada fila muestra el número y la fecha de apertura (con la etiqueta de color de su prioridad), el ATM, la agencia y su estado, la falla, el técnico, el estado del ticket y el semáforo del SLA. Al hacer clic en una fila se abre el detalle. Para llevar la información a Excel, el botón <b>Exportar Excel</b> lleva a Reportes.</p>
 
 <h2>4.5 Detalle del ticket</h2>
 <p>Reúne toda la historia del caso. Es la misma pantalla para todos los roles; cambian los botones disponibles.</p>
@@ -220,7 +220,7 @@
 <div class="regla"><b>Regla del sistema</b><p>El tiempo del ticket se cuenta desde que el banco envió el correo, aunque el ticket se abra después. El sistema solo lee el buzón: no marca los correos como leídos, no los mueve ni los borra. Cada correo se procesa una sola vez, y los anteriores a la activación no se tocan.</p></div>
 
 <h2>4.9 Reportes</h2>
-<p>Los reportes se calculan con lo que registran los operadores y los técnicos; no hay que preparar nada. Tienen seis pestañas, que comparten los mismos filtros.</p>
+<p>Los reportes se calculan con lo que registran los operadores y los técnicos; no hay que preparar nada. Tienen siete pestañas, que comparten los mismos filtros.</p>
 <h3>Filtros</h3>
 <ul>
 <li><b>Período:</b> los atajos <b>Este mes</b>, <b>Mes anterior</b>, <b>Últimos 30 días</b> y <b>Este año</b>, o las fechas <b>Desde</b> y <b>Hasta</b>. El rango máximo es de 2 años.</li>
@@ -243,6 +243,25 @@
 </table>
 <p>Debajo hay cuatro gráficos: <b>Abiertos y concluidos por semana</b>, <b>Antigüedad de los pendientes</b> (menos de 4 h, de 4 a 24 h, de 1 a 3 días, más de 3 días), <b>Por estado actual</b> y <b>Por prioridad</b>.</p>
 <p>Cada tarjeta tiene el enlace <b>Ver detalle</b>, que abre la lista exacta de tickets que componen esa cifra.</p>
+
+<h3>Informe visual</h3>
+<figure><img src="capturas/informe-visual.jpg" alt="Informe visual"><figcaption>Informe visual del mes, en la vista Tablero.</figcaption></figure>
+<p>Es el resumen mensual que se presenta al banco, armado solo con los datos del sistema. Tiene cuatro secciones, cada una con su gráfica, su tabla y un texto que la resume:</p>
+<table>
+<thead><tr><th style="width:30%">Sección</th><th>Qué muestra</th></tr></thead>
+<tr><td><b>Zona de atención</b></td><td>Los cajeros activos del banco por estado, y cuántos se atendieron en el período.</td></tr>
+<tr><td><b>Cantidad y estados de los reportes</b></td><td>Las atenciones del período según cómo quedó el cajero: operativo, pendiente por repuesto, fuera de servicio, etc.</td></tr>
+<tr><td><b>Motivos de los reportes</b></td><td>El porcentaje de cada tipo de falla, en una gráfica de torta.</td></tr>
+<tr><td><b>Repuestos utilizados</b></td><td>La cantidad usada de cada repuesto y el más utilizado.</td></tr>
+</table>
+<p>Cada atención registrada cuenta como un «reporte». Un ticket puede tener más de una atención (por ejemplo, si quedó pendiente por repuesto y el técnico volvió), por eso la cantidad de reportes no siempre coincide con la de tickets.</p>
+<figure><img src="capturas/informe-presentacion.jpg" alt="Informe visual en formato de presentación"><figcaption>Vista Presentación: así sale el PDF.</figcaption></figure>
+<ol class="pasos">
+<li>Elija el período (por ejemplo, <b>Mes anterior</b>) y el <b>Banco</b>.</li>
+<li>Toque <b>Presentación</b> para ver las diapositivas antes de imprimir.</li>
+<li>Toque <b>Imprimir o guardar en PDF</b> y, en el diálogo del navegador, elija <b>Guardar como PDF</b>.</li>
+</ol>
+<div class="nota"><b>Nota</b><p>El PDF sale en formato de presentación, con el mismo diseño del informe que se entrega al banco: portada, títulos en tres colores y una diapositiva por sección. Con el Banco Nacional de Crédito lleva su fondo y sus logos; con otros bancos, un fondo blanco con el logo de ServiPos.</p></div>
 
 <h3>Cajeros</h3>
 <figure><img src="capturas/reportes-cajeros.jpg" alt="Reporte por cajero"><figcaption>Cajeros con fallas en el período.</figcaption></figure>
@@ -283,7 +302,7 @@
 <tr><td><b>Código de agencia</b></td><td class="no">No</td><td>Código que el banco da a la agencia.</td></tr>
 <tr><td><b>Nombre de agencia</b></td><td class="si">Sí</td><td>Nombre con el que se conoce la ubicación.</td></tr>
 <tr><td><b>Tipo de sitio</b></td><td class="no">No</td><td>Agencia, Dirección general o Remoto.</td></tr>
-<tr><td><b>Marca</b> · <b>Modelo</b></td><td class="no">No</td><td>Por ejemplo, DIEBOLD · OPTEVA 562.</td></tr>
+<tr><td><b>Marca</b> · <b>Modelo</b></td><td class="no">No</td><td>Se eligen de listas: primero la marca y luego uno de sus modelos, por ejemplo DIEBOLD · OPTEVA 562. Las listas se administran en Catálogos → Marcas y modelos (sección 4.11).</td></tr>
 <tr><td><b>Dirección / ubicación</b></td><td class="no">No</td><td>Se usa en el botón «Cómo llegar» y en el mensaje de WhatsApp al técnico.</td></tr>
 <tr><td><b>Activo</b></td><td class="no">No</td><td>Un cajero inactivo deja de ofrecerse al crear tickets y no admite tickets nuevos, pero conserva su historial y sigue apareciendo en los reportes.</td></tr>
 </table>
@@ -300,22 +319,27 @@
 <tr><td><b>Repuestos</b></td><td>Piezas que el técnico puede indicar en una atención. Se guardan en MAYÚSCULAS para evitar duplicados.</td></tr>
 <tr><td><b>Estatus final</b></td><td>Cómo queda el cajero tras la atención, y a qué estado lleva el ticket.</td></tr>
 <tr><td><b>Bancos</b></td><td>Clientes bancarios.</td></tr>
+<tr><td><b>Marcas y modelos</b></td><td>Marcas de cajeros y, dentro de cada una, sus modelos. Se eligen en la ficha de cada cajero.</td></tr>
 <tr><td><b>Estados</b></td><td>Estados y regiones de cobertura.</td></tr>
 <tr><td><b>SLA</b></td><td>Metas de tiempo por prioridad (sección 4.12).</td></tr>
 </table>
 <p>En cualquiera de ellos: escriba el nombre y toque <b>Agregar</b> para crear un elemento; use el <b>lápiz</b> para cambiarle el nombre; y el <b>interruptor</b> para activarlo o desactivarlo. Los <b>Estados</b> no tienen interruptor: solo se agregan o se renombran.</p>
 <div class="regla"><b>Regla del sistema</b><p>Los elementos no se eliminan, se desactivan. Uno inactivo deja de ofrecerse en los formularios nuevos, pero los tickets y reportes anteriores lo conservan. No se admiten dos elementos con el mismo nombre.</p></div>
 <figure><img src="capturas/catalogos-estatus.jpg" alt="Catálogo de estatus final"><figcaption>Estatus final: cada uno indica a qué estado lleva el ticket.</figcaption></figure>
+<h3>Marcas y modelos</h3>
+<figure><img src="capturas/catalogos-marcas.jpg" alt="Catálogo de marcas y modelos"><figcaption>Marcas de cajeros, con los modelos de cada una.</figcaption></figure>
+<p>Arriba se agregan las marcas. Con la flecha de cada marca se abren sus modelos, donde se agregan, renombran y desactivan. Todo se guarda en MAYÚSCULAS. Un mismo modelo no se puede repetir dentro de una marca.</p>
+<div class="regla"><b>Regla del sistema</b><p>El catálogo se llenó con las marcas y modelos que ya tenían los cajeros, y la importación del Excel agrega sola los que falten. Si se renombra una marca o un modelo, el cambio se aplica a todos los cajeros que lo usan.</p></div>
 <p>En <b>Estatus final</b>, además del nombre, se elige el estado al que pasa el ticket: Concluido, Pendiente por repuesto o Pendiente por validación. Los de tipo «Concluido» llevan primero el ticket a «Por confirmar» (sección 4.6).</p>
 
 <h2>4.12 Metas de SLA</h2>
 <figure><img src="capturas/catalogos-sla.jpg" alt="Metas de SLA"><figcaption>Metas de llegada y de resolución por prioridad.</figcaption></figure>
-<p>En <b>Catálogos → SLA</b> se definen, en horas, la meta de <b>llegada al sitio</b> y la de <b>resolución</b> para cada prioridad. Admite decimales (1,5 es una hora y media). Si se deja una casilla vacía, esa meta no se mide. Toque <b>Guardar metas</b> para aplicar.</p>
+<p>En <b>Catálogos → SLA</b> se definen, en horas, la meta de <b>llegada al sitio</b> y la de <b>resolución</b> para cada una de las tres prioridades: Crítica, Media y Baja. Admite decimales (1,5 es una hora y media). Si se deja una casilla vacía, esa meta no se mide. Toque <b>Guardar metas</b> para aplicar.</p>
 <div class="aviso"><b>Atención</b><p>El cambio aplica de inmediato a todos los tickets, también a los ya abiertos, y queda en la auditoría. Los valores con los que se entrega el sistema son de ejemplo.</p></div>
 
 <h2>4.13 Usuarios y técnicos</h2>
 <figure><img src="capturas/usuarios.jpg" alt="Usuarios y técnicos"><figcaption>Lista de usuarios, con su último ingreso.</figcaption></figure>
-<p>La lista muestra, por cada usuario, su nombre y <b>con qué inicia sesión</b> (teléfono o correo), su rol, los estados que cubre, su <b>último ingreso</b> y sus tickets activos. Se puede filtrar por rol. La etiqueta <b>Nunca ingresó</b> señala a quien aún no ha entrado, y <b>Enlace enviado</b> a quien tiene un enlace de acceso vigente.</p>
+<p>La lista muestra, por cada usuario, su nombre y <b>con qué inicia sesión</b> (teléfono o correo), su rol, los estados que cubre (técnicos) o los bancos que atiende (operadores), su <b>último ingreso</b> y sus tickets activos. Se puede filtrar por rol. La etiqueta <b>Nunca ingresó</b> señala a quien aún no ha entrado, y <b>Enlace enviado</b> a quien tiene un enlace de acceso vigente.</p>
 <figure class="media"><img src="capturas/d-usuario-editar.jpg" alt="Formulario de usuario"><figcaption>Alta y edición de un usuario.</figcaption></figure>
 <table>
 <thead><tr><th style="width:26%">Campo</th><th>Descripción</th></tr></thead>
@@ -325,8 +349,10 @@
 <tr><td><b>Correo</b></td><td><b>Obligatorio para administradores y operadores:</b> es su usuario. Opcional para técnicos.</td></tr>
 <tr><td><b>Contraseña</b></td><td>Opcional. Lo recomendado es dejarla vacía y usar <b>Enviar acceso</b>, para que el usuario cree la suya.</td></tr>
 <tr><td><b>Estados que cubre</b></td><td>Solo para técnicos. Con ellos el sistema sugiere a quién asignar cada ticket.</td></tr>
+<tr><td><b>Bancos que atiende</b></td><td>Solo para operadores. Si se marcan uno o varios bancos, el operador solo ve los tickets, cajeros, correos y reportes de esos bancos, solo abre tickets para ellos y solo recibe sus avisos. Sin ninguno marcado, atiende todos.</td></tr>
 <tr><td><b>Puede iniciar sesión</b></td><td>Al apagarlo, el usuario queda desactivado.</td></tr>
 </table>
+<figure class="media"><img src="capturas/d-usuario-operador.jpg" alt="Operador con su banco asignado"><figcaption>Operador asignado al Banco Nacional de Crédito.</figcaption></figure>
 <h3>Dar acceso a un usuario</h3>
 <figure class="media"><img src="capturas/d-usuario-acceso.jpg" alt="Diálogo para enviar acceso"><figcaption>«Enviar acceso» genera un enlace de un solo uso.</figcaption></figure>
 <ol class="pasos">

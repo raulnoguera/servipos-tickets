@@ -84,7 +84,7 @@
 <tr><td><b>Notificaciones</b></td><td>Web Push (VAPID)</td><td>Avisos al dispositivo sin pasar por tiendas de apps.</td></tr>
 <tr><td><b>Correo entrante</b></td><td>IMAP · verificación DKIM</td><td>Lectura del buzón de reportes y comprobación de la firma del banco.</td></tr>
 <tr><td><b>Excel</b></td><td>PhpSpreadsheet</td><td>Importación del histórico y descargas con formato.</td></tr>
-<tr><td><b>Pruebas</b></td><td>PHPUnit</td><td>106 pruebas automáticas que se ejecutan antes de cada publicación.</td></tr>
+<tr><td><b>Pruebas</b></td><td>PHPUnit</td><td>117 pruebas automáticas que se ejecutan antes de cada publicación.</td></tr>
 </table>
 
 <h2>8.2 Infraestructura</h2>
@@ -137,7 +137,7 @@
 <tr><td><b>Adivinar contraseñas</b></td><td>Bloqueo de 5 minutos tras 5 intentos fallidos desde una conexión, y bloqueo adicional de la cuenta tras 30 intentos desde cualquier origen. El mensaje de error no revela si el usuario existe.</td></tr>
 <tr><td><b>Contraseñas débiles o conocidas por terceros</b></td><td>Mínimo 10 caracteres con letras y números. Cada usuario crea la suya con un enlace de un solo uso; el administrador nunca la conoce. Se guardan cifradas de forma irreversible.</td></tr>
 <tr><td><b>Acceso de un empleado dado de baja</b></td><td>Al desactivarlo pierde el acceso al instante en todos sus equipos y deja de recibir notificaciones.</td></tr>
-<tr><td><b>Ver o modificar lo ajeno</b></td><td>Permisos por rol comprobados en el servidor en cada operación. El técnico solo accede a sus tickets.</td></tr>
+<tr><td><b>Ver o modificar lo ajeno</b></td><td>Permisos por rol comprobados en el servidor en cada operación. El técnico solo accede a sus tickets, y el operador asignado a un banco, solo a lo de ese banco.</td></tr>
 <tr><td><b>Inyección de código en las páginas</b></td><td>El navegador solo ejecuta programas del propio sitio (política de seguridad de contenido). El sistema no puede mostrarse dentro de otra página.</td></tr>
 <tr><td><b>Inyección en la base de datos</b></td><td>Todas las consultas usan parámetros; no se arma ninguna con texto del usuario.</td></tr>
 <tr><td><b>Interceptar la comunicación</b></td><td>Todo viaja cifrado por HTTPS, y el navegador queda instruido para usar siempre esa vía.</td></tr>
@@ -188,7 +188,7 @@
 <p class="pie-capitulo">«Corregido parcialmente» significa que se aplicó la parte de mayor valor y queda un refinamiento sin impacto práctico: el paquete conserva los archivos fuente por decisión del cliente; los reportes muy amplios aún cargan sus datos en memoria, dentro del límite de 2 años; y la política de contenido no envía reportes de infracciones.</p>
 
 <h2>9.5 Verificación en producción</h2>
-<p>El 11 de octubre de 2026, tras instalar el sistema en el hosting de ServiPos, se repitió la verificación sobre el sitio real:</p>
+<p>El 11 de octubre de 2026, tras instalar el sistema en el hosting de ServiPos, se repitió la verificación sobre el sitio real, y se volvió a hacer el 20 de octubre, al reinstalarlo con una configuración y unas claves nuevas:</p>
 <ul>
 <li>Ningún archivo interno (configuración, código, registros) es accesible desde internet.</li>
 <li>Las protecciones del navegador llegan completas en cada respuesta.</li>
@@ -219,7 +219,7 @@
 <li><b>Importar el Excel histórico</b> (Importar Excel), simulando primero.</li>
 <li><b>Completar los cajeros:</b> banco, dirección y modelo de los que falten.</li>
 <li><b>Comprobar la lectura del buzón:</b> en Correos del banco debe indicar que se leyó hace pocos minutos.</li>
-<li><b>Crear los operadores</b> del Call Center, con su correo.</li>
+<li><b>Crear los operadores</b> del Call Center, con su correo y el banco que atiende cada uno.</li>
 <li><b>Cargar el teléfono de cada técnico</b> y los estados que cubre.</li>
 <li><b>Enviar el acceso</b> a cada usuario y confirmar que ingresó (columna «Último ingreso»).</li>
 <li><b>Instalar la aplicación</b> en el teléfono de cada técnico y activar las notificaciones.</li>
@@ -243,6 +243,8 @@
 <tr><td>La pantalla dice que no logra leer el buzón.</td><td>Avise al administrador; suele deberse a un cambio en la contraseña del buzón. Mientras tanto, registre los tickets a mano.</td></tr>
 <tr><td>Abrí un ticket por error.</td><td>Use <b>Anular</b>, indicando el motivo.</td></tr>
 <tr><td>No encuentro un cajero al crear el ticket.</td><td>Búsquelo por agencia o serial. Si no existe, el administrador debe crearlo en <b>Cajeros</b>.</td></tr>
+<tr><td>Un operador no ve un ticket o un cajero.</td><td>Revise los bancos que tiene asignados en <b>Usuarios y técnicos</b>: solo ve lo de esos bancos (sección 4.13).</td></tr>
+<tr><td>¿Cómo preparo el informe mensual para el banco?</td><td>En <b>Reportes → Informe visual</b>, con el mes y el banco elegidos, toque <b>Imprimir o guardar en PDF</b> (sección 4.9).</td></tr>
 <tr><td>Un técnico dejó la empresa.</td><td>Reasigne sus tickets abiertos y desactívelo en <b>Usuarios y técnicos</b>.</td></tr>
 <tr><td>¿Puedo cargar el Excel de nuevo con filas nuevas?</td><td>Sí. Solo se agrega lo nuevo (sección 4.14).</td></tr>
 <tr><td>Veo una versión vieja de una pantalla.</td><td>Abra el menú y toque <b>Buscar actualización</b>, o recargue la página.</td></tr>
@@ -263,6 +265,8 @@
 <tr><td><b>Enlace de acceso</b></td><td>Enlace de un solo uso con el que un usuario crea su contraseña.</td></tr>
 <tr><td><b>Por revisar</b></td><td>Correo del banco que el sistema no pudo resolver solo y espera una decisión.</td></tr>
 <tr><td><b>Firma digital (DKIM)</b></td><td>Prueba de que un correo salió realmente del dominio del banco y no fue alterado.</td></tr>
+<tr><td><b>Informe visual</b></td><td>Resumen mensual para el banco (zona, estados, motivos y repuestos) que se descarga en PDF con formato de presentación.</td></tr>
+<tr><td><b>Prioridad</b></td><td>Urgencia del ticket: Crítica (roja), Media (amarilla) o Baja (verde). Define sus metas de SLA.</td></tr>
 <tr><td><b>Bandeja de envíos</b></td><td>Lo que el teléfono guarda mientras no hay señal, para enviarlo después.</td></tr>
 <tr><td><b>PWA</b></td><td>Aplicación web que se instala en el teléfono sin pasar por una tienda.</td></tr>
 <tr><td><b>Auditoría</b></td><td>Registro de quién hizo qué y cuándo en las funciones sensibles.</td></tr>

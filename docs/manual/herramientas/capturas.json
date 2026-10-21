@@ -31,7 +31,7 @@
    ]
   },
   {
-   "email": "admin.demo@servipos.test",
+   "email": "admin@servipos.test",
    "shots": [
     {
      "name": "monitor",
@@ -300,6 +300,40 @@
      "wait": 3800,
      "w": 1440,
      "h": 900
+    },
+    {
+     "name": "informe-visual",
+     "path": "/reportes?tab=visual&desde=2026-09-01&hasta=2026-09-30&banco=1",
+     "wait": 5000,
+     "w": 1440,
+     "h": 1000
+    },
+    {
+     "name": "informe-presentacion",
+     "path": "/reportes?tab=visual&desde=2026-09-01&hasta=2026-09-30&banco=1",
+     "wait": 5000,
+     "w": 1440,
+     "h": 1000,
+     "js": "document.querySelectorAll('*').forEach(e=>e.style.transition='none');[...document.querySelectorAll('button[role=radio]')].find(b=>b.textContent.trim()==='Presentación').click();await new Promise(r=>setTimeout(r,1800));",
+     "after": 700
+    },
+    {
+     "name": "catalogos-marcas",
+     "path": "/catalogos",
+     "wait": 3500,
+     "w": 1440,
+     "h": 900,
+     "js": "document.querySelectorAll('*').forEach(e=>e.style.transition='none');[...document.querySelectorAll('nav button')].find(b=>b.textContent.includes('Marcas')).click();await new Promise(r=>setTimeout(r,700));document.querySelector('button[aria-expanded]').click();await new Promise(r=>setTimeout(r,600));document.querySelectorAll('*').forEach(e=>e.style.transition='none');",
+     "after": 500
+    },
+    {
+     "name": "usuario-operador",
+     "path": "/usuarios",
+     "wait": 3500,
+     "w": 1440,
+     "h": 900,
+     "js": "document.querySelectorAll('*').forEach(e=>e.style.transition='none');const row=[...document.querySelectorAll('tbody tr')].find(r=>r.textContent.includes('Operador Demo'));[...row.querySelectorAll('button')].find(b=>b.textContent.includes('Editar')).click();await new Promise(r=>setTimeout(r,900));const chip=[...document.querySelectorAll('button[aria-pressed]')][0];chip&&chip.getAttribute('aria-pressed')==='false'&&chip.click();await new Promise(r=>setTimeout(r,400));document.querySelectorAll('*').forEach(e=>e.style.transition='none');",
+     "after": 600
     }
    ]
   },

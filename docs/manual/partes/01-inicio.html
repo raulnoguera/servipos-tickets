@@ -38,7 +38,7 @@
 <tr><th>Documento</th><td>Manual de usuario · Sistema de Monitoreo de Tickets ATM</td></tr>
 <tr><th>Cliente</th><td>ServiPos 2019, C.A.</td></tr>
 <tr><th>Desarrollado por</th><td>GT Consulting</td></tr>
-<tr><th>Versión del manual</th><td>1.1 · octubre de 2026</td></tr>
+<tr><th>Versión del manual</th><td>1.2 · octubre de 2026</td></tr>
 <tr><th>Versión del sistema descrita</th><td><!--VERSION--></td></tr>
 <tr><th>Dirección de producción</th><td>https://intra.servipos2019.com</td></tr>
 </table>
@@ -82,7 +82,7 @@
 <table>
 <tr><th style="width:24%">Rol</th><th>Quién lo usa</th><th>Qué hace</th></tr>
 <tr><td><span class="et r-admin">Administrador</span></td><td>Responsables del servicio y de la configuración.</td><td>Todo lo que hace el operador y, además: da la <b>última confirmación del cierre</b> de cada ticket, y administra cajeros, catálogos, metas de SLA, usuarios, la importación del Excel y la auditoría.</td></tr>
-<tr><td><span class="et r-oper">Operador Call Center</span></td><td>Quienes reciben los reportes de los bancos.</td><td>Abre tickets, los asigna a los técnicos, les da seguimiento, los edita o anula, comenta, consulta cajeros y reportes.</td></tr>
+<tr><td><span class="et r-oper">Operador Call Center</span></td><td>Quienes reciben los reportes de los bancos.</td><td>Abre tickets, los asigna a los técnicos, les da seguimiento, los edita o anula, comenta, consulta cajeros y reportes. Si el administrador le asigna uno o varios bancos, solo ve y atiende lo de esos bancos.</td></tr>
 <tr><td><span class="et r-tec">Técnico de Campo</span></td><td>Quienes atienden los cajeros en sitio.</td><td>Ve solo sus tickets, avisa que va en camino y que llegó, registra la atención (constancia, trabajo, repuestos, foto) y consulta su historial.</td></tr>
 </table>
 
@@ -101,10 +101,12 @@
 <tr><td><b>Confirmar el cierre</b> o devolver el ticket al técnico</td><td class="si">Sí</td><td class="no">—</td><td class="no">—</td></tr>
 <tr><td>Comentar y seguir un ticket</td><td class="si">Sí</td><td class="si">Sí</td><td class="si">En los suyos</td></tr>
 <tr><td>Ver reportes y descargarlos en Excel</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
+<tr><td>Generar el informe visual para el banco (PDF)</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
 <tr><td>Consultar cajeros y su hoja de vida</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
 <tr><td>Crear y editar cajeros</td><td class="si">Sí</td><td class="no">—</td><td class="no">—</td></tr>
 <tr><td>Administrar catálogos y metas de SLA</td><td class="si">Sí</td><td class="no">—</td><td class="no">—</td></tr>
 <tr><td>Administrar usuarios y enviar accesos</td><td class="si">Sí</td><td class="no">—</td><td class="no">—</td></tr>
+<tr><td>Asignar a cada operador los bancos que atiende</td><td class="si">Sí</td><td class="no">—</td><td class="no">—</td></tr>
 <tr><td>Importar el Excel histórico</td><td class="si">Sí</td><td class="no">—</td><td class="no">—</td></tr>
 <tr><td>Consultar la auditoría</td><td class="si">Sí</td><td class="no">—</td><td class="no">—</td></tr>
 <tr><td>Cambiar su propia contraseña</td><td class="si">Sí</td><td class="si">Sí</td><td class="si">Sí</td></tr>
@@ -149,7 +151,7 @@
 </table>
 
 <h2>2.4 Prioridad y metas de tiempo (SLA)</h2>
-<p>Cada ticket tiene una prioridad: <b>Crítica, Alta, Media o Baja</b>. La prioridad determina dos metas de tiempo, contadas siempre desde la apertura del ticket:</p>
+<p>Cada ticket tiene una de tres prioridades, cada una con su color: <span class="et" style="background:#DC2626;color:#fff">Crítica</span> en rojo, <span class="et" style="background:#FACC15;color:#422006">Media</span> en amarillo y <span class="et" style="background:#059669;color:#fff">Baja</span> en verde. La prioridad determina dos metas de tiempo, contadas siempre desde la apertura del ticket:</p>
 <ul>
 <li><b>Llegada al sitio:</b> tiempo máximo hasta que el técnico marca «Llegué al sitio».</li>
 <li><b>Resolución:</b> tiempo máximo hasta que el cajero queda operativo.</li>
@@ -157,7 +159,6 @@
 <table class="estrecha" style="min-width:70%">
 <tr><th>Prioridad</th><th class="c">Meta de llegada</th><th class="c">Meta de resolución</th></tr>
 <tr><td>Crítica</td><td class="c">2 horas</td><td class="c">4 horas</td></tr>
-<tr><td>Alta</td><td class="c">4 horas</td><td class="c">8 horas</td></tr>
 <tr><td>Media</td><td class="c">8 horas</td><td class="c">24 horas</td></tr>
 <tr><td>Baja</td><td class="c">24 horas</td><td class="c">48 horas</td></tr>
 </table>
