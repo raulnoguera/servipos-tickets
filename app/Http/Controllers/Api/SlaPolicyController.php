@@ -97,7 +97,7 @@ class SlaPolicyController extends Controller
                 'orange' => $policies[$z->value]->orange ?? null,
             ])->values(),
             'schedule' => $sla->calendar()->schedule() + ['day_minutes' => $sla->calendar()->dayMinutes()],
-            'holidays' => Holiday::where('date', '>=', now()->subYear()->startOfYear())->orderBy('date')->get()
+            'holidays' => Holiday::where('date', '>=', now()->toDateString())->orderBy('date')->get()
                 ->map(fn (Holiday $h) => ['id' => $h->id, 'date' => $h->date->toDateString(), 'name' => $h->name]),
             'default_schedule' => BusinessCalendar::DEFAULT_SCHEDULE,
         ];

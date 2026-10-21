@@ -86,7 +86,7 @@ function SlaSettings() {
                     <table className="w-full min-w-[620px] text-sm">
                         <thead>
                             <tr className="text-left text-xs font-bold tracking-wide text-muted uppercase">
-                                <th className="pb-2">Zona</th><th className="pb-2">Se mide en</th><th className="pb-2">Verde hasta</th><th className="pb-2">Naranja hasta</th><th className="pb-2">Después</th>
+                                <th className="pb-2">Zona</th><th className="pb-2">Se mide en</th><th className="pb-2"><span className="mr-1.5 inline-block size-2 rounded-full bg-emerald-500" />Verde hasta</th><th className="pb-2"><span className="mr-1.5 inline-block size-2 rounded-full bg-orange-500" />Naranja hasta</th><th className="pb-2">Después</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-line">
@@ -99,8 +99,8 @@ function SlaSettings() {
                                             <option value="days">Días hábiles</option>
                                         </Select>
                                     </td>
-                                    <td className="py-2.5 pr-3"><Input value={p.green} onChange={setPolicy(i, 'green')} inputMode="decimal" className="w-28 border-emerald-300 tabular" aria-label={`Verde hasta, ${p.label}`} /></td>
-                                    <td className="py-2.5 pr-3"><Input value={p.orange} onChange={setPolicy(i, 'orange')} inputMode="decimal" className="w-28 border-orange-300 tabular" aria-label={`Naranja hasta, ${p.label}`} /></td>
+                                    <td className="py-2.5 pr-3"><Input value={p.green} onChange={setPolicy(i, 'green')} inputMode="decimal" className="w-28 tabular" aria-label={`Verde hasta, ${p.label}`} /></td>
+                                    <td className="py-2.5 pr-3"><Input value={p.orange} onChange={setPolicy(i, 'orange')} inputMode="decimal" className="w-28 tabular" aria-label={`Naranja hasta, ${p.label}`} /></td>
                                     <td className="py-2.5"><LevelBadge level="critica" /></td>
                                 </tr>
                             ))}
@@ -149,7 +149,7 @@ function SlaSettings() {
 
             <section className="p-5">
                 <h3 className="font-display text-base font-bold text-ink">Feriados</h3>
-                <p className="mt-1 text-sm text-muted">Estos días no suman tiempo. Agregue los feriados bancarios del año.</p>
+                <p className="mt-1 text-sm text-muted">Estos días no suman tiempo. Se muestran los de hoy en adelante; agregue los feriados bancarios del año.</p>
                 <form
                     className="mt-4 flex flex-wrap items-end gap-3"
                     onSubmit={(e) => {
@@ -157,14 +157,14 @@ function SlaSettings() {
                         addHoliday.mutate();
                     }}
                 >
-                    <Input type="date" required value={holiday.date} onChange={(e) => setHoliday({ ...holiday, date: e.target.value })} className="w-44 tabular" aria-label="Fecha del feriado" />
-                    <Input required maxLength={80} value={holiday.name} onChange={(e) => setHoliday({ ...holiday, name: e.target.value })} placeholder="Motivo (p. ej. Carnaval)" className="w-64" aria-label="Motivo del feriado" />
+                    <div className="w-full sm:w-44"><Input type="date" required value={holiday.date} onChange={(e) => setHoliday({ ...holiday, date: e.target.value })} className="tabular" aria-label="Fecha del feriado" /></div>
+                    <div className="w-full sm:w-72"><Input required maxLength={80} value={holiday.name} onChange={(e) => setHoliday({ ...holiday, name: e.target.value })} placeholder="Motivo (p. ej. Carnaval)" aria-label="Motivo del feriado" /></div>
                     <Button type="submit" icon={Plus} loading={addHoliday.isPending}>Agregar</Button>
                 </form>
-                <ul className="mt-4 divide-y divide-line rounded-xl border border-line">
-                    {server.holidays.length === 0 && <li className="px-4 py-3 text-sm text-muted">No hay feriados cargados.</li>}
+                {server.holidays.length === 0 && <p className="mt-4 text-sm text-muted">No hay feriados cargados.</p>}
+                <ul className="mt-4 grid gap-2 sm:grid-cols-2">
                     {server.holidays.map((h) => (
-                        <li key={h.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
+                        <li key={h.id} className="flex items-center justify-between gap-3 rounded-lg border border-line px-3 py-2 text-sm">
                             <span><b className="tabular text-ink">{formatDate(h.date)}</b> <span className="text-body">· {h.name}</span></span>
                             <button type="button" onClick={() => removeHoliday.mutate(h.id)} className="rounded-lg p-1.5 text-faint hover:bg-red-50 hover:text-red-600" aria-label={`Quitar ${h.name}`} title="Quitar">
                                 <X className="size-4" />
