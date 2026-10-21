@@ -68,7 +68,7 @@ class InboundMailProcessor
             'from_email' => $mail->fromEmail,
             'from_name' => $mail->fromName,
             'subject' => $mail->subject,
-            'sent_at' => $mail->sentAt,
+            'sent_at' => $mail->sentAt->setTimezone(config('app.timezone')),
             'body' => mb_strimwidth($this->parser->ownText($mail->text), 0, 8000, '…'),
             'parsed' => $parsed,
         ]);

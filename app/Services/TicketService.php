@@ -87,7 +87,7 @@ class TicketService
     {
         return DB::transaction(function () use ($atm, $data, $sentAt, $by) {
             $now = CarbonImmutable::now();
-            $openedAt = $sentAt->greaterThan($now) ? $now : $sentAt;
+            $openedAt = ($sentAt->greaterThan($now) ? $now : $sentAt)->setTimezone(config('app.timezone'));
 
             $ticket = Ticket::create([
                 'number' => $this->numbers->next($now->year),

@@ -189,7 +189,8 @@ class InboundEmailTest extends TestCase
 
         $mail = IncomingMail::fromMessage(Message::fromString($raw), $dkim);
         $this->assertSame(['reportes@banco.test', ['banco.test'], 'Reporte ATM D'], [$mail->fromEmail, $mail->verifiedDomains, $mail->subject]);
-        $this->assertSame('2026-10-07T14:29:32+00:00', $mail->sentAt->toIso8601String());
+        $this->assertTrue($mail->sentAt->equalTo(CarbonImmutable::parse('2026-10-07T14:29:32+00:00')));
+        $this->assertSame(config('app.timezone'), $mail->sentAt->getTimezone()->getName());
         $this->assertSame('Dispensación', (new BankReportParser)->parse($mail->subject, $mail->text)['fault']);
         $this->assertSame(InboundEmail::TICKET, app(InboundMailProcessor::class)->process($mail)->status);
 
@@ -298,5 +299,18 @@ class InboundEmailTest extends TestCase
 
         $this->actingAs($operator)->postJson("/api/v1/inbound-emails/{$other->id}/ignore")->assertOk()->assertJsonPath('data.status', 'ignorado');
         $this->assertSame(1, Ticket::count());
+    }
+
+    public function test_the_time_of_an_email_written_in_utc_is_kept_in_local_time(): void
+    {
+        config(['app.timezone' => 'America/Caracas']);
+        date_default_timezone_set('America/Caracas');
+        $this->travelTo(CarbonImmutable::parse('2026-10-21 16:30:00', 'America/Caracas'));
+
+        // El banco escribió a las 17:48 UTC, es decir, a las 13:48 en Venezuela.
+        $email = $this->process("ATM A1916524\nSerial: RDC52714\nFalla: LECTORA", ['at' => CarbonImmutable::parse('2026-10-21 17:48:00', 'UTC')]);
+
+        $this->assertSame('2026-10-21 13:48:00', $email->refresh()->sent_at->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-10-21 13:48:00', $email->ticket->opened_at->format('Y-m-d H:i:s'));
     }
 }

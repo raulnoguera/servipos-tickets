@@ -31,7 +31,9 @@ final readonly class IncomingMail
         $email = strtolower(trim((string) ($from->mail ?? '')));
         $text = $message->hasTextBody() ? $message->getTextBody() : self::plain($message->getHTMLBody());
         try {
-            $sentAt = CarbonImmutable::instance($message->getDate()->toDate());
+            // El correo trae su propia zona horaria (los del banco vienen en UTC): se pasa a la
+            // hora local, porque la base de datos guarda las fechas sin zona.
+            $sentAt = CarbonImmutable::instance($message->getDate()->toDate())->setTimezone(config('app.timezone'));
         } catch (Throwable) {
             $sentAt = CarbonImmutable::now();
         }
