@@ -5,7 +5,7 @@ import { ArrowLeft, Download, FileImage, Search } from 'lucide-react';
 import { api, download } from '../lib/api';
 import { formatDate, formatDateTime, formatDuration, formatNumber } from '../lib/format';
 import { Button, Card, EmptyState, Input, LoadingBlock, PageHeader, Pagination, StatusBadge, Table, Td, Th, cx, toast } from '../components/ui';
-import { LevelBadge } from '../components/Sla';
+import { LevelBadge, PriorityBadge } from '../components/Sla';
 
 const PAGE = 50;
 
@@ -147,7 +147,7 @@ export default function ReportDetail() {
                                 {shown.map((r) => (
                                     <tr key={r.id} onClick={() => navigate(`/tickets/${r.id}`)} className="cursor-pointer hover:bg-brand-50/40">
                                         <Td className="whitespace-nowrap">
-                                            <div className="flex items-center gap-1.5"><span className="font-semibold text-brand-600 tabular">{r.number}</span></div>
+                                            <div className="flex items-center gap-1.5"><span className="font-semibold text-brand-600 tabular">{r.number}</span>{r.priority && <PriorityBadge priority={r.priority} size="sm" />}</div>
                                             <div className="text-xs text-muted">{formatDateTime(r.opened_at)}</div>
                                         </Td>
                                         <Td className="max-w-[200px]"><div className="font-medium text-ink tabular">{r.atm_number}</div><div className="truncate text-xs text-muted">{r.agency_name}</div></Td>

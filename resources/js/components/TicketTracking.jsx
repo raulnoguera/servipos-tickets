@@ -5,7 +5,7 @@ import { api } from '../lib/api';
 import { useCatalogs } from '../lib/queries';
 import { formatDateTime, formatDuration, initials } from '../lib/format';
 import { Alert, Button, Card, CardHeader, Field, Input, Modal, Select, STATUS, Textarea, cx, toast } from './ui';
-import { SlaMeter, SlaZoneField, slaRule } from './Sla';
+import { DEFAULT_PRIORITIES, SlaMeter, SlaZoneField, slaRule } from './Sla';
 
 function useTicketUpdate(ticketId) {
     const queryClient = useQueryClient();
@@ -63,12 +63,13 @@ export function WatchButton({ ticket }) {
     );
 }
 
-/** Editar falla, tipo de SLA, detalle y caso del banco (queda en el historial). */
+/** Editar prioridad, falla, tipo de SLA, detalle y caso del banco (queda en el historial). */
 export function EditTicketModal({ ticket, open, onClose }) {
     const { data: catalogs } = useCatalogs();
     const update = useTicketUpdate(ticket.id);
     const [form, setForm] = useState({
         fault_type_id: ticket.fault_type_id ? String(ticket.fault_type_id) : '',
+        priority: ticket.priority ?? 'media',
         sla_zone: ticket.sla?.zone ?? ticket.atm?.zone ?? 'urbana',
         description: ticket.description ?? '',
         bank_reference: ticket.bank_reference ?? '',
@@ -102,6 +103,13 @@ export function EditTicketModal({ ticket, open, onClose }) {
                         <Select id={id} value={form.fault_type_id} onChange={set('fault_type_id')}>
                             <option value="">Sin clasificar</option>
                             {catalogs?.fault_types.filter((f) => f.active || String(f.id) === form.fault_type_id).map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+                        </Select>
+                    )}
+                </Field>
+                <Field label="Prioridad" hint="Urgencia del caso; no cambia el SLA" error={err?.field?.('priority')}>
+                    {(id) => (
+                        <Select id={id} value={form.priority} onChange={set('priority')}>
+                            {(catalogs?.priorities ?? DEFAULT_PRIORITIES).map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                         </Select>
                     )}
                 </Field>

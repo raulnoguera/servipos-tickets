@@ -24,6 +24,8 @@ class TicketResource extends JsonResource
             'number' => $this->number,
             'status' => $this->status->value,
             'status_label' => $this->status->label(),
+            'priority' => $this->priority?->value ?? 'media',
+            'priority_label' => $this->priority?->label() ?? 'Media',
             'sla' => app(SlaService::class)->evaluate($this->resource),
             'responded_at' => $this->responded_at?->toIso8601String(),
             'source' => $this->source,

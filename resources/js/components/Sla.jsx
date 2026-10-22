@@ -1,12 +1,30 @@
-import { CheckCircle2, Clock3, Flame } from 'lucide-react';
+import { ArrowDown, CheckCircle2, Clock3, Flame, Minus, TimerOff } from 'lucide-react';
 import { formatDateTime } from '../lib/format';
 import { Field, Select, cx } from './ui';
 
-/** Semáforo del SLA: el color depende de la zona del cajero y de las horas hábiles transcurridas. */
+/** Prioridad: la urgencia que indica el operador. No cambia el SLA. */
+export const PRIORITY = {
+    critica: { label: 'Crítica', className: 'bg-red-600 text-white ring-red-600', icon: Flame },
+    media: { label: 'Media', className: 'bg-yellow-400 text-yellow-950 ring-yellow-400', icon: Minus },
+    baja: { label: 'Baja', className: 'bg-emerald-600 text-white ring-emerald-600', icon: ArrowDown },
+};
+
+export const DEFAULT_PRIORITIES = [{ value: 'critica', label: 'Crítica' }, { value: 'media', label: 'Media' }, { value: 'baja', label: 'Baja' }];
+
+export function PriorityBadge({ priority = 'media', size = 'md' }) {
+    const p = PRIORITY[priority] || PRIORITY.media;
+    return (
+        <span title={`Prioridad ${p.label.toLowerCase()}`} className={cx('inline-flex items-center gap-1 rounded-full font-semibold whitespace-nowrap ring-1 ring-inset', size === 'sm' ? 'px-2 py-0.5 text-[11px]' : 'px-2.5 py-1 text-xs', p.className)}>
+            <p.icon className="size-3" aria-hidden /> {p.label}
+        </span>
+    );
+}
+
+/** Semáforo del SLA: el color depende del tipo de SLA y de las horas hábiles transcurridas. */
 export const SLA_LEVEL = {
-    verde: { label: 'Verde', className: 'bg-emerald-600 text-white ring-emerald-600', bar: 'bg-emerald-500', icon: CheckCircle2 },
-    naranja: { label: 'Naranja', className: 'bg-orange-500 text-white ring-orange-500', bar: 'bg-orange-500', icon: Clock3 },
-    critica: { label: 'Crítica', className: 'bg-red-600 text-white ring-red-600', bar: 'bg-red-600', icon: Flame },
+    verde: { label: 'Verde', badge: 'SLA verde', className: 'bg-white text-emerald-700 ring-emerald-500', bar: 'bg-emerald-500', icon: CheckCircle2 },
+    naranja: { label: 'Naranja', badge: 'SLA naranja', className: 'bg-white text-orange-700 ring-orange-500', bar: 'bg-orange-500', icon: Clock3 },
+    critica: { label: 'Crítica', badge: 'SLA crítico', className: 'bg-white text-red-700 ring-red-500', bar: 'bg-red-600', icon: TimerOff },
 };
 
 const ZONES = [{ value: 'urbana', label: 'Urbana' }, { value: 'extraurbana', label: 'Extraurbana' }];
@@ -45,7 +63,7 @@ export function LevelBadge({ level, size = 'md', title }) {
     }
     return (
         <span title={title} className={cx('inline-flex items-center gap-1 rounded-full font-semibold whitespace-nowrap ring-1 ring-inset', size === 'sm' ? 'px-2 py-0.5 text-[11px]' : 'px-2.5 py-1 text-xs', s.className)}>
-            <s.icon className="size-3" aria-hidden /> {s.label}
+            <s.icon className="size-3" aria-hidden /> {s.badge}
         </span>
     );
 }

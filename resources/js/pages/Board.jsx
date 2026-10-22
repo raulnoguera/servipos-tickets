@@ -5,7 +5,7 @@ import { Plus, RefreshCw, UserX } from 'lucide-react';
 import { api } from '../lib/api';
 import { useCatalogs } from '../lib/queries';
 import { Button, Elapsed, LoadingBlock, PageHeader, Select, STATUS, cx } from '../components/ui';
-import { LEVEL_WEIGHT, SLA_LEVEL, SlaBadge } from '../components/Sla';
+import { DEFAULT_PRIORITIES, LEVEL_WEIGHT, PriorityBadge, SLA_LEVEL, SlaBadge } from '../components/Sla';
 
 const COLUMNS = ['abierto', 'asignado', 'en_transito', 'en_sitio', 'pendiente_repuesto', 'pendiente_validacion', 'por_confirmar', 'concluido'];
 const COLUMN_ACCENT = {
@@ -25,7 +25,7 @@ function TicketCard({ t }) {
         >
             <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-bold text-brand-600 tabular">{t.number}</span>
-                <SlaBadge sla={t.sla} size="sm" />
+                <PriorityBadge priority={t.priority} size="sm" />
             </div>
             <p className="mt-1.5 truncate text-sm font-semibold text-ink" title={t.atm.agency_name}>{t.atm.agency_name}</p>
             <p className="truncate text-xs text-muted">ATM {t.atm.atm_number}{t.atm.state && ` · ${t.atm.state}`}</p>
@@ -37,6 +37,7 @@ function TicketCard({ t }) {
                 </span>
                 <Elapsed ticket={t} className="shrink-0 text-muted" />
             </div>
+            {t.sla?.level && <div className="mt-2"><SlaBadge sla={t.sla} size="sm" /></div>}
         </Link>
     );
 }
@@ -46,10 +47,11 @@ export default function Board() {
     const { data: catalogs } = useCatalogs();
     const [technician, setTechnician] = useState('');
     const [level, setLevel] = useState('');
+    const [priority, setPriority] = useState('');
     const today = new Date();
     const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-    const query = { technician_id: technician, sla: level, per_page: 200 };
+    const query = { technician_id: technician, priority, sla: level, per_page: 200 };
     const open = useQuery({ queryKey: ['board', 'open', query], queryFn: () => api('tickets', { query: { ...query, open: 1 } }), refetchInterval: 30000 });
     const done = useQuery({
         queryKey: ['board', 'done', query, todayIso],
@@ -80,6 +82,12 @@ export default function Board() {
                     <Select value={technician} onChange={(e) => setTechnician(e.target.value)} aria-label="Técnico">
                         <option value="">Todos los técnicos</option>
                         {catalogs?.technicians.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </Select>
+                </div>
+                <div className="w-full sm:w-44">
+                    <Select value={priority} onChange={(e) => setPriority(e.target.value)} aria-label="Prioridad">
+                        <option value="">Toda prioridad</option>
+                        {(catalogs?.priorities ?? DEFAULT_PRIORITIES).map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                     </Select>
                 </div>
                 <div className="w-full sm:w-44">

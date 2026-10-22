@@ -149,6 +149,28 @@ class TicketTrackingTest extends TestCase
         $this->getJson('/api/v1/catalogs')->assertJsonPath('zones.1.rule', 'verde hasta 1 día hábil, naranja hasta 2 días hábiles');
     }
 
+    public function test_priority_is_chosen_when_opening_and_can_be_edited_without_touching_the_sla(): void
+    {
+        $this->travelTo($this->monday());
+        $ticket = $this->actingAs($this->operator)->postJson('/api/v1/tickets', [
+            'atm_id' => Atm::factory()->create()->id,
+            'fault_type_id' => FaultType::firstOrCreate(['name' => 'Falla de Dispensación'])->id,
+            'priority' => 'critica',
+        ])->assertCreated()->assertJsonPath('data.priority', 'critica')->assertJsonPath('data.priority_label', 'Crítica')->json('data');
+
+        $this->patchJson("/api/v1/tickets/{$ticket['id']}", ['priority' => 'baja'])
+            ->assertOk()
+            ->assertJsonPath('data.priority', 'baja')
+            ->assertJsonPath('data.sla.orange_at', $ticket['sla']['orange_at'], 'la prioridad no cambia el semáforo');
+        $this->assertStringContainsString('Prioridad: Crítica → Baja', Ticket::find($ticket['id'])->events()->pluck('note')->implode(' | '));
+
+        $this->getJson('/api/v1/tickets?priority=baja')->assertJsonCount(1, 'data');
+        $this->getJson('/api/v1/tickets?priority=critica')->assertJsonCount(0, 'data');
+        $this->postJson('/api/v1/tickets', ['atm_id' => Atm::factory()->create()->id, 'fault_type_id' => FaultType::first()->id])
+            ->assertCreated()->assertJsonPath('data.priority', 'media');
+        $this->getJson('/api/v1/catalogs')->assertJsonPath('priorities.0.value', 'critica');
+    }
+
     public function test_editing_a_ticket_is_logged_in_the_history(): void
     {
         $ticket = $this->open();

@@ -7,7 +7,7 @@ import { formatDateTime } from '../lib/format';
 import { useCatalogs } from '../lib/queries';
 import AtmSearch from '../components/AtmSearch';
 import { Alert, Badge, Button, Card, EmptyState, Field, Input, LoadingBlock, Modal, PageHeader, Pagination, Segmented, Select, Table, Td, Th, toast } from '../components/ui';
-import { SlaZoneField } from '../components/Sla';
+import { DEFAULT_PRIORITIES, SlaZoneField } from '../components/Sla';
 
 const STATUS = {
     revisar: { label: 'Por revisar', tone: 'warn' },
@@ -78,11 +78,13 @@ function EmailModal({ email, onClose }) {
     const [notFound, setNotFound] = useState(null);
     const [faultTypeId, setFaultTypeId] = useState('');
     const [slaZone, setSlaZone] = useState('urbana');
+    const [priority, setPriority] = useState('media');
 
     useEffect(() => {
         setAtm(email?.atm?.active ? email.atm : null);
         setNotFound(null);
         setFaultTypeId('');
+        setPriority('media');
     }, [email?.id]);
 
     // El tipo de SLA toma la zona del cajero elegido (se puede cambiar).
@@ -98,7 +100,7 @@ function EmailModal({ email, onClose }) {
         onClose();
     };
     const open = useMutation({
-        mutationFn: () => api(`inbound-emails/${email.id}/ticket`, { method: 'POST', body: { atm_id: atm.id, fault_type_id: faultTypeId || null, sla_zone: slaZone } }),
+        mutationFn: () => api(`inbound-emails/${email.id}/ticket`, { method: 'POST', body: { atm_id: atm.id, fault_type_id: faultTypeId || null, sla_zone: slaZone, priority } }),
         onSuccess: (res) => done(`Ticket ${res.data.number} abierto`),
     });
     const ignore = useMutation({
@@ -164,6 +166,13 @@ function EmailModal({ email, onClose }) {
                                         <Select id={id} value={faultTypeId} onChange={(e) => setFaultTypeId(e.target.value)}>
                                             <option value="">Según el correo</option>
                                             {catalogs?.fault_types.filter((f) => f.active).map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+                                        </Select>
+                                    )}
+                                </Field>
+                                <Field label="Prioridad" hint="Urgencia del caso; no cambia el SLA" error={undefined}>
+                                    {(id) => (
+                                        <Select id={id} value={priority} onChange={(e) => setPriority(e.target.value)}>
+                                            {(catalogs?.priorities ?? DEFAULT_PRIORITIES).map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                                         </Select>
                                     )}
                                 </Field>

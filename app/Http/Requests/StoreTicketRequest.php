@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\Priority;
 use App\Enums\Role;
 use App\Enums\Zone;
 use App\Models\Scopes\BankScope;
@@ -25,6 +26,7 @@ class StoreTicketRequest extends FormRequest
         return [
             'atm_id' => ['required', 'integer', Rule::exists('atms', 'id')->where('active', true)->where(fn ($q) => BankScope::banks() === null ? $q : $q->whereIn('bank_id', BankScope::banks()))],
             'fault_type_id' => ['required', 'integer', 'exists:fault_types,id'],
+            'priority' => ['nullable', Rule::enum(Priority::class)],
             'sla_zone' => ['nullable', Rule::enum(Zone::class)],
             'description' => ['nullable', 'string', 'max:2000'],
             'bank_reference' => ['nullable', 'string', 'max:60'],
@@ -45,6 +47,6 @@ class StoreTicketRequest extends FormRequest
      */
     public function attributes(): array
     {
-        return ['atm_id' => 'cajero', 'fault_type_id' => 'tipo de falla', 'assigned_to' => 'técnico', 'sla_zone' => 'tipo de SLA'];
+        return ['atm_id' => 'cajero', 'fault_type_id' => 'tipo de falla', 'assigned_to' => 'técnico', 'sla_zone' => 'tipo de SLA', 'priority' => 'prioridad'];
     }
 }

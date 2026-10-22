@@ -53,6 +53,7 @@
 <table>
 <thead><tr><th style="width:25%">Campo</th><th class="c" style="width:13%">Obligatorio</th><th>Descripción</th></tr></thead>
 <tr><td><b>Tipo de falla</b></td><td class="si">Sí</td><td>Motivo del reporte, de la lista de <b>Catálogos → Tipos de falla</b>.</td></tr>
+<tr><td><b>Prioridad</b></td><td class="no">No</td><td>Crítica (roja), Media (amarilla) o Baja (verde). Por defecto, Media. Indica la urgencia; no cambia el SLA.</td></tr>
 <tr><td><b>Tipo de SLA</b></td><td class="si">Sí</td><td>Urbana o Extraurbana. Viene con la zona del cajero y debajo muestra sus límites. Si este caso debe medirse distinto, cámbielo: aplica solo a este ticket.</td></tr>
 <tr><td><b>N° de caso del banco</b></td><td class="no">No</td><td>Número de caso o incidente del banco, si el correo lo trae. Sirve luego para buscar el ticket.</td></tr>
 <tr><td><b>Detalle del reporte</b></td><td class="no">No</td><td>Texto libre. Se recomienda copiar lo que indica el correo del banco.</td></tr>
@@ -77,10 +78,10 @@
 <h3>Búsqueda y filtros</h3>
 <ul>
 <li><b>Buscador:</b> por N° de ticket, N° de ATM, nombre de agencia o caso del banco.</li>
-<li><b>Técnico, banco y semáforo:</b> tres listas para acotar el resultado. La de semáforo filtra por Verde, Naranja o Crítica.</li>
+<li><b>Técnico, banco, prioridad y semáforo:</b> cuatro listas para acotar el resultado. La de semáforo filtra por Verde, Naranja o Crítica.</li>
 </ul>
 <h3>Columnas</h3>
-<p>Los tickets en curso se ordenan por urgencia: primero los que están en crítica o más cerca de llegar a ella. Cada fila muestra el número y la fecha de apertura, el ATM, la agencia y su estado, la falla, el técnico, el estado del ticket y el semáforo del SLA. Al hacer clic en una fila se abre el detalle. Para llevar la información a Excel, el botón <b>Exportar Excel</b> lleva a Reportes.</p>
+<p>Los tickets en curso se ordenan por urgencia: primero los que están en crítica o más cerca de llegar a ella. Cada fila muestra el número y la fecha de apertura (con la etiqueta de su prioridad), el ATM, la agencia y su estado, la falla, el técnico, el estado del ticket y el semáforo del SLA. Al hacer clic en una fila se abre el detalle. Para llevar la información a Excel, el botón <b>Exportar Excel</b> lleva a Reportes.</p>
 
 <h2>4.5 Detalle del ticket</h2>
 <p>Reúne toda la historia del caso. Es la misma pantalla para todos los roles; cambian los botones disponibles.</p>
@@ -88,10 +89,10 @@
 
 <h3>Encabezado</h3>
 <ul>
-<li><b>Número, estado y color del SLA.</b></li>
+<li><b>Número, estado, prioridad y color del SLA.</b></li>
 <li><b>Línea de apertura:</b> fecha, hora, quién lo abrió y el caso del banco. En tickets concluidos, también quién confirmó el cierre y cuándo.</li>
 <li><b>Seguir:</b> al seguir un ticket recibirá los avisos de cada novedad. El número indica cuántas personas lo siguen.</li>
-<li><b>Editar:</b> cambiar tipo de falla, tipo de SLA, caso del banco o detalle (operador y administrador).</li>
+<li><b>Editar:</b> cambiar prioridad, tipo de falla, tipo de SLA, caso del banco o detalle (operador y administrador).</li>
 <li><b>Tiempo:</b> «Tiempo transcurrido» mientras está en curso; «Tiempo hasta la atención» cuando espera confirmación; «Tiempo total del ciclo» cuando concluyó.</li>
 </ul>
 
@@ -112,7 +113,7 @@
 
 <h3>Editar</h3>
 <figure class="media"><img src="capturas/d-ticket-editar.jpg" alt="Diálogo de edición"><figcaption>Edición de los datos del ticket.</figcaption></figure>
-<p>Permite corregir el <b>tipo de falla</b>, el <b>tipo de SLA</b>, el <b>N° de caso del banco</b> y el <b>detalle</b>. Cada cambio queda anotado en la actividad del ticket, con el valor anterior y el nuevo.</p>
+<p>Permite corregir la <b>prioridad</b>, el <b>tipo de falla</b>, el <b>tipo de SLA</b>, el <b>N° de caso del banco</b> y el <b>detalle</b>. Cada cambio queda anotado en la actividad del ticket, con el valor anterior y el nuevo.</p>
 <div class="nota"><b>Nota</b><p>Al cambiar el tipo de SLA, el semáforo del ticket se recalcula desde su apertura. Si lo que estaba mal es la zona del cajero, corríjala mejor en su ficha: así se aplica también a sus tickets futuros y a los que abra el correo.</p></div>
 
 <h3>Anular</h3>
@@ -155,9 +156,9 @@
 <ul>
 <li><b>Columnas:</b> Abierto, Asignado, En tránsito, En sitio, Pend. repuesto, Pend. validación, Por confirmar y Concluido (los concluidos de hoy). Si no caben, la pantalla se desplaza hacia la derecha.</li>
 <li><b>Orden:</b> dentro de cada columna, primero los de color más urgente (crítica, naranja, verde) y, entre ellos, los más antiguos.</li>
-<li><b>Tarjeta:</b> número, color del SLA, agencia, ATM y estado, falla, técnico y tiempo transcurrido.</li>
+<li><b>Tarjeta:</b> número, prioridad, agencia, ATM y estado, falla, técnico, tiempo transcurrido y color del SLA.</li>
 <li><b>Borde rojo:</b> el ticket está en crítica.</li>
-<li><b>Filtros:</b> por técnico y por color del semáforo.</li>
+<li><b>Filtros:</b> por técnico, por prioridad y por color del semáforo.</li>
 </ul>
 <p>Al hacer clic en una tarjeta se abre el ticket. El estado se cambia desde el ticket, no arrastrando la tarjeta.</p>
 
@@ -207,7 +208,7 @@
 <ol class="pasos">
 <li>Abra el correo y lea el texto y el motivo.</li>
 <li>Confirme el cajero propuesto, o toque <b>Cambiar</b> y búsquelo.</li>
-<li>Si lo desea, elija el <b>tipo de falla</b> y cambie el <b>tipo de SLA</b> (viene con la zona del cajero).</li>
+<li>Si lo desea, elija el <b>tipo de falla</b> y la <b>prioridad</b>, y cambie el <b>tipo de SLA</b> (viene con la zona del cajero).</li>
 <li>Toque <b>Abrir ticket</b>. Si el correo no corresponde a una falla, toque <b>Descartar</b>.</li>
 </ol>
 
@@ -309,7 +310,7 @@
 </table>
 <h3>Hoja de vida del cajero</h3>
 <figure><img src="capturas/cajero-hoja.jpg" alt="Hoja de vida de un cajero"><figcaption>Hoja de vida de un cajero.</figcaption></figure>
-<p>Reúne todo el historial de un ATM: tickets totales, abiertos ahora, tickets de los últimos 90 días, visitas, repuestos usados y tiempo promedio de resolución; los gráficos de <b>fallas reportadas</b> y <b>repuestos cambiados</b>; y el <b>historial de tickets</b> con falla, color del SLA, técnico, repuestos, estado y duración. Los botones <b>Mapa</b> y <b>Nuevo ticket</b> están arriba a la derecha. Sirve para detectar cajeros con fallas repetidas.</p>
+<p>Reúne todo el historial de un ATM: tickets totales, abiertos ahora, tickets de los últimos 90 días, visitas, repuestos usados y tiempo promedio de resolución; los gráficos de <b>fallas reportadas</b> y <b>repuestos cambiados</b>; y el <b>historial de tickets</b> con falla, prioridad, color del SLA, técnico, repuestos, estado y duración. Los botones <b>Mapa</b> y <b>Nuevo ticket</b> están arriba a la derecha. Sirve para detectar cajeros con fallas repetidas.</p>
 
 <h2>4.11 Catálogos</h2>
 <p>Son las listas que alimentan los formularios. Solo el administrador las modifica.</p>

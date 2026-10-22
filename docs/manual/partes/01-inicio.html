@@ -75,7 +75,7 @@
 
 <h1><span class="cap">Capítulo 2</span>2. Conceptos básicos</h1>
 
-<p class="entrada">Antes de recorrer las pantallas conviene conocer cinco conceptos que aparecen en todo el sistema: los roles, el ticket, sus estados, el semáforo del SLA y el estatus final del cajero.</p>
+<p class="entrada">Antes de recorrer las pantallas conviene conocer seis conceptos que aparecen en todo el sistema: los roles, el ticket, sus estados, la prioridad, el semáforo del SLA y el estatus final del cajero.</p>
 
 <h2>2.1 Roles de usuario</h2>
 <p>Cada usuario tiene un rol, y el rol define qué ve y qué puede hacer. Existen tres:</p>
@@ -93,7 +93,7 @@
 <tr><td>Abrir un ticket nuevo</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
 <tr><td>Revisar los correos del banco y abrir sus tickets</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
 <tr><td>Asignar o reasignar un técnico</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
-<tr><td>Editar falla, detalle o caso del banco</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
+<tr><td>Editar prioridad, falla, tipo de SLA, detalle o caso del banco</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
 <tr><td>Anular un ticket</td><td class="si">Sí</td><td class="si">Sí</td><td class="no">—</td></tr>
 <tr><td>Ver tickets</td><td class="si">Todos</td><td class="si">Todos</td><td class="si">Los suyos</td></tr>
 <tr><td>Marcar «Voy en camino» y «Llegué al sitio»</td><td class="si">Sí</td><td class="si">Sí</td><td class="si">En los suyos</td></tr>
@@ -114,7 +114,7 @@
 <div class="regla"><b>Regla del sistema</b><p>Los permisos se comprueban en el servidor en cada operación. Que una opción no aparezca en el menú no es la única protección: aunque alguien intente la operación por otra vía, el sistema la rechaza y deja el intento registrado en la auditoría.</p></div>
 
 <h2>2.2 El ticket</h2>
-<p>Un ticket representa <b>una falla de un cajero</b>, desde que se reporta hasta que se resuelve. Reúne en un solo lugar el cajero, la falla, el semáforo del SLA, el técnico responsable, las visitas realizadas, los repuestos usados, la foto de la constancia, los comentarios y el historial de todo lo ocurrido.</p>
+<p>Un ticket representa <b>una falla de un cajero</b>, desde que se reporta hasta que se resuelve. Reúne en un solo lugar el cajero, la falla, la prioridad, el semáforo del SLA, el técnico responsable, las visitas realizadas, los repuestos usados, la foto de la constancia, los comentarios y el historial de todo lo ocurrido.</p>
 <p>Un ticket nace de dos maneras: lo abre el sistema al leer el correo del banco (sección 4.8), o lo registra el Call Center a mano (sección 4.3).</p>
 <p>Cada ticket recibe un número único con este formato:</p>
 <p style="text-align:center;font-family:'Urbanist';font-size:18pt;font-weight:800;color:#00194C;margin:4pt 0 2pt">TK-2026-00193</p>
@@ -150,7 +150,14 @@
 <tr><td><span class="et e-anulado">Anulado</span></td><td>Se canceló (reporte duplicado, el banco desistió, etc.), con el motivo anotado.</td><td>Botón «Anular».</td></tr>
 </table>
 
-<h2>2.4 Semáforo del SLA: zona del cajero y horario bancario</h2>
+<h2>2.4 Prioridad y semáforo del SLA</h2>
+<p>Cada ticket tiene dos indicaciones distintas:</p>
+<table class="estrecha" style="min-width:80%">
+<tr><th style="width:24%">Indicación</th><th>Qué es</th></tr>
+<tr><td><b>Prioridad</b></td><td>La urgencia que indica el operador al abrir el ticket: <span class="et" style="background:#DC2626;color:#fff">Crítica</span>, <span class="et" style="background:#FACC15;color:#422006">Media</span> o <span class="et" style="background:#059669;color:#fff">Baja</span>. Por defecto, Media. Se cambia con «Editar». Sirve para ordenar y filtrar; <b>no cambia el SLA</b>.</td></tr>
+<tr><td><b>Semáforo del SLA</b></td><td>Lo calcula el sistema con el tiempo hábil transcurrido. Se muestra con borde de color y el texto «SLA verde», «SLA naranja» o «SLA crítico», para no confundirlo con la prioridad.</td></tr>
+</table>
+<h3>Semáforo del SLA: tipo de SLA y horario bancario</h3>
 <p>El SLA mide cuánto tarda la atención, desde que se abre el ticket hasta que el técnico reporta que el cajero quedó operativo. El resultado se muestra como un semáforo de tres colores: <span class="et" style="background:#059669;color:#fff">Verde</span>, <span class="et" style="background:#F97316;color:#fff">Naranja</span> y <span class="et" style="background:#DC2626;color:#fff">Crítica</span>. Los límites dependen del <b>tipo de SLA</b> del ticket, Urbana o Extraurbana. Por defecto es la zona del cajero, que se indica en su ficha (sección 4.10), y al abrir o editar el ticket se puede cambiar solo para ese caso:</p>
 <table class="estrecha" style="min-width:80%">
 <tr><th>Zona</th><th class="c"><span class="et" style="background:#059669;color:#fff">Verde</span></th><th class="c"><span class="et" style="background:#F97316;color:#fff">Naranja</span></th><th class="c"><span class="et" style="background:#DC2626;color:#fff">Crítica</span></th></tr>

@@ -6,7 +6,7 @@ import { api } from '../lib/api';
 import { useCatalogs } from '../lib/queries';
 import { mapsUrl } from '../lib/format';
 import { Alert, Button, Card, CardHeader, Field, Input, PageHeader, Select, Textarea, toast } from '../components/ui';
-import { SlaZoneField } from '../components/Sla';
+import { DEFAULT_PRIORITIES, SlaZoneField } from '../components/Sla';
 import AtmSearch from '../components/AtmSearch';
 
 function AtmCard({ atm }) {
@@ -52,7 +52,7 @@ export default function TicketNew() {
     const [atm, setAtm] = useState(null);
     const [lookupError, setLookupError] = useState(null);
     const [searchKey, setSearchKey] = useState(0);
-    const [form, setForm] = useState({ fault_type_id: '', sla_zone: 'urbana', bank_reference: '', description: '', assigned_to: '' });
+    const [form, setForm] = useState({ fault_type_id: '', priority: 'media', sla_zone: 'urbana', bank_reference: '', description: '', assigned_to: '' });
 
     // Al elegir el cajero, el tipo de SLA toma su zona (se puede cambiar).
     useEffect(() => {
@@ -90,7 +90,7 @@ export default function TicketNew() {
         setAtm(null);
         setLookupError(null);
         setSearchKey((k) => k + 1);
-        setForm({ fault_type_id: '', sla_zone: 'urbana', bank_reference: '', description: '', assigned_to: '' });
+        setForm({ fault_type_id: '', priority: 'media', sla_zone: 'urbana', bank_reference: '', description: '', assigned_to: '' });
         create.reset();
     }
 
@@ -165,6 +165,13 @@ export default function TicketNew() {
                                 <Select id={id} value={form.fault_type_id} onChange={set('fault_type_id')} required>
                                     <option value="">Seleccione…</option>
                                     {catalogs?.fault_types.filter((f) => f.active).map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+                                </Select>
+                            )}
+                        </Field>
+                        <Field label="Prioridad" hint="Urgencia del caso; no cambia el SLA" error={err?.field?.('priority')}>
+                            {(id) => (
+                                <Select id={id} value={form.priority} onChange={set('priority')}>
+                                    {(catalogs?.priorities ?? DEFAULT_PRIORITIES).map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                                 </Select>
                             )}
                         </Field>

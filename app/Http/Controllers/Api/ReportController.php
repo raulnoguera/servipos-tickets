@@ -167,7 +167,7 @@ class ReportController extends Controller
         $title = ReportService::TICKET_METRICS[$metric].($fault ? ": {$fault}" : '');
         if ($request->query('format') === 'xlsx') {
             return $this->excel->download($title, $this->describe($f), [
-                'number' => 'N° Ticket', 'opened' => 'Apertura', 'closed' => 'Cierre', 'status_label' => 'Estado', 'zone' => 'Zona',
+                'number' => 'N° Ticket', 'opened' => 'Apertura', 'closed' => 'Cierre', 'status_label' => 'Estado', 'priority_label' => 'Prioridad', 'zone' => 'Zona',
                 'atm_number' => 'N° ATM', 'agency_name' => 'Agencia', 'state' => 'Estado (región)', 'fault_type' => 'Falla', 'technician' => 'Técnico',
                 'visits' => 'Visitas', 'arrival' => 'Llegada', 'duration' => 'Resolución', 'sla_label' => 'SLA',
                 'parts' => 'Repuestos',

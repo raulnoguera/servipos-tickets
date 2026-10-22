@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\Priority;
 use App\Enums\SlaLevel;
 use App\Enums\TicketStatus;
 use App\Models\Scopes\BankScope;
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
-    'number', 'atm_id', 'bank_id', 'fault_type_id', 'description', 'bank_reference', 'status', 'sla_zone', 'source',
+    'number', 'atm_id', 'bank_id', 'fault_type_id', 'description', 'bank_reference', 'status', 'priority', 'sla_zone', 'source',
     'assigned_to', 'opened_by', 'opened_at', 'assigned_at', 'responded_at', 'closed_at', 'confirmed_at', 'confirmed_by', 'duration_ms', 'sla_orange_at', 'sla_critical_at',
 ])]
 #[ScopedBy(BankScope::class)]
@@ -28,6 +29,7 @@ class Ticket extends Model
     {
         return [
             'status' => TicketStatus::class,
+            'priority' => Priority::class,
             'opened_at' => 'datetime',
             'assigned_at' => 'datetime',
             'responded_at' => 'datetime',

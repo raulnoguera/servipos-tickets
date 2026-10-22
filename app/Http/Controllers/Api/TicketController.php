@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\Priority;
 use App\Enums\Role;
 use App\Enums\SlaLevel;
 use App\Enums\TicketStatus;
@@ -32,6 +33,7 @@ class TicketController extends Controller
             'status' => ['nullable', 'string', 'max:200'],
             'open' => ['nullable', 'string', 'max:5'],
             'history' => ['nullable', 'string', 'max:5'],
+            'priority' => ['nullable', 'string', 'max:60'],
             'sla' => ['nullable', 'string', 'max:20'],
             'sort' => ['nullable', 'string', 'max:20'],
             'bank_id' => ['nullable', 'integer'],
@@ -56,6 +58,7 @@ class TicketController extends Controller
             ->when($request->query('open'), fn ($q) => $q->whereNotIn('status', [TicketStatus::Closed, TicketStatus::Cancelled]))
             ->when($request->query('bank_id'), fn ($q, $v) => $q->where('bank_id', $v))
             ->when($request->query('technician_id'), fn ($q, $v) => $q->where('assigned_to', $v))
+            ->when($request->query('priority'), fn ($q, $v) => $q->whereIn('priority', explode(',', $v)))
             ->when($request->query('atm_id'), fn ($q, $v) => $q->where('atm_id', $v))
             ->when($request->query('closed_from'), fn ($q, $v) => $q->whereDate('closed_at', '>=', $v))
             ->when(SlaLevel::tryFrom((string) $request->query('sla')), fn ($q, $level) => $q->slaLevel($level))
@@ -158,12 +161,13 @@ class TicketController extends Controller
         ]);
     }
 
-    /** Editar falla, tipo de SLA, detalle o caso del banco (queda en el historial). */
+    /** Editar prioridad, falla, tipo de SLA, detalle o caso del banco (queda en el historial). */
     public function update(Request $request, Ticket $ticket): TicketResource
     {
         Gate::authorize('manage', $ticket);
         $data = $request->validate([
             'fault_type_id' => ['sometimes', 'nullable', 'integer', 'exists:fault_types,id'],
+            'priority' => ['sometimes', Rule::enum(Priority::class)],
             'sla_zone' => ['sometimes', 'nullable', Rule::enum(Zone::class)],
             'description' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'bank_reference' => ['sometimes', 'nullable', 'string', 'max:60'],

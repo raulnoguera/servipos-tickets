@@ -171,7 +171,7 @@ class InboundMailProcessor
     }
 
     /** Abre el ticket de un correo; `$by` es quien lo decide a mano desde la bandeja, o nadie si fue automático. */
-    public function openTicket(InboundEmail $email, Atm $atm, ?User $by, ?int $faultTypeId = null, ?string $slaZone = null): Ticket
+    public function openTicket(InboundEmail $email, Atm $atm, ?User $by, ?int $faultTypeId = null, ?string $slaZone = null, ?string $priority = null): Ticket
     {
         $parsed = $email->parsed ?? [];
         $sender = trim(($email->from_name ?? '').' <'.$email->from_email.'>');
@@ -184,6 +184,7 @@ class InboundMailProcessor
         return $this->tickets->openFromEmail($atm, [
             'fault_type_id' => $faultTypeId ?? $this->faultType($parsed['fault'] ?? null)->id,
             'sla_zone' => $slaZone,
+            'priority' => $priority,
             'description' => mb_strimwidth($description, 0, 2000, '…'),
         ], CarbonImmutable::instance($email->sent_at), $by);
     }

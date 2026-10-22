@@ -5,7 +5,7 @@ import { api } from '../lib/api';
 import { formatDateTime, formatDuration, mapsUrl } from '../lib/format';
 import { Button, Card, CardHeader, EmptyState, LoadingBlock, StatusBadge, Table, Td, Th } from '../components/ui';
 import { HBarChart } from '../components/Charts';
-import { LevelBadge } from '../components/Sla';
+import { LevelBadge, PriorityBadge } from '../components/Sla';
 
 function Stat({ label, value }) {
     return (
@@ -78,7 +78,7 @@ export default function AtmHistory() {
                     <EmptyState title="Este cajero no tiene tickets" />
                 ) : (
                     <Table>
-                        <thead><tr><Th>Ticket</Th><Th>Falla</Th><Th>SLA</Th><Th>Técnico</Th><Th>Repuestos</Th><Th>Estado</Th><Th className="text-right">Duración</Th></tr></thead>
+                        <thead><tr><Th>Ticket</Th><Th>Falla</Th><Th>Prioridad</Th><Th>SLA</Th><Th>Técnico</Th><Th>Repuestos</Th><Th>Estado</Th><Th className="text-right">Duración</Th></tr></thead>
                         <tbody>
                             {data.tickets.map((t) => (
                                 <tr key={t.id} className="hover:bg-brand-50/40">
@@ -87,7 +87,7 @@ export default function AtmHistory() {
                                         <div className="text-xs text-muted">{formatDateTime(t.opened_at)}</div>
                                     </Td>
                                     <Td className="max-w-[180px] truncate">{t.fault_type ?? '—'}</Td>
-                                    <Td><LevelBadge level={t.sla} size="sm" /></Td>
+                                    <Td><PriorityBadge priority={t.priority} size="sm" /></Td><Td><LevelBadge level={t.sla} size="sm" /></Td>
                                     <Td className="whitespace-nowrap">{t.technician ?? '—'}</Td>
                                     <Td className="max-w-[220px] text-xs">{t.parts || <span className="text-faint">—</span>}</Td>
                                     <Td><StatusBadge status={t.status} size="sm" /></Td>
