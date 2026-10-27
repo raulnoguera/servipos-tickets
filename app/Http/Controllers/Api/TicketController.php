@@ -12,6 +12,7 @@ use App\Http\Requests\StoreTicketRequest;
 use App\Http\Resources\TicketResource;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Models\UserNotification;
 use App\Models\Visit;
 use App\Services\TicketService;
 use Carbon\CarbonImmutable;
@@ -85,8 +86,18 @@ class TicketController extends Controller
         return $this->detail($ticket);
     }
 
-    public function show(Ticket $ticket): TicketResource
+    public function show(Request $request, Ticket $ticket): TicketResource|JsonResponse
     {
+        $user = $request->user();
+        // Un técnico que tuvo el ticket y se lo reasignaron: se le explica, sin
+        // registrarlo como acceso denegado (es lo esperable al tocar un aviso viejo).
+        if ($user->role === Role::Technician && $user->cannot('view', $ticket)
+            && UserNotification::where('user_id', $user->id)->where('ticket_id', $ticket->id)->exists()) {
+            return response()->json([
+                'message' => "El ticket {$ticket->number} fue reasignado a otro técnico y ya no aparece en sus tickets.",
+                'reason' => 'reassigned',
+            ], 403);
+        }
         Gate::authorize('view', $ticket);
 
         return $this->detail($ticket);

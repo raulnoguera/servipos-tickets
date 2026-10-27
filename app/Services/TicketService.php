@@ -139,6 +139,9 @@ class TicketService
         if ($this->notify) {
             // Se envía después de responder, para no demorar al operador.
             defer(fn () => $this->push->ticketAssigned($ticket->fresh()));
+            if ($previous) {
+                defer(fn () => $this->push->ticketReassigned($ticket->fresh(), $previous, $technician));
+            }
         }
 
         return $ticket;

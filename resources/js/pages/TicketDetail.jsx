@@ -271,6 +271,9 @@ export default function TicketDetail() {
     if (isLoading) {
         return <LoadingBlock />;
     }
+    if (error?.reason === 'reassigned') {
+        return <EmptyState title="Este ticket fue reasignado" description={error.message} action={<Button as={Link} to="/mis-tickets" variant="secondary">Ir a mis tickets</Button>} />;
+    }
     if (error) {
         const title = error.offline
             ? 'Sin señal: este ticket no se había abierto antes en este teléfono'

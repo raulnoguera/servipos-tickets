@@ -29,7 +29,8 @@ const Audit = lazy(() => import('./pages/Audit'));
 const Emails = lazy(() => import('./pages/Emails'));
 
 const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: true, staleTime: 15000 } },
+    // Un 4xx (sin permiso, no existe) no cambia al reintentar: solo se reintentan fallas de red o del servidor.
+    defaultOptions: { queries: { retry: (count, error) => count < 1 && !(error?.status >= 400 && error?.status < 500), refetchOnWindowFocus: true, staleTime: 15000 } },
 });
 
 function Guard({ roles, children }) {

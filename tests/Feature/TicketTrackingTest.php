@@ -4,9 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\Atm;
 use App\Models\AtmCondition;
+use App\Models\AuditLog;
 use App\Models\FaultType;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Models\UserNotification;
 use App\Services\PushNotifier;
 use Carbon\CarbonImmutable;
 use Database\Seeders\AtmConditionSeeder;
@@ -169,6 +171,32 @@ class TicketTrackingTest extends TestCase
         $this->postJson('/api/v1/tickets', ['atm_id' => Atm::factory()->create()->id, 'fault_type_id' => FaultType::first()->id])
             ->assertCreated()->assertJsonPath('data.priority', 'media');
         $this->getJson('/api/v1/catalogs')->assertJsonPath('priorities.0.value', 'critica');
+    }
+
+    public function test_the_previous_technician_is_told_when_a_ticket_is_reassigned(): void
+    {
+        $other = User::factory()->technician()->create(['name' => 'Fernando Lastra']);
+        $ticket = $this->open(); // asignado a Jesus Ramos
+        $this->actingAs($this->operator)->postJson("/api/v1/tickets/{$ticket['id']}/assign", ['technician_id' => $other->id])->assertOk();
+
+        $notice = UserNotification::where('user_id', $this->technician->id)->latest('id')->first();
+        $this->assertSame('reassigned', $notice->kind);
+        $this->assertSame("{$ticket['number']} reasignado", $notice->title);
+        $this->assertSame('Se asignó a Fernando Lastra. Ya no aparece en sus tickets.', $notice->body);
+        $this->assertSame('/mis-tickets', $notice->url);
+        $this->assertSame(0, UserNotification::where('user_id', $this->technician->id)->where('kind', 'assigned')->whereNull('read_at')->count(), 'el aviso viejo queda leído');
+
+        // Al tocar el aviso viejo: un mensaje claro, y no cuenta como acceso denegado.
+        $this->actingAs($this->technician)->getJson("/api/v1/tickets/{$ticket['id']}")
+            ->assertForbidden()
+            ->assertJsonPath('reason', 'reassigned')
+            ->assertJsonPath('message', "El ticket {$ticket['number']} fue reasignado a otro técnico y ya no aparece en sus tickets.");
+        $this->assertSame(0, AuditLog::where('action', 'auth.denied')->count());
+
+        // Un técnico que nunca lo tuvo sigue recibiendo el 403 de siempre, y queda en la auditoría.
+        $this->actingAs(User::factory()->technician()->create())->getJson("/api/v1/tickets/{$ticket['id']}")
+            ->assertForbidden()->assertJsonMissingPath('reason');
+        $this->assertSame(1, AuditLog::where('action', 'auth.denied')->count());
     }
 
     public function test_editing_a_ticket_is_logged_in_the_history(): void

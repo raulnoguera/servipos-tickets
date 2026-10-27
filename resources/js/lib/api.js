@@ -5,6 +5,7 @@ export class ApiError extends Error {
         super(body?.message || `Error ${status}`);
         this.status = status;
         this.errors = body?.errors || {};
+        this.reason = body?.reason ?? null;
         /** Sin señal o el servidor no respondió a tiempo: el envío puede reintentarse. */
         this.offline = status === 0;
     }

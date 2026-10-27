@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Ban, Bell, CheckCheck, CheckCircle2, ClipboardList, Mail, MapPin, PackageX, Settings, UserCheck } from 'lucide-react';
+import { Ban, Bell, CheckCheck, CheckCircle2, ClipboardList, Mail, MapPin, PackageX, Settings, UserCheck, UserX } from 'lucide-react';
 import { api } from '../lib/api';
 import { playChime } from '../lib/sound';
 import NotificationSettings from './NotificationSettings';
@@ -9,6 +9,7 @@ import { cx, toast } from './ui';
 
 const KIND = {
     assigned: { icon: UserCheck, className: 'bg-brand-50 text-brand-600' },
+    reassigned: { icon: UserX, className: 'bg-slate-100 text-slate-600' },
     moved: { icon: MapPin, className: 'bg-sky-50 text-sky-600' },
     pending: { icon: PackageX, className: 'bg-amber-50 text-amber-700' },
     closed: { icon: CheckCircle2, className: 'bg-emerald-50 text-emerald-600' },

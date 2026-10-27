@@ -58,6 +58,27 @@ class PushNotifier
         ]);
     }
 
+    /**
+     * Al técnico que tenía el ticket: se reasignó a otro. Usa la misma etiqueta que
+     * el aviso de «Nuevo ticket», así el teléfono lo reemplaza en vez de dejar un
+     * aviso que ya no lleva a ningún lado. Sus avisos anteriores de ese ticket
+     * quedan leídos.
+     */
+    public function ticketReassigned(Ticket $ticket, User $previous, User $technician): int
+    {
+        $keepsHistory = $previous->can('view', $ticket);
+        UserNotification::where('user_id', $previous->id)->where('ticket_id', $ticket->id)->whereNull('read_at')->update(['read_at' => now()]);
+
+        return $this->send($previous, [
+            'kind' => 'reassigned',
+            'ticket_id' => $ticket->id,
+            'title' => "{$ticket->number} reasignado",
+            'body' => "Se asignó a {$technician->name}. ".($keepsHistory ? 'Queda en su historial solo para consulta.' : 'Ya no aparece en sus tickets.'),
+            'url' => $keepsHistory ? "/tickets/{$ticket->id}" : '/mis-tickets',
+            'tag' => $ticket->number,
+        ]);
+    }
+
     /** "En camino" o "En sitio": avisa a operadores y administradores. */
     public function technicianMoved(Ticket $ticket, User $actor, bool $arrived, CarbonInterface $at): int
     {
