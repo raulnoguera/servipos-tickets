@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\PushNotifier;
 use Database\Seeders\AtmConditionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Mockery\MockInterface;
@@ -174,6 +175,7 @@ class TicketNotificationsTest extends TestCase
     private function visit(User $by, string $condition): void
     {
         $this->actingAs($by)->postJson("/api/v1/tickets/{$this->ticket->id}/visits", [
+            'photo' => UploadedFile::fake()->image('constancia.jpg'),
             'work_done' => 'Cambio de correas',
             'atm_condition_id' => AtmCondition::firstWhere('name', $condition)->id,
             'parts_changed' => false,

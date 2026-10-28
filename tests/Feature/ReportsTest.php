@@ -9,6 +9,7 @@ use App\Models\Part;
 use App\Models\User;
 use Database\Seeders\AtmConditionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 class ReportsTest extends TestCase
@@ -120,6 +121,7 @@ class ReportsTest extends TestCase
         ])->json('data.id');
         $this->travel($hours)->hours();
         $this->actingAs($this->technician)->postJson("/api/v1/tickets/{$id}/visits", [
+            'photo' => UploadedFile::fake()->image('constancia.jpg'),
             'work_done' => 'Trabajo',
             'atm_condition_id' => AtmCondition::firstWhere('name', $condition)->id,
             'parts_changed' => true,

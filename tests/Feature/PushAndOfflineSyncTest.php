@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\PushNotifier;
 use Database\Seeders\AtmConditionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
 use Mockery\MockInterface;
 use Tests\TestCase;
@@ -80,6 +81,7 @@ class PushAndOfflineSyncTest extends TestCase
         $this->actingAs($technician)->postJson("/api/v1/tickets/{$ticket->id}/status", ['status' => 'en_transito', 'at' => now()->setTime(9, 0)->toIso8601String(), 'queued' => true])->assertOk();
         $this->actingAs($technician)->postJson("/api/v1/tickets/{$ticket->id}/status", ['status' => 'en_sitio', 'at' => $arrived->toIso8601String(), 'queued' => true])->assertOk();
         $this->actingAs($technician)->postJson("/api/v1/tickets/{$ticket->id}/visits", [
+            'photo' => UploadedFile::fake()->image('constancia.jpg'),
             'client_uuid' => (string) Str::uuid(),
             'work_done' => 'Cambio de correas',
             'atm_condition_id' => AtmCondition::firstWhere('name', 'Operativo')->id,

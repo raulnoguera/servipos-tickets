@@ -126,6 +126,24 @@ class TicketApiTest extends TestCase
         $this->assertSame([1200, 1600], [$width, $height], 'la foto se reduce a 1600 px');
     }
 
+    public function test_the_technician_must_attach_the_constancia_photo(): void
+    {
+        $ticket = $this->openAssignedTicket();
+        $data = [
+            'work_done' => 'Se reemplaza el picker',
+            'atm_condition_id' => AtmCondition::firstWhere('name', 'Operativo')->id,
+            'parts_changed' => false,
+        ];
+
+        $this->actingAs($this->technician)->postJson("/api/v1/tickets/{$ticket->id}/visits", $data)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['photo' => 'Tome la foto de la constancia firmada']);
+        $this->assertSame(0, $ticket->visits()->count());
+
+        // Desde el portal, quien registra por el técnico puede hacerlo sin la foto.
+        $this->actingAs($this->operator)->postJson("/api/v1/tickets/{$ticket->id}/visits", $data)->assertOk();
+    }
+
     public function test_only_an_admin_gives_the_final_confirmation(): void
     {
         $ticket = $this->openAssignedTicket();
@@ -218,6 +236,7 @@ class TicketApiTest extends TestCase
         $user = auth()->user()?->is($this->operator) ? $this->operator : $this->technician;
 
         return $this->actingAs($user)->post("/api/v1/tickets/{$ticket->id}/visits", $extra + [
+            'photo' => UploadedFile::fake()->image('constancia.jpg'),
             'constancia_number' => '6251',
             'work_done' => 'Se reemplaza el picker',
             'atm_condition_id' => AtmCondition::firstWhere('name', $condition)->id,

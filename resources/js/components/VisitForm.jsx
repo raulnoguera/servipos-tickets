@@ -29,6 +29,9 @@ export default function VisitForm({ ticket, onDone }) {
     const [photo, setPhoto] = useState(null);
     const [photoInfo, setPhotoInfo] = useState(null);
     const [compressing, setCompressing] = useState(false);
+    const [photoMissing, setPhotoMissing] = useState(false);
+    // El técnico siempre adjunta la constancia firmada; desde el portal es opcional.
+    const photoRequired = user?.role === 'technician';
 
     const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
@@ -38,6 +41,7 @@ export default function VisitForm({ ticket, onDone }) {
             return;
         }
         setCompressing(true);
+        setPhotoMissing(false);
         const small = await compressImage(file);
         setPhoto(small);
         setPhotoInfo({ before: file.size, after: small.size, url: URL.createObjectURL(small) });
@@ -115,6 +119,11 @@ export default function VisitForm({ ticket, onDone }) {
                     setPartsError('Elija el repuesto en cada fila, o quite las filas vacías.');
                     return;
                 }
+                if (photoRequired && !photo) {
+                    setPhotoMissing(true);
+                    document.getElementById('foto-constancia')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return;
+                }
                 save.mutate();
             }}
         >
@@ -136,10 +145,11 @@ export default function VisitForm({ ticket, onDone }) {
                 </div>
 
                 <label
+                    id="foto-constancia"
                     className={cx(
                         'flex cursor-pointer items-center gap-4 rounded-xl border-2 border-dashed p-4 transition',
                         photo ? 'border-emerald-300 bg-emerald-50/50' : 'border-line hover:border-brand-300 hover:bg-brand-50/40',
-                        err?.field?.('photo') && 'border-red-300',
+                        (photoMissing || err?.field?.('photo')) && !photo && 'border-red-300 bg-red-50/40',
                     )}
                 >
                     <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={pickPhoto} />
@@ -151,15 +161,21 @@ export default function VisitForm({ ticket, onDone }) {
                         </div>
                     )}
                     <div className="min-w-0 text-sm">
-                        <p className="font-semibold text-ink">{photo ? 'Foto lista' : compressing ? 'Optimizando foto…' : 'Tomar foto de la planilla firmada'}</p>
+                        <p className="font-semibold text-ink">
+                            {photo ? 'Foto lista' : compressing ? 'Optimizando foto…' : 'Tomar foto de la planilla firmada'}
+                            {photoRequired && !photo && !compressing && <span className="ml-0.5 text-red-500">*</span>}
+                        </p>
                         {photoInfo ? (
                             <p className="text-muted">
                                 {formatBytes(photoInfo.before)} → <b className="text-emerald-700">{formatBytes(photoInfo.after)}</b> · toque para cambiarla
                             </p>
                         ) : (
-                            <p className="text-muted">Abre la cámara del teléfono. En computadora puede elegir un archivo.</p>
+                            <p className="text-muted">
+                                {photoRequired ? 'Obligatoria para registrar la atención. ' : ''}Abre la cámara del teléfono. En computadora puede elegir un archivo.
+                            </p>
                         )}
-                        {err?.field?.('photo') && <p className="mt-1 text-red-600">{err.field('photo')}</p>}
+                        {photoMissing && !photo && <p className="mt-1 font-semibold text-red-600">Tome la foto de la constancia firmada antes de registrar la atención.</p>}
+                        {!photoMissing && err?.field?.('photo') && <p className="mt-1 text-red-600">{err.field('photo')}</p>}
                     </div>
                     <ImagePlus className="ml-auto hidden size-5 shrink-0 text-faint sm:block" />
                 </label>

@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\Role;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreVisitRequest extends FormRequest
 {
@@ -31,7 +33,19 @@ class StoreVisitRequest extends FormRequest
             'parts' => ['exclude_unless:parts_changed,true', 'required', 'array', 'min:1'],
             'parts.*.part_id' => ['required', 'integer', 'distinct', 'exists:parts,id'],
             'parts.*.quantity' => ['required', 'integer', 'min:1', 'max:999'],
-            'photo' => ['nullable', 'image', 'max:15360'],
+            // El técnico siempre adjunta la foto de la constancia firmada. Desde el portal
+            // (administrador u operador que registra por él) sigue siendo opcional.
+            'photo' => [Rule::requiredIf(fn () => $this->user()?->role === Role::Technician), 'nullable', 'image', 'max:15360'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'photo.required' => 'Tome la foto de la constancia firmada antes de registrar la atención.',
         ];
     }
 

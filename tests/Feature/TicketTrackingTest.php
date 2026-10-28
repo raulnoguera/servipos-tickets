@@ -13,6 +13,7 @@ use App\Services\PushNotifier;
 use Carbon\CarbonImmutable;
 use Database\Seeders\AtmConditionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Mockery\MockInterface;
 use Tests\TestCase;
@@ -86,6 +87,7 @@ class TicketTrackingTest extends TestCase
 
         $this->travelTo($this->monday('10:00')->addDay()); // 3 h hábiles
         $this->actingAs($this->technician)->postJson("/api/v1/tickets/{$ticket['id']}/visits", [
+            'photo' => UploadedFile::fake()->image('constancia.jpg'),
             'work_done' => 'Listo', 'atm_condition_id' => AtmCondition::firstWhere('name', 'Operativo')->id, 'parts_changed' => false,
         ])->assertOk()->assertJsonPath('data.sla.level', 'verde')->assertJsonPath('data.sla.running', false);
 

@@ -10,6 +10,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use Database\Seeders\AtmConditionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 class TechnicianHistoryTest extends TestCase
@@ -53,6 +54,7 @@ class TechnicianHistoryTest extends TestCase
         $this->actingAs($this->jesus)->getJson("/api/v1/tickets/{$reassigned->id}")->assertOk();
         $this->actingAs($this->jesus)->postJson("/api/v1/tickets/{$reassigned->id}/status", ['status' => 'en_transito'])->assertForbidden();
         $this->actingAs($this->jesus)->postJson("/api/v1/tickets/{$reassigned->id}/visits", [
+            'photo' => UploadedFile::fake()->image('constancia.jpg'),
             'work_done' => 'x', 'atm_condition_id' => AtmCondition::first()->id, 'parts_changed' => false,
         ])->assertForbidden();
 
@@ -88,6 +90,7 @@ class TechnicianHistoryTest extends TestCase
     private function visit(Ticket $ticket, User $technician, string $condition, bool $parts = false): void
     {
         $this->actingAs($technician)->postJson("/api/v1/tickets/{$ticket->id}/visits", [
+            'photo' => UploadedFile::fake()->image('constancia.jpg'),
             'work_done' => 'Trabajo',
             'atm_condition_id' => AtmCondition::firstWhere('name', $condition)->id,
             'parts_changed' => $parts,

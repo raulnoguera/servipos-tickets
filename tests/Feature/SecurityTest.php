@@ -14,6 +14,7 @@ use App\Services\TicketService;
 use Database\Seeders\AtmConditionSeeder;
 use Database\Seeders\DemoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\RateLimiter;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
@@ -122,6 +123,7 @@ class SecurityTest extends TestCase
         ]);
         $attack = '=HYPERLINK("https://evil.example","Clic aquí")';
         $this->actingAs($technician)->postJson("/api/v1/tickets/{$ticket->id}/visits", [
+            'photo' => UploadedFile::fake()->image('constancia.jpg'),
             'work_done' => $attack, 'atm_condition_id' => AtmCondition::first()->id, 'parts_changed' => false,
         ])->assertOk();
 
@@ -204,6 +206,7 @@ class SecurityTest extends TestCase
         // Llega 4 horas después de la asignación, pero declara que llegó y terminó casi de inmediato.
         $this->actingAs($technician)->postJson("/api/v1/tickets/{$ticket->id}/status", ['status' => 'en_sitio', 'at' => now()->subHours(4)->addMinutes(2)->toIso8601String()])->assertOk();
         $this->actingAs($technician)->postJson("/api/v1/tickets/{$ticket->id}/visits", [
+            'photo' => UploadedFile::fake()->image('constancia.jpg'),
             'work_done' => 'Cambio de dispensador', 'atm_condition_id' => AtmCondition::where('resulting_ticket_status', 'concluido')->first()->id,
             'parts_changed' => false, 'finished_at' => now()->subHours(4)->addMinutes(3)->toIso8601String(),
             'arrived_at' => now()->subHours(4)->toIso8601String(), // ya no se acepta del cliente
@@ -389,10 +392,10 @@ class SecurityTest extends TestCase
         [$first, $second] = [$make('TK-2026-00001'), $make('TK-2026-00002')];
         $visit = ['client_uuid' => '7f1c1d3e-8a4b-4c5d-9e6f-0a1b2c3d4e5f', 'work_done' => 'Limpieza', 'atm_condition_id' => AtmCondition::first()->id, 'parts_changed' => false];
 
-        $this->actingAs($technician)->postJson("/api/v1/tickets/{$first->id}/visits", $visit)->assertOk();
+        $this->actingAs($technician)->postJson("/api/v1/tickets/{$first->id}/visits", $visit + ['photo' => UploadedFile::fake()->image('constancia.jpg')])->assertOk();
         // El mismo envío repetido devuelve la visita ya creada; en otro ticket se rechaza sin error 500.
-        $this->actingAs($technician)->postJson("/api/v1/tickets/{$first->id}/visits", $visit)->assertOk();
-        $this->actingAs($technician)->postJson("/api/v1/tickets/{$second->id}/visits", $visit)->assertStatus(422);
+        $this->actingAs($technician)->postJson("/api/v1/tickets/{$first->id}/visits", $visit + ['photo' => UploadedFile::fake()->image('constancia.jpg')])->assertOk();
+        $this->actingAs($technician)->postJson("/api/v1/tickets/{$second->id}/visits", $visit + ['photo' => UploadedFile::fake()->image('constancia.jpg')])->assertStatus(422);
         $this->assertSame(1, $first->visits()->count());
         $this->assertSame(0, $second->visits()->count());
     }
