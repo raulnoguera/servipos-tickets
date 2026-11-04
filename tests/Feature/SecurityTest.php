@@ -74,12 +74,12 @@ class SecurityTest extends TestCase
         RateLimiter::clear('login:ana@servipos.test|127.0.0.1');
 
         foreach (range(1, 5) as $i) {
-            $this->postJson('/api/v1/auth/login', ['email' => 'ana@servipos.test', 'password' => 'incorrecta'])
+            $this->postJson('/api/v1/auth/login', ['email' => 'ana@servipos.test', 'password' => self::otraClave()])
                 ->assertJsonPath('errors.email.0', 'Usuario o contraseña incorrectos.');
         }
 
         // Incluso con la contraseña correcta queda bloqueada unos minutos.
-        $this->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'password'])
+        $this->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => $this->claveDePrueba()])
             ->assertStatus(422)
             ->assertJsonPath('errors.email.0', fn ($msg) => str_starts_with($msg, 'Demasiados intentos fallidos'));
     }
@@ -88,9 +88,9 @@ class SecurityTest extends TestCase
     {
         $user = User::factory()->create(['email' => 'luis@servipos.test']);
         foreach (range(1, 4) as $i) {
-            $this->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'mal']);
+            $this->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => self::otraClave()]);
         }
-        $this->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'password'])->assertOk();
+        $this->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => $this->claveDePrueba()])->assertOk();
         $this->assertSame(0, RateLimiter::attempts('login:luis@servipos.test|127.0.0.1'));
     }
 
@@ -265,13 +265,13 @@ class SecurityTest extends TestCase
 
         foreach (range(1, 30) as $i) {
             $this->withServerVariables(['REMOTE_ADDR' => "10.0.0.{$i}"])
-                ->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'incorrecta'])
+                ->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => self::otraClave()])
                 ->assertJsonPath('errors.email.0', 'Usuario o contraseña incorrectos.');
         }
 
         // Desde una IP nueva y con la contraseña correcta: la cuenta sigue bloqueada.
         $this->withServerVariables(['REMOTE_ADDR' => '10.0.9.9'])
-            ->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'password'])
+            ->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => $this->claveDePrueba()])
             ->assertStatus(422)
             ->assertJsonPath('errors.email.0', fn ($msg) => str_starts_with($msg, 'Demasiados intentos fallidos'));
         $this->assertDatabaseHas('audit_logs', ['action' => 'auth.lockout']);
@@ -282,9 +282,10 @@ class SecurityTest extends TestCase
         $admin = User::factory()->admin()->create(['email' => 'jefe@servipos.test']);
         $technician = User::factory()->technician()->create();
 
-        $this->postJson('/api/v1/auth/login', ['email' => $admin->email, 'password' => 'password'])->assertOk();
+        $nueva = self::otraClave();
+        $this->postJson('/api/v1/auth/login', ['email' => $admin->email, 'password' => $this->claveDePrueba()])->assertOk();
         $this->putJson("/api/v1/users/{$technician->id}", [
-            'name' => $technician->name, 'email' => $technician->email, 'role' => 'operator', 'active' => true, 'password' => 'NuevaClave2026x',
+            'name' => $technician->name, 'email' => $technician->email, 'role' => 'operator', 'active' => true, 'password' => $nueva,
         ])->assertOk();
         $this->get('/api/v1/reports/technicians?format=xlsx')->assertOk();
 
@@ -293,7 +294,7 @@ class SecurityTest extends TestCase
         $update = AuditLog::where('action', 'user.updated')->sole();
         $this->assertSame('operator', $update->meta['rol']['ahora']);
         $this->assertSame('cambiada', $update->meta['contraseña']);
-        $this->assertStringNotContainsString('NuevaClave2026x', json_encode(AuditLog::all()));
+        $this->assertStringNotContainsString($nueva, json_encode(AuditLog::all()));
 
         // La consulta de la auditoría es solo para administradores, y el intento queda registrado.
         $this->getJson('/api/v1/audit')->assertOk()->assertJsonPath('meta.total', 3);
@@ -375,7 +376,7 @@ class SecurityTest extends TestCase
         $technician->pushSubscriptions()->create(['endpoint' => 'https://fcm.googleapis.com/fcm/send/x', 'public_key' => 'k', 'auth_token' => 'a']);
 
         $this->actingAs($admin)->putJson("/api/v1/users/{$technician->id}", [
-            'name' => $technician->name, 'email' => $technician->email, 'phone' => $technician->phone, 'role' => 'technician', 'active' => true, 'password' => 'OtraClave2026x',
+            'name' => $technician->name, 'email' => $technician->email, 'phone' => $technician->phone, 'role' => 'technician', 'active' => true, 'password' => self::otraClave(),
         ])->assertOk();
 
         $this->assertSame(0, $technician->pushSubscriptions()->count());

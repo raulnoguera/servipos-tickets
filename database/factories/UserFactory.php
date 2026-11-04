@@ -18,6 +18,14 @@ class UserFactory extends Factory
      */
     protected static ?string $password;
 
+    /** Contraseña en claro de los usuarios de prueba: se genera al azar en cada ejecución. */
+    protected static ?string $plainPassword = null;
+
+    public static function plainPassword(): string
+    {
+        return static::$plainPassword ??= Str::password(16, symbols: false);
+    }
+
     /**
      * Define the model's default state.
      *
@@ -29,7 +37,7 @@ class UserFactory extends Factory
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
+            'password' => static::$password ??= Hash::make(static::plainPassword()),
             'remember_token' => Str::random(10),
             'role' => Role::Operator,
             'active' => true,

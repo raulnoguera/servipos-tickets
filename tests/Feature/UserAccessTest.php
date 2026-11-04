@@ -13,37 +13,41 @@ class UserAccessTest extends TestCase
 {
     use RefreshDatabase;
 
+    /** Las contraseñas del test se generan al azar: no queda ninguna escrita en el código. */
+    private string $clave;
+
     protected function setUp(): void
     {
         parent::setUp();
+        $this->clave = self::otraClave();
         // Las peticiones del portal llevan su origen; así Sanctum inicia la sesión.
         $this->withHeader('Referer', config('app.url'));
     }
 
     public function test_technician_signs_in_with_the_phone_in_any_format(): void
     {
-        $technician = User::factory()->technician()->create(['phone' => '0414-123 45 67']);
+        $technician = User::factory()->technician()->create(['phone' => '0414-123 45 67', 'password' => $this->clave]);
         $this->assertSame('4141234567', $technician->phone_normalized);
 
         foreach (['0414-1234567', '04141234567', '+58 414 1234567', '584141234567', '4141234567'] as $typed) {
-            $this->postJson('/api/v1/auth/login', ['email' => $typed, 'password' => 'password'])
+            $this->postJson('/api/v1/auth/login', ['email' => $typed, 'password' => $this->clave])
                 ->assertOk()->assertJsonPath('data.id', $technician->id)->assertJsonPath('data.login', '0414-123 45 67');
             $this->postJson('/api/v1/auth/logout')->assertOk();
         }
         $this->assertNotNull($technician->refresh()->last_login_at);
 
         // Otro número, o la contraseña equivocada: mismo mensaje genérico.
-        $this->postJson('/api/v1/auth/login', ['email' => '0414-9999999', 'password' => 'password'])
+        $this->postJson('/api/v1/auth/login', ['email' => '0414-9999999', 'password' => $this->clave])
             ->assertJsonPath('errors.email.0', 'Usuario o contraseña incorrectos.');
-        $this->postJson('/api/v1/auth/login', ['email' => '0414-1234567', 'password' => 'otra'])
+        $this->postJson('/api/v1/auth/login', ['email' => '0414-1234567', 'password' => self::otraClave()])
             ->assertJsonPath('errors.email.0', 'Usuario o contraseña incorrectos.');
     }
 
     public function test_staff_still_sign_in_with_their_email(): void
     {
-        $operator = User::factory()->create(['email' => 'Ana.Perez@servipos.test']);
+        $operator = User::factory()->create(['email' => 'Ana.Perez@servipos.test', 'password' => $this->clave]);
 
-        $this->postJson('/api/v1/auth/login', ['email' => ' ana.perez@SERVIPOS.test ', 'password' => 'password'])
+        $this->postJson('/api/v1/auth/login', ['email' => ' ana.perez@SERVIPOS.test ', 'password' => $this->clave])
             ->assertOk()->assertJsonPath('data.id', $operator->id);
     }
 
@@ -74,7 +78,7 @@ class UserAccessTest extends TestCase
     public function test_access_link_lets_the_technician_create_a_password_once(): void
     {
         $admin = User::factory()->admin()->create();
-        $technician = User::factory()->technician()->create(['name' => 'Jesus Ramos', 'phone' => '0414-1234567', 'password' => 'desconocida-123']);
+        $technician = User::factory()->technician()->create(['name' => 'Jesus Ramos', 'phone' => '0414-1234567', 'password' => self::otraClave()]);
         $technician->pushSubscriptions()->create(['endpoint' => 'https://fcm.googleapis.com/fcm/send/x', 'public_key' => 'k', 'auth_token' => 'a']);
 
         $link = $this->actingAs($admin)->postJson("/api/v1/users/{$technician->id}/access-link")->assertOk()->json();
@@ -91,12 +95,12 @@ class UserAccessTest extends TestCase
         // Contraseña débil o sin confirmar: se rechaza y el enlace sigue vigente.
         $this->postJson('/api/v1/access/complete', ['token' => $token, 'password' => 'corta', 'password_confirmation' => 'corta'])->assertJsonValidationErrors('password');
 
-        $this->postJson('/api/v1/access/complete', ['token' => $token, 'password' => 'MiClaveNueva2026', 'password_confirmation' => 'MiClaveNueva2026'])
+        $this->postJson('/api/v1/access/complete', ['token' => $token, 'password' => $this->clave, 'password_confirmation' => $this->clave])
             ->assertOk()->assertJsonPath('data.id', $technician->id);
         $this->getJson('/api/v1/auth/me')->assertOk()->assertJsonPath('data.id', $technician->id);
 
         $technician->refresh();
-        $this->assertTrue(Hash::check('MiClaveNueva2026', $technician->password));
+        $this->assertTrue(Hash::check($this->clave, $technician->password));
         $this->assertNull($technician->access_token_hash);
         $this->assertSame(0, $technician->pushSubscriptions()->count());
         $this->assertDatabaseHas('audit_logs', ['action' => 'user.access_link', 'user_id' => $admin->id]);
@@ -105,7 +109,8 @@ class UserAccessTest extends TestCase
 
         // Un solo uso.
         $this->postJson('/api/v1/access/check', ['token' => $token])->assertJsonValidationErrors('token');
-        $this->postJson('/api/v1/access/complete', ['token' => $token, 'password' => 'OtraClave20261', 'password_confirmation' => 'OtraClave20261'])->assertJsonValidationErrors('token');
+        $otra = self::otraClave();
+        $this->postJson('/api/v1/access/complete', ['token' => $token, 'password' => $otra, 'password_confirmation' => $otra])->assertJsonValidationErrors('token');
     }
 
     public function test_access_links_expire_and_a_new_one_cancels_the_previous(): void
@@ -140,20 +145,22 @@ class UserAccessTest extends TestCase
 
     public function test_users_change_their_own_password_with_the_current_one(): void
     {
-        $technician = User::factory()->technician()->create(['phone' => '0414-1234567', 'remember_token' => 'anterior']);
-        $this->postJson('/api/v1/auth/login', ['email' => '0414-1234567', 'password' => 'password'])->assertOk();
+        $actual = self::otraClave();
+        $nueva = $this->clave;
+        $technician = User::factory()->technician()->create(['phone' => '0414-1234567', 'password' => $actual, 'remember_token' => 'anterior']);
+        $this->postJson('/api/v1/auth/login', ['email' => '0414-1234567', 'password' => $actual])->assertOk();
 
-        $this->putJson('/api/v1/me/password', ['current_password' => 'equivocada', 'password' => 'MiClaveNueva2026', 'password_confirmation' => 'MiClaveNueva2026'])
+        $this->putJson('/api/v1/me/password', ['current_password' => self::otraClave(), 'password' => $nueva, 'password_confirmation' => $nueva])
             ->assertJsonValidationErrors(['current_password' => 'La contraseña actual no es correcta.']);
-        $this->putJson('/api/v1/me/password', ['current_password' => 'password', 'password' => 'corta', 'password_confirmation' => 'corta'])
+        $this->putJson('/api/v1/me/password', ['current_password' => $actual, 'password' => 'corta', 'password_confirmation' => 'corta'])
             ->assertJsonValidationErrors('password');
-        $this->putJson('/api/v1/me/password', ['current_password' => 'password', 'password' => 'MiClaveNueva2026', 'password_confirmation' => 'otra'])
+        $this->putJson('/api/v1/me/password', ['current_password' => $actual, 'password' => $nueva, 'password_confirmation' => self::otraClave()])
             ->assertJsonValidationErrors('password');
 
-        $this->putJson('/api/v1/me/password', ['current_password' => 'password', 'password' => 'MiClaveNueva2026', 'password_confirmation' => 'MiClaveNueva2026'])->assertOk();
+        $this->putJson('/api/v1/me/password', ['current_password' => $actual, 'password' => $nueva, 'password_confirmation' => $nueva])->assertOk();
 
         $technician->refresh();
-        $this->assertTrue(Hash::check('MiClaveNueva2026', $technician->password));
+        $this->assertTrue(Hash::check($nueva, $technician->password));
         $this->assertNotSame('anterior', $technician->remember_token);
         $this->assertDatabaseHas('audit_logs', ['action' => 'user.password_changed', 'user_id' => $technician->id]);
         // Sigue con su sesión abierta.
