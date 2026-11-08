@@ -179,6 +179,38 @@ class ExcelImportExportTest extends TestCase
         $this->assertSame('Operativo / Pendiente por Repuesto', $sheet->getCell("O{$row}")->getValue());
     }
 
+    public function test_export_adds_a_sheet_with_the_tickets_still_open(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-06 08:00'));
+        $atm = Atm::factory()->create(['atm_number' => 'A9', 'agency_name' => 'CHACAO']);
+        $technician = User::factory()->technician()->create(['name' => 'Jesus Ramos']);
+        $make = fn (string $number, TicketStatus $status, string $opened, ?User $tech = null) => Ticket::create([
+            'number' => $number, 'atm_id' => $atm->id, 'status' => $status, 'opened_at' => Carbon::parse($opened),
+            'assigned_to' => $tech?->id, 'description' => 'No dispensa',
+        ]);
+        $part = $make('TK-2026-00002', TicketStatus::PendingPart, '2026-11-02 09:00', $technician);
+        $part->visits()->create(['visit_date' => '2026-11-03', 'technician_id' => $technician->id, 'work_done' => 'Se pide el picker', 'parts_changed' => false]);
+        $make('TK-2026-00003', TicketStatus::Assigned, '2026-11-05 10:00', $technician);
+        $make('TK-2026-00004', TicketStatus::Open, '2026-11-05 11:00');
+        $make('TK-2026-00001', TicketStatus::Closed, '2026-11-01 09:00', $technician);
+        $make('TK-2026-00005', TicketStatus::Cancelled, '2026-11-05 09:00');
+
+        // Las fechas del consolidado no limitan los pendientes: salen los de días anteriores.
+        $book = app(ConsolidadoExporter::class)->build(Carbon::parse('2026-11-05'), Carbon::parse('2026-11-06'));
+        $this->assertSame(['Base General', 'Pendientes'], $book->getSheetNames());
+        $this->assertSame(0, $book->getActiveSheetIndex(), 'abre en la hoja de siempre');
+
+        $sheet = $book->getSheetByName('Pendientes');
+        $this->assertSame('N° Ticket', $sheet->getCell('C2')->getValue());
+        $this->assertSame(['TK-2026-00002', 'TK-2026-00003', 'TK-2026-00004'], [$sheet->getCell('C3')->getValue(), $sheet->getCell('C4')->getValue(), $sheet->getCell('C5')->getValue()]);
+        $this->assertNull($sheet->getCell('C6')->getValue());
+        $this->assertSame('Pendiente por repuesto', $sheet->getCell('J3')->getValue());
+        $this->assertSame('Se pide el picker', $sheet->getCell('M3')->getValue(), 'la observación de la última atención');
+        $this->assertSame(3, $sheet->getCell('N3')->getValue(), 'días abierto');
+        $this->assertSame('Sin asignar', $sheet->getCell('K5')->getValue());
+        $this->assertSame('No dispensa', $sheet->getCell('M5')->getValue(), 'sin atención, la descripción del ticket');
+    }
+
     private function writeFixture(string $path, bool $extended = false): void
     {
         $book = new Spreadsheet;

@@ -655,7 +655,7 @@ function ConsolidadoTab({ filters }) {
     const [error, setError] = useState(null);
     return (
         <Card>
-            <CardHeader title="Exportar consolidado a Excel" subtitle="Mismas columnas del “Libro Consolidado Relación de Atenciones”, una fila por visita, más el N° de ticket. Usa las fechas y el banco de los filtros." actions={<FileSpreadsheet className="size-5 text-ok" />} />
+            <CardHeader title="Exportar consolidado a Excel" subtitle="Mismas columnas del “Libro Consolidado Relación de Atenciones”, una fila por visita, más el N° de ticket. Usa las fechas y el banco de los filtros. Trae además la hoja «Pendientes» con los tickets sin cerrar al momento de descargar." actions={<FileSpreadsheet className="size-5 text-ok" />} />
             <div className="flex flex-wrap items-center gap-3 p-5">
                 <p className="text-sm text-body">Del <b>{formatDate(filters.from)}</b> al <b>{formatDate(filters.to)}</b></p>
                 <Button
