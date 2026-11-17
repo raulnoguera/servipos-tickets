@@ -340,7 +340,7 @@ class ExcelHistoryImporter
                 $this->report->warn($where, '"Cambio de Repuesto" = Si pero no indica el repuesto.');
             }
 
-            $status = $condition?->resulting_ticket_status ?? TicketStatus::PendingValidation;
+            $status = $condition?->resulting_ticket_status ?? TicketStatus::PendingPart;
             $ticket->update([
                 'status' => $status,
                 'assigned_to' => $technician?->id ?? $ticket->assigned_to,
@@ -544,16 +544,16 @@ class ExcelHistoryImporter
     {
         $name = Normalizer::text($value);
         if ($name === null) {
-            $this->report->warn($where, 'Sin "Estatus Final"; el ticket queda pendiente por validación.');
+            $this->report->warn($where, 'Sin "Estatus Final"; el ticket queda pendiente por repuesto.');
 
             return null;
         }
         $key = Normalizer::key($name);
         if (! isset($this->conditions[$key])) {
-            $this->report->warn($where, "Estatus final nuevo \"{$name}\": se creó y lleva el ticket a \"Pendiente por validación\". Revíselo en el catálogo.");
+            $this->report->warn($where, "Estatus final nuevo \"{$name}\": se creó y lleva el ticket a \"Pendiente por repuesto\". Revíselo en el catálogo.");
             $this->conditions[$key] = AtmCondition::create([
                 'name' => $name,
-                'resulting_ticket_status' => TicketStatus::PendingValidation,
+                'resulting_ticket_status' => TicketStatus::PendingPart,
                 'sort' => 99,
             ]);
         }

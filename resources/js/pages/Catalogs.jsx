@@ -177,7 +177,7 @@ function SlaSettings() {
     );
 }
 
-const RESULT_STATUSES = ['concluido', 'pendiente_repuesto', 'pendiente_validacion'];
+const RESULT_STATUSES = ['concluido', 'pendiente_repuesto'];
 
 /** Formulario corto para agregar un elemento (una marca, o un modelo dentro de su marca). */
 function AddForm({ type, extra = {}, placeholder, compact = false }) {
@@ -293,7 +293,7 @@ export default function Catalogs() {
     const add = useMutation({
         mutationFn: () => api(`catalogs/${tab.type}`, {
             method: 'POST',
-            body: { name, ...(tab.type === 'atm-conditions' ? { resulting_ticket_status: 'pendiente_validacion', sort: 50 } : {}) },
+            body: { name, ...(tab.type === 'atm-conditions' ? { resulting_ticket_status: 'pendiente_repuesto', sort: 50 } : {}) },
         }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['catalogs'] });

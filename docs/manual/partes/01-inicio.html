@@ -133,8 +133,7 @@
 <p style="font-weight:700;color:#00194C;margin-top:8pt">Al registrar la atención, el estatus final que elige el técnico define cómo queda el ticket:</p>
 <div class="resultados">
 <div style="background:#DDF5F1"><b style="color:#0E5E55">Por confirmar → Concluido</b>El cajero quedó operativo. El administrador da la última confirmación y el ticket concluye.</div>
-<div style="background:#FFF1D6"><b style="color:#8A5A00">Pendiente por repuesto</b>Falta una pieza. Se resuelve con una nueva visita.</div>
-<div style="background:#FFE9D9"><b style="color:#9A3412">Pendiente por validación</b>Requiere revisión técnica, de comunicaciones o de un tercero.</div>
+<div style="background:#FFF1D6"><b style="color:#8A5A00">Pendiente por repuesto</b>Falta una pieza o el cajero quedó fuera de servicio. Se resuelve con una nueva visita.</div>
 </div>
 
 <table>
@@ -143,8 +142,7 @@
 <tr><td><span class="et e-asignado">Asignado</span></td><td>Tiene un técnico responsable, que todavía no ha salido.</td><td>Al asignar o reasignar.</td></tr>
 <tr><td><span class="et e-transito">En tránsito</span></td><td>El técnico va hacia el cajero.</td><td>Botón «Voy en camino».</td></tr>
 <tr><td><span class="et e-sitio">En sitio</span></td><td>El técnico llegó. Aquí se detiene el reloj de «llegada».</td><td>Botón «Llegué al sitio».</td></tr>
-<tr><td><span class="et e-repuesto">Pend. repuesto</span></td><td>Se atendió, pero falta una pieza para dejarlo operativo. El reloj sigue corriendo.</td><td>Atención con ese estatus final.</td></tr>
-<tr><td><span class="et e-validacion">Pend. validación</span></td><td>Se atendió, pero depende de una revisión o de un tercero. El reloj sigue corriendo.</td><td>Atención con ese estatus final.</td></tr>
+<tr><td><span class="et e-repuesto">Pend. repuesto</span></td><td>Se atendió, pero falta una pieza o el cajero sigue fuera de servicio. El reloj sigue corriendo.</td><td>Atención con ese estatus final.</td></tr>
 <tr><td><span class="et e-confirmar">Por confirmar</span></td><td>El técnico informó que el cajero quedó operativo. El reloj se detiene; falta la confirmación del administrador.</td><td>Atención con estatus «Operativo».</td></tr>
 <tr><td><span class="et e-concluido">Concluido</span></td><td>El administrador confirmó el cierre. El ticket ya no admite cambios.</td><td>Botón «Confirmar cierre».</td></tr>
 <tr><td><span class="et e-anulado">Anulado</span></td><td>Se canceló (reporte duplicado, el banco desistió, etc.), con el motivo anotado.</td><td>Botón «Anular».</td></tr>
@@ -181,8 +179,8 @@
 <tr><th>Estatus final</th><th>El ticket pasa a…</th></tr>
 <tr><td>Operativo</td><td><span class="et e-confirmar">Por confirmar</span> y, tras la confirmación del administrador, <span class="et e-concluido">Concluido</span></td></tr>
 <tr><td>Operativo / Pendiente por Repuesto</td><td><span class="et e-repuesto">Pend. repuesto</span></td></tr>
-<tr><td>Fuera de Servicio</td><td><span class="et e-validacion">Pend. validación</span></td></tr>
-<tr><td>Fuera de Servicio / Pendiente por 3ero</td><td><span class="et e-validacion">Pend. validación</span></td></tr>
+<tr><td>Fuera de Servicio</td><td><span class="et e-repuesto">Pend. repuesto</span></td></tr>
+<tr><td>Fuera de Servicio / Pendiente por 3ero</td><td><span class="et e-repuesto">Pend. repuesto</span></td></tr>
 </table>
 <p>La lista se puede ampliar o ajustar en <b>Catálogos → Estatus final</b> (sección 4.11).</p>
 

@@ -12,7 +12,7 @@
 <table>
 <tr><th style="width:38%">Grupo</th><th>Contenido</th></tr>
 <tr><td><b>Por atender</b></td><td>Asignados, en tránsito o en sitio. Primero los que ya están en sitio.</td></tr>
-<tr><td><b>Pendientes</b></td><td>Los que quedaron por repuesto o por validación.</td></tr>
+<tr><td><b>Pendientes</b></td><td>Los que quedaron pendientes por repuesto.</td></tr>
 <tr><td><b>Por confirmar cierre</b></td><td>Los que ya atendió y esperan la confirmación del administrador.</td></tr>
 </table>
 <p>Cada tarjeta muestra el número del ticket, su estado, la agencia, el ATM y su estado del país, la falla y el tiempo transcurrido. Debajo tiene dos botones:</p>
@@ -61,7 +61,7 @@
 <ul>
 <li><b>Operativo:</b> el ticket pasa a «Por confirmar» y el reloj se detiene.</li>
 <li><b>Operativo / Pendiente por Repuesto:</b> queda en «Pend. repuesto». Cuando llegue la pieza, se registra una nueva atención en el mismo ticket.</li>
-<li><b>Fuera de Servicio:</b> queda en «Pend. validación».</li>
+<li><b>Fuera de Servicio:</b> queda en «Pend. repuesto».</li>
 </ul>
 <div class="aviso"><b>Atención</b><p>Una atención registrada no se puede editar ni borrar desde la aplicación. Revise los datos antes de enviarla.</p></div>
 
@@ -124,8 +124,8 @@
 <tr><td><span class="et e-abierto">Abierto</span></td><td>Asignado · Anulado</td><td>Asignar técnico · Anular</td></tr>
 <tr><td><span class="et e-asignado">Asignado</span></td><td>En tránsito · En sitio · Asignado (otro técnico) · Anulado · el resultado de una atención</td><td>Botones del técnico · Reasignar · Anular · Registrar atención</td></tr>
 <tr><td><span class="et e-transito">En tránsito</span></td><td>En sitio · Asignado (otro técnico) · Anulado · el resultado de una atención</td><td>Ídem</td></tr>
-<tr><td><span class="et e-sitio">En sitio</span></td><td>Por confirmar · Pend. repuesto · Pend. validación</td><td>Registrar atención</td></tr>
-<tr><td><span class="et e-repuesto">Pend. repuesto</span> <span class="et e-validacion">Pend. validación</span></td><td>Asignado · En tránsito · En sitio · Por confirmar · Anulado</td><td>Reasignar · botones del técnico · nueva atención · Anular</td></tr>
+<tr><td><span class="et e-sitio">En sitio</span></td><td>Por confirmar · Pend. repuesto</td><td>Registrar atención</td></tr>
+<tr><td><span class="et e-repuesto">Pend. repuesto</span></td><td>Asignado · En tránsito · En sitio · Por confirmar · Anulado</td><td>Reasignar · botones del técnico · nueva atención · Anular</td></tr>
 <tr><td><span class="et e-confirmar">Por confirmar</span></td><td>Concluido · Asignado · Anulado</td><td>Confirmar cierre · Devolver al técnico · Anular</td></tr>
 <tr><td><span class="et e-concluido">Concluido</span> <span class="et e-anulado">Anulado</span></td><td>Ninguno</td><td>Son estados finales</td></tr>
 </table>
@@ -142,7 +142,7 @@
 <tr><td><b>Fin del reloj</b></td><td>Cuando el técnico registra la atención con el cajero operativo. No espera a la confirmación del administrador. Desde ahí el color queda fijo.</td></tr>
 <tr><td><b>Solo horario bancario</b></td><td>Suma tiempo de lunes a viernes, de 8:00 a. m. a 3:00 p. m., sin feriados. Lo que pasa fuera de ese horario no cuenta. Un día hábil es una jornada completa (7 horas).</td></tr>
 <tr><td><b>Límites por tipo de SLA</b></td><td>El tipo es la zona del cajero, salvo que se elija otro para el ticket. Urbana: verde hasta 4 horas hábiles, naranja hasta 8, después crítica. Extraurbana: verde hasta 1 día hábil, naranja hasta 2, después crítica.</td></tr>
-<tr><td><b>Esperas</b></td><td>Dentro del horario bancario, el reloj sigue corriendo mientras se espera un repuesto o una validación.</td></tr>
+<tr><td><b>Esperas</b></td><td>Dentro del horario bancario, el reloj sigue corriendo mientras se espera un repuesto.</td></tr>
 <tr><td><b>Hora de llegada</b></td><td>Se registra al marcar «Llegué al sitio» (o, si no se marcó, con la atención). Se usa para el tiempo de llegada de los reportes; no cambia el color del SLA.</td></tr>
 <tr><td><b>Hora del servidor</b></td><td>Con señal, la hora de cada paso es la del servidor. El teléfono no puede declarar una hora anterior.</td></tr>
 <tr><td><b>Hora sin señal</b></td><td>Solo en los envíos guardados sin señal se acepta la hora del teléfono, con límites: no puede ser futura, ni anterior a la apertura ni al paso previo, ni de hace más de 24 horas. El ticket muestra además cuándo llegó realmente.</td></tr>

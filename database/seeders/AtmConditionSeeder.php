@@ -12,8 +12,8 @@ class AtmConditionSeeder extends Seeder
     public const CONDITIONS = [
         'Operativo' => TicketStatus::Closed,
         'Operativo / Pendiente por Repuesto' => TicketStatus::PendingPart,
-        'Fuera de Servicio' => TicketStatus::PendingValidation,
-        'Fuera de Servicio/Pendiente por 3ero' => TicketStatus::PendingValidation,
+        'Fuera de Servicio' => TicketStatus::PendingPart,
+        'Fuera de Servicio/Pendiente por 3ero' => TicketStatus::PendingPart,
     ];
 
     public function run(): void

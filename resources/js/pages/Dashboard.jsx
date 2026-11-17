@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, CheckCircle2, Clock3, Hourglass, PackageX, Plus, RefreshCw, Siren, TimerOff, Wrench } from 'lucide-react';
+import { CheckCircle2, Clock3, Hourglass, PackageX, Plus, RefreshCw, Siren, TimerOff, Wrench } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { formatDuration, formatNumber, initials } from '../lib/format';
@@ -82,10 +82,9 @@ export default function Dashboard() {
                 <LoadingBlock />
             ) : (
                 <div className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4 xl:grid-cols-5">
+                    <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
                         <Kpi icon={Siren} tone="brand" label="Tickets activos" value={k.active} detail={`${k.unassigned} sin asignar · ${k.in_field} en campo`} to="/tickets?filtro=en_curso" />
                         <Kpi icon={PackageX} tone="warn" label="Pend. por repuesto" value={k.pending_part} detail="Esperando pieza para culminar" to="/tickets?filtro=pendiente_repuesto" />
-                        <Kpi icon={AlertTriangle} tone="orange" label="Pend. por validación" value={k.pending_validation} detail="En revisión técnica / red" to="/tickets?filtro=pendiente_validacion" />
                         <Kpi icon={CheckCircle2} tone="ok" label="Concluidos" value={k.closed} detail={`${k.opened} abiertos ${PERIOD_TEXT[period]}`} to="/tickets?filtro=concluido" />
                         <Kpi icon={Clock3} tone="navy" label="Tiempo promedio" value={k.avg_duration_ms ? formatDuration(k.avg_duration_ms) : '—'} detail={`De apertura a cierre, ${PERIOD_TEXT[period]}`} />
                     </div>
@@ -182,7 +181,7 @@ export default function Dashboard() {
                         </Table>
                         {!data.recent.length && <EmptyState title="Aún no hay tickets" description="Abra el primero desde “Nuevo ticket”." />}
                     </Card>
-                    <p className="text-center text-xs text-faint">Se actualiza automáticamente cada 30 segundos · {formatNumber(k.active + k.pending_part + k.pending_validation)} tickets sin cerrar</p>
+                    <p className="text-center text-xs text-faint">Se actualiza automáticamente cada 30 segundos · {formatNumber(k.active + k.pending_part)} tickets sin cerrar</p>
                 </div>
             )}
         </>

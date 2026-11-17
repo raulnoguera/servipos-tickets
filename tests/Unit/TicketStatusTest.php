@@ -25,8 +25,15 @@ class TicketStatusTest extends TestCase
     public function test_pending_tickets_can_be_reopened_but_closed_ones_cannot(): void
     {
         $this->assertTrue(TicketStatus::PendingPart->canTransitionTo(TicketStatus::Assigned));
-        $this->assertTrue(TicketStatus::PendingValidation->canTransitionTo(TicketStatus::PendingClosure));
         $this->assertSame([], TicketStatus::Closed->allowedNext());
         $this->assertFalse(TicketStatus::Open->canTransitionTo(TicketStatus::Closed));
+    }
+
+    public function test_pending_validation_is_no_longer_reachable(): void
+    {
+        // El cliente trabaja solo con «Pend. repuesto» y «Por confirmar» (17/11/2026).
+        foreach (TicketStatus::cases() as $status) {
+            $this->assertFalse($status->canTransitionTo(TicketStatus::PendingValidation), $status->value);
+        }
     }
 }

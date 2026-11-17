@@ -11,6 +11,7 @@ enum TicketStatus: string
     case PendingClosure = 'por_confirmar';
     case Closed = 'concluido';
     case PendingPart = 'pendiente_repuesto';
+    /** Ya no se usa (pedido del cliente, 17/11/2026): se conserva para leer el historial. */
     case PendingValidation = 'pendiente_validacion';
     case Cancelled = 'anulado';
 
@@ -61,7 +62,7 @@ enum TicketStatus: string
             self::Open => [self::Assigned, self::Cancelled],
             self::Assigned => [self::InTransit, self::OnSite, self::Assigned, self::Cancelled],
             self::InTransit => [self::OnSite, self::Assigned, self::Cancelled],
-            self::OnSite => [self::PendingClosure, self::PendingPart, self::PendingValidation],
+            self::OnSite => [self::PendingClosure, self::PendingPart],
             // Un ticket pendiente se reabre con una nueva visita.
             self::PendingPart, self::PendingValidation => [self::Assigned, self::InTransit, self::OnSite, self::PendingClosure, self::Cancelled],
             // El administrador confirma el cierre, lo devuelve al técnico o lo anula.

@@ -28,7 +28,6 @@
 <tr><td><b>Hoy / Semana / Mes</b></td><td>Período al que se refieren «Concluidos», «Tiempo promedio», los repuestos y las fallas. Los contadores de tickets abiertos son siempre los del momento.</td></tr>
 <tr><td><b>Tickets activos</b></td><td>Tickets abiertos, asignados, en tránsito o en sitio. Debajo: cuántos están sin asignar y cuántos en campo.</td></tr>
 <tr><td><b>Pend. por repuesto</b></td><td>Tickets que esperan una pieza para culminar.</td></tr>
-<tr><td><b>Pend. por validación</b></td><td>Tickets en revisión técnica, de red o de un tercero.</td></tr>
 <tr><td><b>Concluidos</b></td><td>Tickets concluidos en el período. Debajo: cuántos se abrieron en ese mismo período.</td></tr>
 <tr><td><b>Tiempo promedio</b></td><td>Promedio desde la apertura hasta el cierre, de los concluidos en el período.</td></tr>
 <tr><td><b>Franja verde azulada</b></td><td>Cuántos tickets atendidos esperan la confirmación del cierre. Aparece solo si hay alguno.</td></tr>
@@ -69,7 +68,7 @@
 <tr><th style="width:24%">Pestaña</th><th>Qué lista</th></tr>
 <tr><td><b>Sin cerrar</b></td><td>Todo lo que no está concluido ni anulado. Es la vista inicial.</td></tr>
 <tr><td><b>En curso</b></td><td>Abiertos, asignados, en tránsito y en sitio.</td></tr>
-<tr><td><b>Pend. repuesto</b> · <b>Pend. validación</b></td><td>Los que quedaron pendientes después de una atención.</td></tr>
+<tr><td><b>Pend. repuesto</b></td><td>Los que quedaron pendientes después de una atención.</td></tr>
 <tr><td><b>Por confirmar</b></td><td>Atendidos por el técnico, en espera de la confirmación del administrador.</td></tr>
 <tr><td><b>Concluidos</b> · <b>Anulados</b></td><td>Los ya cerrados.</td></tr>
 <tr><td><b>En crítica</b> · <b>En naranja</b></td><td>Tickets sin cerrar que están en ese color del semáforo.</td></tr>
@@ -154,7 +153,7 @@
 <p>Muestra los tickets en curso como tarjetas, en una columna por estado. Es la vista más cómoda para dirigir la operación del día. Se actualiza sola cada 30 segundos.</p>
 <figure><img src="capturas/tablero.jpg" alt="Tablero de tickets"><figcaption>Tablero por estado.</figcaption></figure>
 <ul>
-<li><b>Columnas:</b> Abierto, Asignado, En tránsito, En sitio, Pend. repuesto, Pend. validación, Por confirmar y Concluido (los concluidos de hoy). Si no caben, la pantalla se desplaza hacia la derecha.</li>
+<li><b>Columnas:</b> Abierto, Asignado, En tránsito, En sitio, Pend. repuesto, Por confirmar y Concluido (los concluidos de hoy). Si no caben, la pantalla se desplaza hacia la derecha.</li>
 <li><b>Orden:</b> dentro de cada columna, primero los de color más urgente (crítica, naranja, verde) y, entre ellos, los más antiguos.</li>
 <li><b>Tarjeta:</b> número, prioridad, agencia, ATM y estado, falla, técnico, tiempo transcurrido y color del SLA.</li>
 <li><b>Borde rojo:</b> el ticket está en crítica.</li>
@@ -333,7 +332,7 @@
 <figure><img src="capturas/catalogos-marcas.jpg" alt="Catálogo de marcas y modelos"><figcaption>Marcas de cajeros, con los modelos de cada una.</figcaption></figure>
 <p>Arriba se agregan las marcas. Con la flecha de cada marca se abren sus modelos, donde se agregan, renombran y desactivan. Todo se guarda en MAYÚSCULAS. Un mismo modelo no se puede repetir dentro de una marca.</p>
 <div class="regla"><b>Regla del sistema</b><p>El catálogo se llenó con las marcas y modelos que ya tenían los cajeros, y la importación del Excel agrega sola los que falten. Si se renombra una marca o un modelo, el cambio se aplica a todos los cajeros que lo usan.</p></div>
-<p>En <b>Estatus final</b>, además del nombre, se elige el estado al que pasa el ticket: Concluido, Pendiente por repuesto o Pendiente por validación. Los de tipo «Concluido» llevan primero el ticket a «Por confirmar» (sección 4.6).</p>
+<p>En <b>Estatus final</b>, además del nombre, se elige el estado al que pasa el ticket: Concluido o Pendiente por repuesto. Los de tipo «Concluido» llevan primero el ticket a «Por confirmar» (sección 4.6).</p>
 
 <h2>4.12 SLA: semáforo, horario bancario y feriados</h2>
 <figure><img src="capturas/catalogos-sla.jpg" alt="Configuración del SLA"><figcaption>Límites por zona, horario bancario y feriados.</figcaption></figure>

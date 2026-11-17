@@ -14,7 +14,6 @@ const TABS = [
     { value: 'sin_cerrar', label: 'Sin cerrar', query: { open: 1 } },
     { value: 'en_curso', label: 'En curso', query: { status: 'abierto,asignado,en_transito,en_sitio' } },
     { value: 'pendiente_repuesto', label: 'Pend. repuesto', query: { status: 'pendiente_repuesto' } },
-    { value: 'pendiente_validacion', label: 'Pend. validación', query: { status: 'pendiente_validacion' } },
     { value: 'por_confirmar', label: 'Por confirmar', query: { status: 'por_confirmar' } },
     { value: 'concluido', label: 'Concluidos', query: { status: 'concluido' } },
     { value: 'vencidos', label: 'En crítica', query: { sla: 'critica', open: 1 } },

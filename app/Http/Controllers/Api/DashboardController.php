@@ -41,7 +41,6 @@ class DashboardController extends Controller
                 'unassigned' => $count([TicketStatus::Open]),
                 'in_field' => $count([TicketStatus::InTransit, TicketStatus::OnSite]),
                 'pending_part' => $count([TicketStatus::PendingPart]),
-                'pending_validation' => $count([TicketStatus::PendingValidation]),
                 'pending_closure' => $count([TicketStatus::PendingClosure]),
                 'opened' => Ticket::where('opened_at', '>=', $from)->count(),
                 'closed' => (clone $closedInPeriod)->count(),
@@ -99,7 +98,7 @@ class DashboardController extends Controller
         return User::technicians()->where('active', true)
             ->withCount([
                 'assignedTickets as active_tickets' => fn ($q) => $q->whereIn('status', self::ACTIVE),
-                'assignedTickets as pending' => fn ($q) => $q->whereIn('status', [TicketStatus::PendingPart, TicketStatus::PendingValidation]),
+                'assignedTickets as pending' => fn ($q) => $q->where('status', TicketStatus::PendingPart),
                 'assignedTickets as closed' => fn ($q) => $q->where('status', TicketStatus::Closed)->where('closed_at', '>=', $from),
             ])
             ->get()

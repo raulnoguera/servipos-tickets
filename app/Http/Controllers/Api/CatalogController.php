@@ -140,7 +140,7 @@ class CatalogController extends Controller
             $rules['short_name'] = ['nullable', 'string', 'max:30'];
         }
         if ($type === 'atm-conditions') {
-            $rules['resulting_ticket_status'] = ['required', Rule::in([TicketStatus::Closed->value, TicketStatus::PendingPart->value, TicketStatus::PendingValidation->value])];
+            $rules['resulting_ticket_status'] = ['required', Rule::in([TicketStatus::Closed->value, TicketStatus::PendingPart->value])];
             $rules['sort'] = ['integer', 'min:0'];
         }
 
