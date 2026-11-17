@@ -217,6 +217,25 @@ class TicketTrackingTest extends TestCase
         $this->actingAs($this->technician)->patchJson("/api/v1/tickets/{$ticket['id']}", ['description' => 'x'])->assertForbidden();
     }
 
+    public function test_classifying_the_fault_also_fixes_the_visits_that_inherited_it(): void
+    {
+        // El correo traía dos fallas: el ticket queda «Por clasificar» y la atención lo hereda.
+        $unclassified = FaultType::create(['name' => 'Por clasificar']);
+        $ticket = $this->open();
+        Ticket::find($ticket['id'])->update(['fault_type_id' => $unclassified->id]);
+        $this->actingAs($this->technician)->postJson("/api/v1/tickets/{$ticket['id']}/visits", [
+            'photo' => UploadedFile::fake()->image('constancia.jpg'),
+            'work_done' => 'Listo', 'atm_condition_id' => AtmCondition::firstWhere('name', 'Operativo')->id, 'parts_changed' => false,
+        ])->assertOk();
+
+        $dispensa = FaultType::firstWhere('name', 'Falla de Dispensación');
+        $this->actingAs($this->operator)->patchJson("/api/v1/tickets/{$ticket['id']}", ['fault_type_id' => $dispensa->id])
+            ->assertOk()->assertJsonPath('data.fault_type', 'Falla de Dispensación');
+
+        $this->assertSame([$dispensa->id], Ticket::find($ticket['id'])->visits()->pluck('fault_type_id')->all());
+        $this->assertStringContainsString('Falla: Por clasificar → Falla de Dispensación', Ticket::find($ticket['id'])->events()->pluck('note')->implode(' | '));
+    }
+
     public function test_comments_notify_people_involved_and_author_follows_the_ticket(): void
     {
         $this->capturePush();

@@ -347,7 +347,14 @@ class TicketService
             };
         }
         if ($changes) {
+            $faultBefore = $ticket->isDirty('fault_type_id') ? $ticket->getOriginal('fault_type_id') : false;
             $ticket->save();
+            // Las atenciones heredan la falla del ticket (p. ej. «Por clasificar» del correo):
+            // al corregirla, se corrige también en ellas, que es lo que lleva el Consolidado.
+            if ($faultBefore !== false && $ticket->fault_type_id) {
+                $ticket->visits()->reorder()->where(fn ($q) => $faultBefore ? $q->where('fault_type_id', $faultBefore) : $q->whereNull('fault_type_id'))
+                    ->update(['fault_type_id' => $ticket->fault_type_id]);
+            }
             $this->log($ticket, $by, null, null, 'Editado: '.implode(' · ', $changes));
         }
 

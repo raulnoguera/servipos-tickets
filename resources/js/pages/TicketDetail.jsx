@@ -286,6 +286,7 @@ export default function TicketDetail() {
     const finished = ['concluido', 'anulado'].includes(t.status);
     // El técnico ya informó el cierre: el reloj está detenido y solo falta la confirmación del administrador.
     const awaiting = t.status === 'por_confirmar';
+    const unclassified = !t.fault_type || t.fault_type === 'Por clasificar';
     const closed = finished || awaiting || queued.visitQueued;
     // El técnico solo trabaja los tickets que tiene asignados; los de su historial son de consulta.
     const mine = !isTechnician || t.technician?.id === user.id;
@@ -399,9 +400,19 @@ export default function TicketDetail() {
 
                     {/* Falla */}
                     <Card>
-                        <CardHeader title="Falla reportada" />
+                        <CardHeader
+                            title="Falla reportada"
+                            actions={canManage && (
+                                <button type="button" onClick={() => setModal('edit')} className="text-sm font-semibold text-brand-600 hover:underline">
+                                    {unclassified ? 'Clasificar' : 'Cambiar falla'}
+                                </button>
+                            )}
+                        />
                         <div className="p-5">
                             <p className="font-semibold text-ink">{t.fault_type ?? 'Sin clasificar'}</p>
+                            {canManage && unclassified && (
+                                <Alert tone="warn" className="mt-3">El correo traía más de una falla o una que no está en el catálogo. Toque «Clasificar» y elija la falla real; se corrige también en sus atenciones y en el Consolidado.</Alert>
+                            )}
                             {t.description ? <p className="mt-2 text-sm whitespace-pre-line text-body">{t.description}</p> : <p className="mt-1 text-sm text-faint">Sin detalle.</p>}
                         </div>
                     </Card>
